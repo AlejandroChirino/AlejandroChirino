@@ -1,0 +1,12 @@
+# Cursor Project Rules - La L Fashion
+
+## General Coding Standards
+
+### TypeScript Rules
+1. **Always use TypeScript** - No archivos `.js` o `.jsx`
+2. **Explicit types for function parameters and return values**
+3. **Use interfaces for object shapes**
+4. **Avoid `any` type** - Use `unknown` or proper types
+5. **Use type imports** when only importing types:
+   ```typescript
+   import type { Product } from '@/lib/types'

@@ -1,0 +1,65 @@
+# Tech Stack Document - La L Fashion
+
+## Frontend Framework
+- **Next.js 14+** (App Router)
+- **React 18+**
+- **TypeScript**
+
+## Styling
+- **Tailwind CSS** - Framework CSS principal
+- **shadcn/ui** - Biblioteca de componentes UI
+- **Lucide React** - Iconos
+
+## Backend & Database
+- **Supabase** - Base de datos PostgreSQL y autenticación
+- **PostgreSQL** - Base de datos relacional
+- **Next.js API Routes** - Endpoints del servidor
+
+## State Management
+- **React Context API** - Gestión de estado global (Carrito, Favoritos)
+- **React Hooks** - Estado local (useState, useEffect, etc.)
+
+## Authentication
+- **Supabase Auth** - Sistema de autenticación
+- **Hardcoded Admin Credentials** - Para panel administrativo
+  - Email: `lalfashion0@gmail.com`
+  - Password: `08938774163Aa*`
+
+## File Storage
+- **Supabase Storage** - Almacenamiento de imágenes de productos
+
+## Form Handling
+- **Native React Forms** - Formularios controlados
+- **FormData API** - Para uploads de archivos
+
+## Routing
+- **Next.js App Router** - Sistema de rutas basado en carpetas
+- **Dynamic Routes** - Para páginas de productos y categorías
+
+## Development Tools
+- **ESLint** - Linting
+- **TypeScript** - Tipado estático
+- **VS Code** - Editor recomendado
+- **GitHub Copilot Pro** - Asistente de código
+
+## Deployment
+- **Vercel** - Plataforma de hosting y deployment
+- **GitHub** - Control de versiones y CI/CD
+
+## Package Manager
+- **npm** o **pnpm** - Gestión de dependencias
+
+## Key Dependencies
+```json
+{
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@supabase/supabase-js": "^2.x",
+    "lucide-react": "latest",
+    "uuid": "^9.x",
+    "clsx": "^2.x",
+    "tailwind-merge": "^2.x"
+  }
+}

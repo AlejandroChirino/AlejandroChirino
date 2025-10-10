@@ -50,7 +50,7 @@
 - **npm** o **pnpm** - Gestión de dependencias
 
 ## Key Dependencies
-```json
+\`\`\`json
 {
   "dependencies": {
     "next": "^14.0.0",

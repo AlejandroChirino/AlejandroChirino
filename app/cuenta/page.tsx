@@ -2,11 +2,13 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 
 export default function CuentaPage() {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
@@ -16,12 +18,13 @@ export default function CuentaPage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    // Verificar si hay una sesión de admin activa
-    const adminSession = localStorage.getItem("admin_session")
-    if (adminSession === "lalfashion0@gmail.com") {
-      window.location.href = "/admin"
+    // Verificar si hay una cookie de admin activa
+    const cookies = typeof document !== "undefined" ? document.cookie : ""
+    const hasAdminSession = cookies.split(";").some((c) => c.trim() === `admin_session=lalfashion0@gmail.com`)
+    if (hasAdminSession) {
+      router.replace("/admin")
     }
-  }, [])
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,10 +34,11 @@ export default function CuentaPage() {
     try {
       // Verificar si son las credenciales de admin
       if (email === "lalfashion0@gmail.com" && password === "08938774163Aa*") {
-        // Guardar sesión de admin
-        localStorage.setItem("admin_session", email)
-        // Redirigir al panel de administración
-        window.location.href = "/admin"
+        // Establecer cookie de admin (httpOnly no es posible desde el cliente, pero es suficiente para el middleware)
+        // Caduca en 1 día
+        document.cookie = `admin_session=${email}; Max-Age=${60 * 60 * 24}; Path=/`
+        // Redirigir al panel de administración sin recargar la página completa
+        router.replace("/admin")
         return
       }
 
@@ -49,8 +53,8 @@ export default function CuentaPage() {
         return
       }
 
-      // Usuario normal logueado exitosamente
-      window.location.reload()
+      // Usuario normal logueado exitosamente. Supabase establece sb-access-token en cookies; navegar a /cuenta para que middleware/SSR lo detecte
+      router.refresh()
     } catch (error) {
       setError("Error al iniciar sesión")
     } finally {

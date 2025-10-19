@@ -17,7 +17,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
           // Variant styles
           {
-            "bg-accent-orange text-white hover:bg-orange-600 focus:ring-orange-500": variant === "primary",
+            "bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-500": variant === "primary",
             "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500": variant === "secondary",
             "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500": variant === "outline",
           },

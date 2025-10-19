@@ -9,6 +9,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        style={
+          variant === "primary"
+            ? {
+                backgroundColor: "#FF6B35",
+                color: "#ffffff",
+              }
+            : undefined
+        }
         className={cn(
           // Base styles
           "inline-flex items-center justify-center rounded-lg font-medium transition-colors",
@@ -17,7 +25,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
           // Variant styles
           {
-            "!bg-[#FF6B35] text-white hover:!bg-[#ff5722] focus:ring-orange-500": variant === "primary",
+            "hover:!bg-[#ff5722] focus:ring-orange-500": variant === "primary",
             "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500": variant === "secondary",
             "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500": variant === "outline",
           },

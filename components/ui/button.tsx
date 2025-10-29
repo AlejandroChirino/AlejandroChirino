@@ -15,14 +15,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           "focus:outline-none focus:ring-2 focus:ring-offset-2",
           "disabled:opacity-50 disabled:cursor-not-allowed",
 
-          // Variant styles
           {
             "bg-[#FF6B35] text-white hover:bg-[#E85A28] active:bg-[#D14D1F] focus:ring-orange-500 dark:bg-[#FF7B45] dark:hover:bg-[#FF6B35]":
               variant === "primary",
-            "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600":
-              variant === "secondary",
-            "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700":
-              variant === "outline",
+            "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500": variant === "secondary",
+            "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500": variant === "outline",
           },
 
           // Size styles

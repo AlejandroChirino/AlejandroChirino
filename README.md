@@ -1,4 +1,3 @@
-
 🔭 Actualmente estoy trabajando en...
 Proyectos académicos de la UCI y en desarrollar mis propios proyectos personales para ampliar mi portafolio como futuro ingeniero.
 

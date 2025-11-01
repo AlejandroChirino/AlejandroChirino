@@ -1,25 +1,29 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Box, ShoppingCart, Users, Tag, Percent, BarChart4, LogOut } from "lucide-react"
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
-    // Verificar si hay una sesión de admin activa
-    const adminSession = localStorage.getItem("admin_session")
-    if (adminSession === "lalfashion0@gmail.com") {
+    // Verificar cookie establecida desde /cuenta o confiar en el middleware
+    const cookies = typeof document !== "undefined" ? document.cookie : ""
+    const hasAdminSession = cookies.split(";").some((c) => c.trim() === `admin_session=lalfashion0@gmail.com`)
+    if (hasAdminSession) {
       setIsAuthorized(true)
     } else {
-      // Redirigir a la página de cuenta si no es admin
-      window.location.href = "/cuenta"
+      // Si no, confiar en middleware que ya redirige al no autorizado
+      router.replace("/cuenta")
     }
-  }, [])
+  }, [router])
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_session")
-    window.location.href = "/"
+    // Expirar cookie admin_session
+    document.cookie = `admin_session=; Max-Age=0; Path=/`
+    router.replace("/")
   }
 
   if (!isAuthorized) {

@@ -8,5 +8,5 @@
 3. **Use interfaces for object shapes**
 4. **Avoid `any` type** - Use `unknown` or proper types
 5. **Use type imports** when only importing types:
-   ```typescript
+   \`\`\`typescript
    import type { Product } from '@/lib/types'

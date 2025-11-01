@@ -10,10 +10,19 @@ export interface Database {
           image_url: string | null
           category: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria: string | null
+          // Nuevas columnas usadas por la app
+          sale_price: number | null
+          on_sale: boolean
+          is_vip: boolean
+          is_new: boolean
           sizes: string[]
           colors: string[]
           stock: number
           featured: boolean
+          colaboracion_id: string | null
+          peso: number | null
+          precio_compra: number | null
+          inversion_cup: number | null
           created_at: string
           updated_at: string
         }
@@ -25,10 +34,18 @@ export interface Database {
           image_url?: string | null
           category: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria?: string | null
+          sale_price?: number | null
+          on_sale?: boolean
+          is_vip?: boolean
+          is_new?: boolean
           sizes?: string[]
           colors?: string[]
           stock?: number
           featured?: boolean
+          colaboracion_id?: string | null
+          peso?: number | null
+          precio_compra?: number | null
+          inversion_cup?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -40,10 +57,18 @@ export interface Database {
           image_url?: string | null
           category?: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria?: string | null
+          sale_price?: number | null
+          on_sale?: boolean
+          is_vip?: boolean
+          is_new?: boolean
           sizes?: string[]
           colors?: string[]
           stock?: number
           featured?: boolean
+          colaboracion_id?: string | null
+          peso?: number | null
+          precio_compra?: number | null
+          inversion_cup?: number | null
           updated_at?: string
         }
       }
@@ -78,6 +103,20 @@ export interface Database {
           city?: string | null
           postal_code?: string | null
           updated_at?: string
+        }
+      }
+      configuracion: {
+        Row: {
+          precio_libra: number
+          valor_dolar: number
+        }
+        Insert: {
+          precio_libra: number
+          valor_dolar: number
+        }
+        Update: {
+          precio_libra?: number
+          valor_dolar?: number
         }
       }
       favorites: {

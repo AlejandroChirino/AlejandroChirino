@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react" // <-- Importamos useEffect
 import { useRouter } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
@@ -39,9 +39,17 @@ export default function CheckoutPage() {
     submitOrder,
   } = useCheckout()
 
-  // Redirigir si no hay productos
+  // CORRECCIÓN CLAVE: Mover la redirección a useEffect
+  // Esto garantiza que la redirección solo se ejecute en el navegador (cliente)
+  useEffect(() => {
+    if (itemCount === 0) {
+      router.push("/carrito")
+    }
+  }, [itemCount, router])
+
+  // Si el carrito está vacío, renderiza null temporalmente mientras useEffect redirige
+  // O si estás seguro de que el hook useCart está disponible inmediatamente:
   if (itemCount === 0) {
-    router.push("/carrito")
     return null
   }
 

@@ -21,8 +21,8 @@ import { supabase } from "@/lib/supabaseClient"
 import LoadingSkeleton from "@/components/loading-skeleton"
 
 interface ProductPageProps {
-  // En Next.js 15+, params es una Promesa en componentes cliente
-  params: Promise<{ slug: string }>
+  // CORRECCIÓN: 'params' es un objeto normal en Componentes Cliente
+  params: { slug: string }
 }
 
 // Componente para productos similares
@@ -82,7 +82,9 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const { slug } = React.use(params) as { slug: string }
+  // CORRECCIÓN CLAVE: Acceder a 'slug' directamente desde 'params'
+  const { slug } = params 
+  
   const {
     product,
     loading,
@@ -158,7 +160,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   }
 
   const handleShare = async () => {
-    // Asegurar ejecución solo en cliente
+    // Asegurar ejecución solo en cliente (Ya envuelto por el agente)
     if (typeof navigator !== "undefined" && typeof window !== "undefined") {
       if (typeof (navigator as any).share === "function") {
         try {

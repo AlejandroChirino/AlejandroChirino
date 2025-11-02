@@ -19,11 +19,13 @@ export interface ProductFormData {
 }
 
 export interface ConfiguracionData {
-  precio_libra: numbe  id?: number
+  id?: number
   precio_libra: number
   valor_dolar: number
   updated_at?: string
-ductWithCalculations extends ProductFormData {
+}
+
+export interface ProductWithCalculations extends ProductFormData {
   id: string
   inversion_cup: number
   created_at: string

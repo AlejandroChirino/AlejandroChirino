@@ -71,7 +71,11 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Checkbox id="auto_calculate" checked={autoCalculate} onCheckedChange={setAutoCalculate} />
+            <Checkbox
+              id="auto_calculate"
+              checked={autoCalculate}
+              onCheckedChange={(checked) => setAutoCalculate(checked === true)}
+            />
             <label htmlFor="auto_calculate" className="text-sm font-medium text-gray-700">
               Calcular inversión automáticamente
             </label>

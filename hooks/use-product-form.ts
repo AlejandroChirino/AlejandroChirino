@@ -91,7 +91,7 @@ export function useProductForm(productId?: string): UseProductFormReturn {
           ? formData
           : {
               ...formData,
-              id: formData.id || uuidv4(),
+              id: uuidv4(),
             }
 
         const response = await fetch(url, {

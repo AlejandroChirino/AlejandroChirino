@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { notFound } from "next/navigation"
 import { Heart, Share2, Star, Truck, Shield, RotateCcw } from "lucide-react"
 import Header from "@/components/header"
@@ -29,7 +29,7 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useState(() => {
+  useEffect(() => {
     async function fetchSimilarProducts() {
       try {
         setLoading(true)

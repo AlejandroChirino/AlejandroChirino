@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import "../styles/globals.css"
+import "./globals.css"
 
 // Importar los providers
 import { CartProvider } from "@/contexts/cart-context"

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, Users, ExternalLink } from "lucide-react"
 import Link from "next/link"
@@ -15,12 +15,10 @@ import { formatDate } from "@/lib/utils"
 import type { Colaboracion, Product } from "@/lib/types"
 
 interface ColaboracionPageProps {
-  // En Next.js 15+, params es una Promesa en componentes cliente
-  params: Promise<{ slug: string }>
+  params: { slug: string }
 }
 
 export default function ColaboracionPage({ params }: ColaboracionPageProps) {
-  const resolvedParams = React.use(params) as { slug: string }
   const [colaboracion, setColaboracion] = useState<Colaboracion | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,7 +28,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
     async function fetchData() {
       try {
         // Fetch colaboracion details
-        const colaboracionResponse = await fetch(`/api/colaboraciones/${resolvedParams.slug}`)
+        const colaboracionResponse = await fetch(`/api/colaboraciones/${params.slug}`)
         if (colaboracionResponse.status === 404) {
           notFound()
         }
@@ -40,7 +38,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
         }
 
         // Fetch products
-        const productsResponse = await fetch(`/api/colaboraciones/${resolvedParams.slug}/productos`)
+        const productsResponse = await fetch(`/api/colaboraciones/${params.slug}/productos`)
         if (productsResponse.ok) {
           const productsData = await productsResponse.json()
           setProducts(productsData)
@@ -54,7 +52,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
     }
 
     fetchData()
-  }, [resolvedParams.slug])
+  }, [params.slug])
 
   if (loading) {
     return (

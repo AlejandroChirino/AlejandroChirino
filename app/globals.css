@@ -64,6 +64,10 @@ html {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Marca La ⚡ Fashion - Verde neón oscuro */
+    --brand-green: #00C853;
+    --brand-on-green: #ffffff;
   }
 
   .dark {
@@ -151,10 +155,19 @@ html {
   }
 }
 
-/* Ensure buttons have proper background */
-button[class*="bg-"] {
-  background-color: inherit !important;
+/* Mapeo de clases legacy naranja -> verde marca (para compatibilidad sin tocar páginas) */
+.bg-accent-orange { background-color: var(--brand-green) !important; }
+.hover\:bg-orange-600:hover { background-color: #00b84d !important; }
+.from-accent-orange {
+  --tw-gradient-from: var(--brand-green) !important;
+  --tw-gradient-to: rgb(0 200 83 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
+.to-orange-600 { --tw-gradient-to: #00b84d var(--tw-gradient-to-position) !important; }
+.text-accent-orange { color: var(--brand-green) !important; }
+.border-accent-orange { border-color: var(--brand-green) !important; }
+
+/* Eliminar overrides globales que forzaban herencia de fondo en botones */
 
 /* Carrusel optimizations */
 .carousel-container {

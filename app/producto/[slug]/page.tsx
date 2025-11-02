@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import { useState } from "react"
 import { notFound } from "next/navigation"
 import { Heart, Share2, Star, Truck, Shield, RotateCcw } from "lucide-react"
 import Header from "@/components/header"
@@ -21,8 +21,7 @@ import { supabase } from "@/lib/supabase"
 import LoadingSkeleton from "@/components/loading-skeleton"
 
 interface ProductPageProps {
-  // En Next.js 15+, params es una Promesa en componentes cliente
-  params: Promise<{ slug: string }>
+  params: { slug: string }
 }
 
 // Componente para productos similares
@@ -30,7 +29,7 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  React.useEffect(() => {
+  useState(() => {
     async function fetchSimilarProducts() {
       try {
         setLoading(true)
@@ -82,7 +81,6 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const { slug } = React.use(params) as { slug: string }
   const {
     product,
     loading,
@@ -95,7 +93,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     setActiveImageIndex,
     isValidSelection,
     availableStock,
-  } = useProduct(slug)
+  } = useProduct(params.slug)
 
   const { isFavorite, toggleFavorite } = useFavorites()
   // Reemplazar el hook useCart existente con el nuevo

@@ -13,13 +13,17 @@ export default function AdminPage() {
       setIsAuthorized(true)
     } else {
       // Redirigir a la página de cuenta si no es admin
-      window.location.href = "/cuenta"
+      if (typeof window !== "undefined") {
+        window.location.href = "/cuenta"
+      }
     }
   }, [])
 
   const handleLogout = () => {
     localStorage.removeItem("admin_session")
-    window.location.href = "/"
+    if (typeof window !== "undefined") {
+      window.location.href = "/"
+    }
   }
 
   if (!isAuthorized) {
@@ -66,7 +70,11 @@ export default function AdminPage() {
             {/* Productos */}
             <div
               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => (window.location.href = "/admin/productos")}
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = "/admin/productos"
+                }
+              }}
             >
               <div className="p-6">
                 <div className="flex items-center">

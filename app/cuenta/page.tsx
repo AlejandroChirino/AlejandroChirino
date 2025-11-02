@@ -20,7 +20,9 @@ export default function CuentaPage() {
     // Verificar si hay una sesión de admin activa
     const adminSession = localStorage.getItem("admin_session")
     if (adminSession === "lalfashion0@gmail.com") {
-      window.location.href = "/admin"
+      if (typeof window !== "undefined") {
+        window.location.href = "/admin"
+      }
     }
   }, [])
 
@@ -35,7 +37,9 @@ export default function CuentaPage() {
         // Guardar sesión de admin
         localStorage.setItem("admin_session", email)
         // Redirigir al panel de administración
-        window.location.href = "/admin"
+        if (typeof window !== "undefined") {
+          window.location.href = "/admin"
+        }
         return
       }
 
@@ -51,7 +55,9 @@ export default function CuentaPage() {
       }
 
       // Usuario normal logueado exitosamente
-      window.location.reload()
+      if (typeof window !== "undefined") {
+        window.location.reload()
+      }
     } catch (error) {
       setError("Error al iniciar sesión")
     } finally {

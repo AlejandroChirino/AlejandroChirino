@@ -158,25 +158,30 @@ export default function ProductPage({ params }: ProductPageProps) {
   }
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: `Mira este producto: ${product.name}`,
-          url: window.location.href,
-        })
-      } catch (error) {
-        console.log("Error sharing:", error)
+    // Asegurar ejecución solo en cliente
+    if (typeof navigator !== "undefined" && typeof window !== "undefined") {
+      if (typeof (navigator as any).share === "function") {
+        try {
+          await (navigator as any).share({
+            title: product.name,
+            text: `Mira este producto: ${product.name}`,
+            url: window.location.href,
+          })
+          return
+        } catch (error) {
+          console.log("Error sharing:", error)
+        }
       }
-    } else {
-      // Fallback to clipboard
-      try {
-        await navigator.clipboard.writeText(window.location.href)
-        setToastMessage("Enlace copiado al portapapeles")
-        setToastType("success")
-        setShowToast(true)
-      } catch (error) {
-        console.log("Error copying to clipboard:", error)
+      // Fallback to clipboard si está disponible
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        try {
+          await navigator.clipboard.writeText(window.location.href)
+          setToastMessage("Enlace copiado al portapapeles")
+          setToastType("success")
+          setShowToast(true)
+        } catch (error) {
+          console.log("Error copying to clipboard:", error)
+        }
       }
     }
   }

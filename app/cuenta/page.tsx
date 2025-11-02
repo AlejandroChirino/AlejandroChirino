@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabaseClient"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import Button from "@/components/ui/button"

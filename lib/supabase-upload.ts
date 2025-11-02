@@ -1,4 +1,4 @@
-import { supabase } from "./supabase"
+import { supabase } from "./supabaseClient"
 
 /**
  * Sube una imagen al bucket de Supabase Storage

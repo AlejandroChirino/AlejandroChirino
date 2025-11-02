@@ -1,19 +1,24 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabaseClient"
 
 interface ProductLayoutProps {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   try {
-    const { data: product } = await supabase
+    const { slug } = await params
+    const resp = await supabase
       .from("products")
       .select("name, description, price, image_url, category")
-      .eq("id", params.slug)
+      .eq("id", slug)
       .single()
+
+    const product = resp.data as
+      | { name?: string; description?: string | null; image_url?: string | null }
+      | null
 
     if (!product) {
       return {

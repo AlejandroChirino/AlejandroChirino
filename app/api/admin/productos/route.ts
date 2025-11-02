@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "20")
 
-    let query = supabase.from("products").select("*").order("created_at", { ascending: false })
+  let query = supabaseAdmin
+      .from("products")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
 
     // Aplicar filtros
     if (search) {
@@ -44,7 +47,7 @@ export async function GET(request: NextRequest) {
     const to = from + limit - 1
     query = query.range(from, to)
 
-    const { data: products, error, count } = await query
+  const { data: products, error, count } = await query
 
     if (error) {
       console.error("Error fetching products:", error)
@@ -71,23 +74,49 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Obtener configuración para calcular inversión
-    const { data: config } = await supabase.from("configuracion").select("precio_libra, valor_dolar").single()
+    const { data: _cfg, error: cfgError } = await supabaseAdmin
+      .from("configuracion")
+      .select("*")
+      .single()
+    const config = _cfg as { precio_libra: number; valor_dolar: number } | null
 
-    if (!config) {
+    if (cfgError || !config) {
       return NextResponse.json({ error: "Error al obtener configuración" }, { status: 500 })
     }
 
     // Calcular inversión en CUP
     const inversion_cup = (body.peso * config.precio_libra + body.precio_compra) * config.valor_dolar
 
-    const productData = {
-      ...body,
+    // Construir payload tipado para la tabla products (Insert)
+    type ProductsInsert = import("@/lib/database.types").Database["public"]["Tables"]["products"]["Insert"]
+    const now = new Date().toISOString()
+    const productData: ProductsInsert = {
+      id: body.id,
+      name: body.name,
+      description: body.description ?? null,
+      price: body.price,
+      sale_price: body.sale_price ?? null,
+      on_sale: body.on_sale ?? null,
+      image_url: body.image_url ?? null,
+      category: body.category,
+      subcategoria: body.subcategoria ?? null,
+      sizes: body.sizes ?? [],
+      colors: body.colors ?? [],
+      stock: body.stock ?? 0,
+      featured: body.featured ?? false,
+      is_vip: body.is_vip ?? null,
+      is_new: body.is_new ?? null,
       inversion_cup,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      colaboracion_id: body.colaboracion_id ?? null,
+      created_at: now,
+      updated_at: now,
     }
 
-    const { data: product, error } = await supabase.from("products").insert([productData]).select().single()
+    const { data: product, error } = await supabaseAdmin
+      .from("products")
+      .insert([productData as never])
+      .select()
+      .single()
 
     if (error) {
       console.error("Error creating product:", error)
@@ -110,7 +139,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "No se proporcionaron IDs" }, { status: 400 })
     }
 
-    const { error } = await supabase.from("products").delete().in("id", ids)
+  const { error } = await supabaseAdmin.from("products").delete().in("id", ids)
 
     if (error) {
       console.error("Error deleting products:", error)

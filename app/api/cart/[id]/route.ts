@@ -1,19 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import type { Tables, TablesInsert, TablesUpdate } from "@/lib/database.types"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const { quantity, size, color } = await request.json()
+
+    const updateData: TablesUpdate<"cart_items"> = {
+      quantity,
+      size,
+      color,
+      updated_at: new Date().toISOString(),
+    }
 
     const { data: cartItem, error } = await supabase
       .from("cart_items")
-      .update({
-        quantity,
-        size,
-        color,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", params.id)
+      .update(updateData as never)
+      .eq("id", id)
       .select()
       .single()
 
@@ -27,9 +31,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await supabase.from("cart_items").delete().eq("id", params.id)
+    const { id } = await params
+    const { error } = await supabase.from("cart_items").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: "Error deleting cart item" }, { status: 500 })

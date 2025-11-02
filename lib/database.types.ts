@@ -7,6 +7,8 @@ export interface Database {
           name: string
           description: string | null
           price: number
+          sale_price: number | null
+          on_sale: boolean | null
           image_url: string | null
           category: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria: string | null
@@ -14,6 +16,10 @@ export interface Database {
           colors: string[]
           stock: number
           featured: boolean
+          is_vip: boolean | null
+          is_new: boolean | null
+          inversion_cup: number | null
+          colaboracion_id: string | null
           created_at: string
           updated_at: string
         }
@@ -22,6 +28,8 @@ export interface Database {
           name: string
           description?: string | null
           price: number
+          sale_price?: number | null
+          on_sale?: boolean | null
           image_url?: string | null
           category: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria?: string | null
@@ -29,6 +37,10 @@ export interface Database {
           colors?: string[]
           stock?: number
           featured?: boolean
+          is_vip?: boolean | null
+          is_new?: boolean | null
+          inversion_cup?: number | null
+          colaboracion_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -37,6 +49,8 @@ export interface Database {
           name?: string
           description?: string | null
           price?: number
+          sale_price?: number | null
+          on_sale?: boolean | null
           image_url?: string | null
           category?: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria?: string | null
@@ -44,7 +58,30 @@ export interface Database {
           colors?: string[]
           stock?: number
           featured?: boolean
+          is_vip?: boolean | null
+          is_new?: boolean | null
+          inversion_cup?: number | null
+          colaboracion_id?: string | null
           updated_at?: string
+        }
+      }
+      configuracion: {
+        Row: {
+          id: number
+          precio_libra: number
+          valor_dolar: number
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          precio_libra: number
+          valor_dolar: number
+          updated_at?: string | null
+        }
+        Update: {
+          precio_libra?: number
+          valor_dolar?: number
+          updated_at?: string | null
         }
       }
       user_profiles: {
@@ -298,5 +335,27 @@ export interface Database {
         }
       }
     }
+    Views: {
+      [key: string]: never
+    }
+    Functions: {
+      [key: string]: never
+    }
+    Enums: {
+      [key: string]: never
+    }
+    CompositeTypes: {
+      [key: string]: never
+    }
   }
 }
+
+// Utility helper types for easier usage elsewhere
+export type Tables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"]
+
+export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Insert"]
+
+export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"]

@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import LoadingSkeleton from "@/components/loading-skeleton"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabaseClient"
 import ProductCarousel from "@/components/product-carousel"
 
 // Featured products component

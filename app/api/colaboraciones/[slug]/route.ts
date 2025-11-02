@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
+    const { slug } = await params
     const { data: colaboracion, error } = await supabase
       .from("colaboraciones")
       .select("*")
-      .eq("slug", params.slug)
+      .eq("slug", slug)
       .eq("activa", true)
       .single()
 

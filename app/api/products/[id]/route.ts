@@ -1,14 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import type { TablesUpdate } from "@/lib/database.types"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Verificar que Supabase esté configurado
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 500 })
     }
 
-    const { data: product, error } = await supabase.from("products").select("*").eq("id", params.id).single()
+    const { id } = await params
+    const { data: product, error } = await supabase.from("products").select("*").eq("id", id).single()
 
     if (error) {
       if (error.code === "PGRST116") {
@@ -27,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 500 })
@@ -35,10 +37,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const body = await request.json()
 
+    const updateData: TablesUpdate<"products"> = {
+      ...(body as Partial<TablesUpdate<"products">>),
+      updated_at: new Date().toISOString(),
+    }
+
+    const { id } = await params
     const { data: product, error } = await supabase
       .from("products")
-      .update({ ...body, updated_at: new Date().toISOString() })
-      .eq("id", params.id)
+      .update(updateData as never)
+      .eq("id", id)
       .select()
       .single()
 
@@ -52,13 +60,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 500 })
     }
 
-    const { error } = await supabase.from("products").delete().eq("id", params.id)
+    const { id } = await params
+    const { error } = await supabase.from("products").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: "Error deleting product" }, { status: 500 })

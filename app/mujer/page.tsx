@@ -6,7 +6,7 @@ import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import SubcategoryTabs from "@/components/subcategory-tabs"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 
 // Women products component

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
@@ -39,9 +39,14 @@ export default function CheckoutPage() {
     submitOrder,
   } = useCheckout()
 
-  // Redirigir si no hay productos
+  // Redirigir si no hay productos (en efecto para evitar ejecución en SSR)
+  useEffect(() => {
+    if (itemCount === 0) {
+      router.replace("/carrito")
+    }
+  }, [itemCount, router])
+
   if (itemCount === 0) {
-    router.push("/carrito")
     return null
   }
 

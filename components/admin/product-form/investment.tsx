@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Input from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import Button from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ConfiguracionModal } from "@/components/admin/configuracion-modal"
@@ -22,8 +23,7 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
 
   useEffect(() => {
     if (autoCalculate && config.precio_libra && config.valor_dolar) {
-      // Usar 0 si los valores son null/undefined para asegurar el cálculo
-      const safePeso = formData.peso ?? 0 
+      const safePeso = formData.peso ?? 0
       const safePrecioCompra = formData.precio_compra ?? 0
       
       const investment = (safePeso * config.precio_libra + safePrecioCompra) * config.valor_dolar
@@ -35,13 +35,11 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
     reloadConfig()
   }
 
-  // Lógica de formateo robusta (Solución para 0.00 CUP)
-  const isZeroOrNegligible = Math.abs(calculatedInvestment) < 0.005; 
-    
+  const isZeroOrNegligible = Math.abs(calculatedInvestment) < 0.005
   const displayInvestment = isZeroOrNegligible
-    ? "CUP" 
-    : calculatedInvestment.toFixed(2) + " CUP"; 
-  
+    ? "CUP"
+    : calculatedInvestment.toFixed(2) + " CUP"
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -56,29 +54,39 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Peso (libras)"
-              type="number"
-              value={formData.peso ?? ''}
-              onChange={(e) => updateField("peso", Number(e.target.value))}
-              error={errors.peso}
-              required
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="peso">
+                Peso (libras) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="peso"
+                type="number"
+                value={formData.peso ?? ''}
+                onChange={(e) => updateField("peso", Number(e.target.value))}
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className={errors.peso ? "border-red-500" : ""}
+              />
+              {errors.peso && <p className="text-sm text-red-600">{errors.peso}</p>}
+            </div>
 
-            <Input
-              label="Precio de compra (USD)"
-              type="number"
-              value={formData.precio_compra ?? ''}
-              onChange={(e) => updateField("precio_compra", Number(e.target.value))}
-              error={errors.precio_compra}
-              required
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="precio_compra">
+                Precio de compra (USD) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="precio_compra"
+                type="number"
+                value={formData.precio_compra ?? ''}
+                onChange={(e) => updateField("precio_compra", Number(e.target.value))}
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className={errors.precio_compra ? "border-red-500" : ""}
+              />
+              {errors.precio_compra && <p className="text-sm text-red-600">{errors.precio_compra}</p>}
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">

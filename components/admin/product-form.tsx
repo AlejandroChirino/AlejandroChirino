@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import Button from "@/components/ui/button"
 import { useProductForm } from "@/hooks/use-product-form"
@@ -13,17 +12,18 @@ import { Variants } from "./product-form/variants"
 import { Inventory } from "./product-form/inventory"
 import { Visibility } from "./product-form/visibility"
 import { ImageUpload } from "./product-form/image-upload"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 interface ProductFormProps {
   productId?: string
   onSuccess?: () => void
-  allowMultiple?: boolean
 }
 
-export function ProductForm({ productId, onSuccess, allowMultiple = false }: ProductFormProps) {
-  const [createdCount, setCreatedCount] = useState(0)
-  const [isMultipleMode, setIsMultipleMode] = useState(false)
-
+export function ProductForm({ productId, onSuccess }: ProductFormProps) {
+  const [isBulkMode, setIsBulkMode] = useState(false)
+  const [quantity, setQuantity] = useState(10)
   const { formData, loading, errors, updateField, submitForm, resetForm, loadProduct } = useProductForm(productId)
 
   useEffect(() => {
@@ -35,19 +35,10 @@ export function ProductForm({ productId, onSuccess, allowMultiple = false }: Pro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const success = await submitForm(isMultipleMode)
+    const success = await submitForm(isBulkMode ? quantity : 1)
     if (success) {
-      if (isMultipleMode) {
-        setCreatedCount((prev) => prev + 1)
-      } else {
-        onSuccess?.()
-      }
+      onSuccess?.()
     }
-  }
-
-  const handleReset = () => {
-    resetForm()
-    setCreatedCount(0)
   }
 
   return (
@@ -55,28 +46,37 @@ export function ProductForm({ productId, onSuccess, allowMultiple = false }: Pro
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{productId ? "Editar producto" : "Crear nuevo producto"}</h1>
 
-        {allowMultiple && !productId && (
-          <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={isMultipleMode}
-                  onChange={(e) => setIsMultipleMode(e.target.checked)}
-                  className="rounded"
+        {!productId && (
+          <div className="mt-4 rounded-lg border bg-white p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="bulk-mode"
+                  checked={isBulkMode}
+                  onCheckedChange={setIsBulkMode}
+                  className="data-[state=checked]:bg-[#4CAF50] data-[state=unchecked]:bg-[#F44336]"
                 />
-                <span className="text-sm font-medium">Modo creación múltiple</span>
-              </label>
-
-              {createdCount > 0 && (
-                <span className="text-sm text-green-600 font-medium">Productos creados: {createdCount}</span>
-              )}
+                <Label htmlFor="bulk-mode" className="text-sm font-medium">
+                  Creación en masa
+                </Label>
+              </div>
             </div>
-
-            {isMultipleMode && (
-              <Button variant="outline" onClick={handleReset}>
-                Reiniciar contador
-              </Button>
+            {isBulkMode && (
+              <div className="mt-4">
+                <Label htmlFor="quantity">Cantidad a crear</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity(Number(e.target.value))}
+                  className="mt-2 max-w-xs"
+                  min="1"
+                  placeholder="Ej: 50"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Se crearán {quantity} productos con la misma información.
+                </p>
+              </div>
             )}
           </div>
         )}
@@ -125,8 +125,8 @@ export function ProductForm({ productId, onSuccess, allowMultiple = false }: Pro
               ? "Guardando..."
               : productId
                 ? "Actualizar producto"
-                : isMultipleMode
-                  ? "Crear y continuar"
+                : isBulkMode
+                  ? `Crear ${quantity} productos`
                   : "Crear producto"}
           </Button>
         </div>

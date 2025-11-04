@@ -5,7 +5,8 @@ import { createPortal } from "react-dom"
 import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 import Button from "@/components/ui/button"
-import Input from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useConfiguracion } from "@/hooks/use-configuracion"
 
 interface ConfiguracionModalProps {
@@ -87,29 +88,35 @@ export function ConfiguracionModal({ isOpen, onClose, onSuccess }: Configuracion
 
         {/* Body - IMPORTANTE: Reemplazamos <form> por <div> para eliminar el comportamiento de submit */}
         <div className="p-6 space-y-4">
-          <Input
-            label="Precio por libra (USD)"
-            type="number"
-            value={formData.precio_libra ?? ""} 
-            onChange={(e) => setFormData({ ...formData, precio_libra: Number(e.target.value) })}
-            required
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            disabled={loading}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="precio-libra">Precio por libra (USD)</Label>
+            <Input
+              id="precio-libra"
+              type="number"
+              value={formData.precio_libra ?? ""}
+              onChange={(e) => setFormData({ ...formData, precio_libra: Number(e.target.value) })}
+              required
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              disabled={loading}
+            />
+          </div>
 
-          <Input
-            label="Valor del dólar (CUP)"
-            type="number"
-            value={formData.valor_dolar ?? ""} 
-            onChange={(e) => setFormData({ ...formData, valor_dolar: Number(e.target.value) })}
-            required
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            disabled={loading}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="valor-dolar">Valor del dólar (CUP)</Label>
+            <Input
+              id="valor-dolar"
+              type="number"
+              value={formData.valor_dolar ?? ""}
+              onChange={(e) => setFormData({ ...formData, valor_dolar: Number(e.target.value) })}
+              required
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              disabled={loading}
+            />
+          </div>
 
           <div className="p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">

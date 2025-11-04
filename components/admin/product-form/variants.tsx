@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Input from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import Button from "@/components/ui/button"
 import { X } from "lucide-react"
 import type { ProductFormData } from "@/lib/admin-types"
@@ -46,17 +47,22 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
       <h3 className="text-lg font-semibold text-gray-900">Variantes</h3>
 
       {/* Tallas */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="space-y-2">
+        <Label>
           Tallas disponibles <span className="text-red-500">*</span>
-        </label>
+        </Label>
 
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2">
           {commonSizes.map((size) => (
             <Button
               key={size}
               type="button"
               variant={formData.sizes.includes(size) ? "primary" : "outline"}
+              className={
+                formData.sizes.includes(size)
+                  ? "bg-[#4CAF50] text-white hover:bg-[#43a047]"
+                  : "border-[#424242] text-[#424242] hover:bg-transparent"
+              }
               size="sm"
               onClick={() => {
                 if (formData.sizes.includes(size)) {
@@ -71,12 +77,17 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
           ))}
         </div>
 
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-2">
           <Input
             placeholder="Talla personalizada"
             value={newSize}
             onChange={(e) => setNewSize(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && addSize(newSize)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addSize(newSize);
+              }
+            }}
           />
           <Button type="button" onClick={() => addSize(newSize)} disabled={!newSize}>
             Agregar
@@ -101,17 +112,22 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
       </div>
 
       {/* Colores */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="space-y-2">
+        <Label>
           Colores disponibles <span className="text-red-500">*</span>
-        </label>
+        </Label>
 
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2">
           {commonColors.map((color) => (
             <Button
               key={color}
               type="button"
               variant={formData.colors.includes(color) ? "primary" : "outline"}
+              className={
+                formData.colors.includes(color)
+                  ? "bg-[#4CAF50] text-white hover:bg-[#43a047]"
+                  : "border-[#424242] text-[#424242] hover:bg-transparent"
+              }
               size="sm"
               onClick={() => {
                 if (formData.colors.includes(color)) {
@@ -126,12 +142,17 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
           ))}
         </div>
 
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-2">
           <Input
             placeholder="Color personalizado"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && addColor(newColor)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addColor(newColor);
+              }
+            }}
           />
           <Button type="button" onClick={() => addColor(newColor)} disabled={!newColor}>
             Agregar

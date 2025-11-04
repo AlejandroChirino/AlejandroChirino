@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useState } from "react"
-import Input from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import Button from "@/components/ui/button"
 import type { CustomerData } from "@/lib/types"
 
@@ -46,52 +47,67 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Nombre completo"
-            value={data.fullName}
-            onChange={(e) => onUpdate({ fullName: e.target.value })}
-            error={errors.fullName}
-            required
-            placeholder="Tu nombre completo"
-          />
+          <div>
+            <Label htmlFor="fullName">Nombre completo</Label>
+            <Input
+              id="fullName"
+              value={data.fullName}
+              onChange={(e) => onUpdate({ fullName: e.target.value })}
+              required
+              placeholder="Tu nombre completo"
+            />
+            {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+          </div>
 
-          <Input
-            label="Teléfono"
-            type="tel"
-            value={data.phone}
-            onChange={(e) => onUpdate({ phone: e.target.value })}
-            error={errors.phone}
-            required
-            placeholder="+53 5xxx xxxx"
-          />
+          <div>
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={data.phone}
+              onChange={(e) => onUpdate({ phone: e.target.value })}
+              required
+              placeholder="+53 5xxx xxxx"
+            />
+            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+          </div>
         </div>
 
-        <Input
-          label="Email (opcional)"
-          type="email"
-          value={data.email}
-          onChange={(e) => onUpdate({ email: e.target.value })}
-          error={errors.email}
-          placeholder="tu@email.com"
-        />
+        <div>
+          <Label htmlFor="email">Email (opcional)</Label>
+          <Input
+            id="email"
+            type="email"
+            value={data.email}
+            onChange={(e) => onUpdate({ email: e.target.value })}
+            placeholder="tu@email.com"
+          />
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+        </div>
 
-        <Input
-          label="Dirección completa"
-          value={data.address}
-          onChange={(e) => onUpdate({ address: e.target.value })}
-          error={errors.address}
-          required
-          placeholder="Calle, número, entre calles, reparto"
-        />
+        <div>
+          <Label htmlFor="address">Dirección completa</Label>
+          <Input
+            id="address"
+            value={data.address}
+            onChange={(e) => onUpdate({ address: e.target.value })}
+            required
+            placeholder="Calle, número, entre calles, reparto"
+          />
+          {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+        </div>
 
-        <Input
-          label="Ciudad/Municipio"
-          value={data.city}
-          onChange={(e) => onUpdate({ city: e.target.value })}
-          error={errors.city}
-          required
-          placeholder="La Habana, Santiago, etc."
-        />
+        <div>
+          <Label htmlFor="city">Ciudad/Municipio</Label>
+          <Input
+            id="city"
+            value={data.city}
+            onChange={(e) => onUpdate({ city: e.target.value })}
+            required
+            placeholder="La Habana, Santiago, etc."
+          />
+          {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Notas adicionales (opcional)</label>

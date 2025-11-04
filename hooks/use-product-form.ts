@@ -11,7 +11,7 @@ interface UseProductFormReturn {
   errors: Record<string, string>
   updateField: (field: keyof ProductFormData, value: any) => void
   validateForm: () => boolean
-  submitForm: (isMultiple?: boolean) => Promise<boolean>
+  submitForm: (quantity: number) => Promise<boolean>
   resetForm: () => void
   loadProduct: (id: string) => Promise<void>
 }
@@ -71,8 +71,13 @@ export function useProductForm(productId?: string): UseProductFormReturn {
     return Object.keys(newErrors).length === 0
   }, [formData])
 
+  const resetForm = useCallback(() => {
+    setFormData(initialFormData)
+    setErrors({})
+  }, [])
+
   const submitForm = useCallback(
-    async (isMultiple = false): Promise<boolean> => {
+    async (quantity = 1): Promise<boolean> => {
       if (!validateForm()) {
         toast({
           title: "Error de validación",
@@ -84,34 +89,43 @@ export function useProductForm(productId?: string): UseProductFormReturn {
 
       setLoading(true)
       try {
-        const url = productId ? `/api/admin/productos/${productId}` : "/api/admin/productos"
-        const method = productId ? "PUT" : "POST"
-
-        const payload = productId
-          ? formData
-          : {
-              ...formData,
-              id: uuidv4(),
-            }
-
-        const response = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || "Error al guardar producto")
+        if (productId) {
+          // Lógica de actualización para un solo producto
+          const response = await fetch(`/api/admin/productos/${productId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+          })
+          const data = await response.json()
+          if (!response.ok) throw new Error(data.error || "Error al actualizar producto")
+          toast({ title: "Producto actualizado", description: "El producto se actualizó correctamente" })
+        } else if (quantity > 1) {
+          // Lógica de creación masiva
+          const response = await fetch("/api/admin/productos/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productData: formData, quantity }),
+          })
+          const data = await response.json()
+          if (!response.ok) throw new Error(data.error || "Error en la creación masiva")
+          toast({
+            title: "Creación masiva exitosa",
+            description: `${data.createdCount} productos creados correctamente.`,
+          })
+        } else {
+          // Lógica de creación para un solo producto
+          const payload = { ...formData, id: uuidv4() }
+          const response = await fetch("/api/admin/productos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+          const data = await response.json()
+          if (!response.ok) throw new Error(data.error || "Error al crear producto")
+          toast({ title: "Producto creado", description: "El producto se creó correctamente" })
         }
 
-        toast({
-          title: productId ? "Producto actualizado" : "Producto creado",
-          description: productId ? "El producto se actualizó correctamente" : "El producto se creó correctamente",
-        })
-
-        if (isMultiple && !productId) {
+        if (!productId) {
           resetForm()
         }
 
@@ -127,13 +141,8 @@ export function useProductForm(productId?: string): UseProductFormReturn {
         setLoading(false)
       }
     },
-    [formData, productId, validateForm],
+    [formData, productId, validateForm, resetForm],
   )
-
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData)
-    setErrors({})
-  }, [])
 
   const loadProduct = useCallback(async (id: string) => {
     setLoading(true)

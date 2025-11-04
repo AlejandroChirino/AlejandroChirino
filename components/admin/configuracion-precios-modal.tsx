@@ -4,7 +4,8 @@ import type React from "react"
 import { createPortal } from "react-dom"
 import { useState, useEffect } from "react"
 import Button from "@/components/ui/button"
-import Input from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useConfiguracion } from "@/hooks/use-configuracion" // El hook clave
 import { X } from "lucide-react"
 
@@ -103,30 +104,36 @@ export function ConfiguracionPreciosModal({ isOpen, onClose, onSuccess }: Config
           </div>
 
           {/* Input Nuevo Valor Dólar */}
-          <Input
-            label="Nuevo valor del dólar (CUP)"
-            type="number"
-            value={formData.valor_dolar ?? ""} 
-            onChange={(e) => setFormData({ ...formData, valor_dolar: Number(e.target.value) })}
-            required
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            disabled={saving || loading}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="nuevo-valor-dolar">Nuevo valor del dólar (CUP)</Label>
+            <Input
+              id="nuevo-valor-dolar"
+              type="number"
+              value={formData.valor_dolar ?? ""}
+              onChange={(e) => setFormData({ ...formData, valor_dolar: Number(e.target.value) })}
+              required
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              disabled={saving || loading}
+            />
+          </div>
 
           {/* Input Nuevo Precio por Libra */}
-          <Input
-            label="Nuevo precio por libra (USD)"
-            type="number"
-            value={formData.precio_libra ?? ""} 
-            onChange={(e) => setFormData({ ...formData, precio_libra: Number(e.target.value) })}
-            required
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            disabled={saving || loading}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="nuevo-precio-libra">Nuevo precio por libra (USD)</Label>
+            <Input
+              id="nuevo-precio-libra"
+              type="number"
+              value={formData.precio_libra ?? ""}
+              onChange={(e) => setFormData({ ...formData, precio_libra: Number(e.target.value) })}
+              required
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              disabled={saving || loading}
+            />
+          </div>
 
           {/* Footer */}
           <div className="flex justify-end gap-3 pt-4">

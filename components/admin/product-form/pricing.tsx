@@ -19,8 +19,8 @@ export function Pricing({ formData, errors, updateField }: PricingProps) {
         <Input
           label="Precio regular (CUP)"
           type="number"
-          value={formData.price}
-          onChange={(e) => updateField("price", Number(e.target.value))}
+          value={formData.price || ""}
+          onChange={(e) => updateField("price", e.target.value ? Number(e.target.value) : undefined)}
           error={errors.price}
           required
           min="0"

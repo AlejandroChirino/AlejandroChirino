@@ -7,6 +7,7 @@ export interface Database {
           name: string
           description: string | null
           price: number
+          precio_compra: number | null
           sale_price: number | null
           on_sale: boolean | null
           image_url: string | null
@@ -18,6 +19,7 @@ export interface Database {
           featured: boolean
           is_vip: boolean | null
           is_new: boolean | null
+          peso: number | null
           inversion_cup: number | null
           colaboracion_id: string | null
           created_at: string
@@ -28,6 +30,7 @@ export interface Database {
           name: string
           description?: string | null
           price: number
+          precio_compra?: number | null
           sale_price?: number | null
           on_sale?: boolean | null
           image_url?: string | null
@@ -39,6 +42,7 @@ export interface Database {
           featured?: boolean
           is_vip?: boolean | null
           is_new?: boolean | null
+          peso?: number | null
           inversion_cup?: number | null
           colaboracion_id?: string | null
           created_at?: string
@@ -49,6 +53,7 @@ export interface Database {
           name?: string
           description?: string | null
           price?: number
+          precio_compra?: number | null
           sale_price?: number | null
           on_sale?: boolean | null
           image_url?: string | null
@@ -60,6 +65,7 @@ export interface Database {
           featured?: boolean
           is_vip?: boolean | null
           is_new?: boolean | null
+          peso?: number | null
           inversion_cup?: number | null
           colaboracion_id?: string | null
           updated_at?: string

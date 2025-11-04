@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "20")
 
-  let query = supabaseAdmin
+    let query = supabaseAdmin
       .from("products")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const to = from + limit - 1
     query = query.range(from, to)
 
-  const { data: products, error, count } = await query
+    const { data: products, error, count } = await query
 
     if (error) {
       console.error("Error fetching products:", error)
@@ -73,19 +73,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Obtener configuración para calcular inversión
-    const { data: _cfg, error: cfgError } = await supabaseAdmin
-      .from("configuracion")
-      .select("*")
-      .single()
-    const config = _cfg as { precio_libra: number; valor_dolar: number } | null
-
-    if (cfgError || !config) {
-      return NextResponse.json({ error: "Error al obtener configuración" }, { status: 500 })
-    }
-
-    // Calcular inversión en CUP
-    const inversion_cup = (body.peso * config.precio_libra + body.precio_compra) * config.valor_dolar
+    // --- LÓGICA DE CÁLCULO DE INVERSIÓN ELIMINADA ---
+    // La base de datos (Trigger) ahora es la única responsable de calcular 'inversion_cup'.
+    // Esto resuelve el conflicto de doble cálculo.
 
     // Construir payload tipado para la tabla products (Insert)
     type ProductsInsert = import("@/lib/database.types").Database["public"]["Tables"]["products"]["Insert"]
@@ -94,7 +84,8 @@ export async function POST(request: NextRequest) {
       id: body.id,
       name: body.name,
       description: body.description ?? null,
-      price: body.price,
+      // Usamos ?? null para asegurar que los campos numéricos opcionales acepten null
+      price: body.price ?? null, 
       sale_price: body.sale_price ?? null,
       on_sale: body.on_sale ?? null,
       image_url: body.image_url ?? null,
@@ -106,7 +97,13 @@ export async function POST(request: NextRequest) {
       featured: body.featured ?? false,
       is_vip: body.is_vip ?? null,
       is_new: body.is_new ?? null,
-      inversion_cup,
+
+      // Enviamos los valores de origen para que el TRIGGER DE LA DB los lea.
+      peso: body.peso ?? null, 
+      precio_compra: body.precio_compra ?? null,
+
+      // Enviamos NULL, permitiendo que el TRIGGER lo sobrescriba con el valor calculado.
+      inversion_cup: null, 
       colaboracion_id: body.colaboracion_id ?? null,
       created_at: now,
       updated_at: now,
@@ -139,7 +136,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "No se proporcionaron IDs" }, { status: 400 })
     }
 
-  const { error } = await supabaseAdmin.from("products").delete().in("id", ids)
+    const { error } = await supabaseAdmin.from("products").delete().in("id", ids)
 
     if (error) {
       console.error("Error deleting products:", error)

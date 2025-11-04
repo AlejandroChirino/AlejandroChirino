@@ -22,7 +22,11 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
 
   useEffect(() => {
     if (autoCalculate && config.precio_libra && config.valor_dolar) {
-      const investment = (formData.peso * config.precio_libra + formData.precio_compra) * config.valor_dolar
+      // Usar 0 si los valores son null/undefined para asegurar el cálculo
+      const safePeso = formData.peso ?? 0 
+      const safePrecioCompra = formData.precio_compra ?? 0
+      
+      const investment = (safePeso * config.precio_libra + safePrecioCompra) * config.valor_dolar
       setCalculatedInvestment(investment)
     }
   }, [formData.peso, formData.precio_compra, config, autoCalculate])
@@ -31,6 +35,13 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
     reloadConfig()
   }
 
+  // Lógica de formateo robusta (Solución para 0.00 CUP)
+  const isZeroOrNegligible = Math.abs(calculatedInvestment) < 0.005; 
+    
+  const displayInvestment = isZeroOrNegligible
+    ? "CUP" 
+    : calculatedInvestment.toFixed(2) + " CUP"; 
+  
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -48,7 +59,7 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
             <Input
               label="Peso (libras)"
               type="number"
-              value={formData.peso}
+              value={formData.peso ?? ''}
               onChange={(e) => updateField("peso", Number(e.target.value))}
               error={errors.peso}
               required
@@ -60,7 +71,7 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
             <Input
               label="Precio de compra (USD)"
               type="number"
-              value={formData.precio_compra}
+              value={formData.precio_compra ?? ''}
               onChange={(e) => updateField("precio_compra", Number(e.target.value))}
               error={errors.precio_compra}
               required
@@ -84,10 +95,10 @@ export function Investment({ formData, errors, updateField }: InvestmentProps) {
           {autoCalculate && (
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Fórmula:</strong> (Peso × {config.precio_libra} + Precio compra) × {config.valor_dolar}
+                <strong>Fórmula:</strong> (Peso * {config.precio_libra} + Precio compra) * {config.valor_dolar}
               </p>
               <p className="text-lg font-semibold text-blue-900 mt-2">
-                Inversión calculada: {calculatedInvestment.toFixed(2)} CUP
+                Inversión calculada: {displayInvestment}
               </p>
             </div>
           )}

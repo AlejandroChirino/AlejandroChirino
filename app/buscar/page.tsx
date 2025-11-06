@@ -7,7 +7,7 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import Button from "@/components/ui/button"
-import Input from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
 import { debounce } from "@/lib/utils"
 import type { Product, ProductCategory } from "@/lib/types"
 

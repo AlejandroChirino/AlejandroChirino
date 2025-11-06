@@ -1,8 +1,8 @@
 "use client"
 
-import { memo, useState, useCallback } from "react"
+import { memo, useState, useCallback, useEffect } from "react"
 import Link from "next/link"
-import { Menu, Search, User, Heart, X, Crown } from "lucide-react"
+import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag } from "lucide-react"
 // Importar el CartBadge
 import CartBadge from "@/components/cart-badge"
 
@@ -149,104 +149,168 @@ const Header = memo(function Header() {
       {/* Spacer */}
       <div className="h-16 lg:h-28" />
 
-      {/* Mobile menu overlay */}
+      {/* Mobile menu overlay (full-screen, white, slide-in) */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={closeMobileMenu} aria-hidden="true" />
-          <div className="fixed left-0 top-0 bottom-0 w-64 bg-white p-4">
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-lg font-semibold">Menú</span>
-              <button onClick={closeMobileMenu} aria-label="Cerrar menú" className="p-1 hover:bg-gray-100 rounded">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <nav className="space-y-4" role="navigation" aria-label="Navegación móvil">
-              <Link
-                href="/"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Inicio
-              </Link>
-              <Link
-                href="/hombre"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Hombre
-              </Link>
-              <Link
-                href="/mujer"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Mujer
-              </Link>
-              <Link
-                href="/accesorios"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Accesorios
-              </Link>
-              <Link
-                href="/nuevo"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Nuevo
-              </Link>
-              <Link
-                href="/colaboraciones"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Colaboraciones
-              </Link>
-              <Link
-                href="/mundo-la-fashion"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Mundo La L
-              </Link>
-              <Link
-                href="/rebajas"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Rebajas
-              </Link>
-              {/* Agregar VIP al menú móvil */}
-              <Link
-                href="/vip"
-                className="flex items-center gap-2 py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                <Crown className="h-5 w-5" />
-                Acceso VIP
-              </Link>
-              <Link
-                href="/favoritos"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Favoritos
-              </Link>
-              <Link
-                href="/carrito"
-                className="block py-2 text-lg hover:text-accent-orange transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Carrito
-              </Link>
-            </nav>
-          </div>
-        </div>
+        <MobileMenuOverlay onClose={closeMobileMenu} />
       )}
     </>
   )
 })
 
 export default Header
+
+// Subcomponente del Menú Móvil para aislar cambios y no afectar desktop
+function MobileMenuOverlay({ onClose }: { onClose: () => void }) {
+  const [slideIn, setSlideIn] = useState(false)
+  const [bouncePhase, setBouncePhase] = useState(false)
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({})
+
+  // Animación de entrada
+  useEffect(() => {
+    // activar transición al montar con leve "bounce"
+    const t1 = setTimeout(() => setSlideIn(true), 0)
+    const t2 = setTimeout(() => setBouncePhase(true), 300)
+    const t3 = setTimeout(() => setBouncePhase(false), 300 + 150)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+    }
+  }, [])
+
+  const handleClose = useCallback(() => {
+    setSlideIn(false)
+    // Esperar la duración de la transición antes de desmontar
+    setTimeout(() => onClose(), 300)
+  }, [onClose])
+
+  const toggleSub = useCallback((key: string) => {
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
+
+  const MenuItem = ({ href, label, onClick, colorClass }: { href: string; label: string; onClick?: () => void; colorClass?: string }) => (
+    <Link
+      href={href}
+      className={`block py-4 text-lg font-semibold tracking-wide ${colorClass ?? "text-gray-900"} hover:text-accent-orange transition-colors`}
+      onClick={() => {
+        onClick?.()
+        handleClose()
+      }}
+    >
+      {label}
+    </Link>
+  )
+
+  const ExpandableItem = ({
+    label,
+    slug,
+    items,
+  }: {
+    label: string
+    slug: string
+    items: { label: string; href: string }[]
+  }) => (
+    <div className="border-b border-gray-100">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
+        onClick={() => toggleSub(slug)}
+        aria-expanded={!!openSub[slug]}
+        aria-controls={`sub-${slug}`}
+      >
+        <span>{label}</span>
+        <ChevronRight className={`h-5 w-5 transition-transform ${openSub[slug] ? "rotate-90" : ""} text-[#4CAF50]`} />
+      </button>
+      <div
+        id={`sub-${slug}`}
+        className={`overflow-hidden transition-[max-height] duration-300 ease-out ${openSub[slug] ? "max-h-96" : "max-h-0"}`}
+      >
+        <div className="pl-4 pb-2">
+          {items.map((it) => (
+            <MenuItem key={it.label} href={it.href} label={it.label} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+
+  // Subcategorías de ejemplo (puedes ajustar los href según tu routing real)
+  const subHombre = [
+    { label: "Camisetas", href: "/hombre?sub=camisetas" },
+    { label: "Pantalones", href: "/hombre?sub=pantalones" },
+    { label: "Calzado", href: "/hombre?sub=calzado" },
+  ]
+  const subMujer = [
+    { label: "Tops", href: "/mujer?sub=tops" },
+    { label: "Vestidos", href: "/mujer?sub=vestidos" },
+    { label: "Calzado", href: "/mujer?sub=calzado" },
+  ]
+  const subAccesorios = [
+    { label: "Gorras", href: "/accesorios?sub=gorras" },
+    { label: "Cinturones", href: "/accesorios?sub=cinturones" },
+    { label: "Bolsos", href: "/accesorios?sub=bolsos" },
+  ]
+
+  const translateClass = !slideIn ? "-translate-x-full" : bouncePhase ? "translate-x-1" : "translate-x-0"
+  const durationClass = bouncePhase ? "duration-150" : "duration-300"
+
+  return (
+    <div
+      className={`fixed inset-0 z-40 lg:hidden bg-white transform transition-transform ease-out ${durationClass} ${translateClass} shadow-[0_0_24px_rgba(0,0,0,0.06)]`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menú móvil"
+    >
+      {/* Top bar con logo y botón cerrar */}
+      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100">
+        <Link href="/" className="font-extrabold text-xl tracking-wide text-gray-900 whitespace-nowrap overflow-hidden">
+          LA <span className="text-accent-orange">L</span> FASHION
+        </Link>
+        <button
+          onClick={handleClose}
+          aria-label="Cerrar menú"
+          className="p-2 rounded-lg hover:bg-gray-100 active:scale-95 transition"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
+
+      {/* Contenido del menú */}
+      <div className="h-[calc(100vh-64px-72px)] overflow-y-auto px-4">
+        <nav className="divide-y divide-gray-100" role="navigation" aria-label="Navegación móvil">
+          <MenuItem href="/" label="Inicio" />
+
+          <ExpandableItem label="Hombre" slug="hombre" items={subHombre} />
+          <ExpandableItem label="Mujer" slug="mujer" items={subMujer} />
+          <ExpandableItem label="Accesorios" slug="accesorios" items={subAccesorios} />
+
+          <MenuItem href="/nuevo" label="Nuevo" colorClass="text-[#4CAF50]" />
+          <MenuItem href="/colaboraciones" label="Colaboraciones" />
+          <MenuItem href="/mundo-la-fashion" label="Mundo La L" />
+          <MenuItem href="/rebajas" label="Rebajas" colorClass="text-[#F44336]" />
+          <MenuItem href="/favoritos" label="Favoritos" />
+        </nav>
+      </div>
+
+      {/* Footer fijo con iconos VIP y Carrito */}
+      <div className="h-[72px] px-4 border-t border-gray-100 flex items-center justify-between">
+        <Link
+          href="/vip"
+          className="flex-1 mr-2 flex items-center justify-center gap-2 h-11 rounded-lg border border-gray-200 hover:bg-gray-50 font-semibold"
+          onClick={handleClose}
+        >
+          <Crown className="h-5 w-5 text-accent-orange" />
+          Acceso VIP
+        </Link>
+        <Link
+          href="/carrito"
+          className="flex-1 ml-2 flex items-center justify-center gap-2 h-11 rounded-lg border border-gray-200 hover:bg-gray-50 font-semibold"
+          onClick={handleClose}
+        >
+          <ShoppingBag className="h-5 w-5" />
+          Carrito
+        </Link>
+      </div>
+    </div>
+  )
+}

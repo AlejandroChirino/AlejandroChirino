@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET() {
   try {
-  const resp = await supabaseAdmin.from("configuracion").select("*").single()
+  const resp = await getSupabaseAdmin().from("configuracion").select("*").single()
   const config = resp.data as { id: number; precio_libra: number; valor_dolar: number; updated_at?: string } | null
   const error = resp.error
 
@@ -23,7 +23,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const { data: config, error } = await supabaseAdmin
+    const { data: config, error } = await getSupabaseAdmin()
       .from("configuracion")
       .update({
         precio_libra: body.precio_libra,

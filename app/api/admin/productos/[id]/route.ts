@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const { data: product, error } = await supabaseAdmin
+    const { data: product, error } = await getSupabaseAdmin()
       .from("products")
       .select("*")
       .eq("id", id)
@@ -28,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
 
     // Obtener configuración para calcular inversión
-    const respConfig = await supabaseAdmin
+    const respConfig = await getSupabaseAdmin()
       .from("configuracion")
       .select("precio_libra, valor_dolar")
       .single()
@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       updated_at: new Date().toISOString(),
     }
 
-    const { data: product, error } = await supabaseAdmin
+    const { data: product, error } = await getSupabaseAdmin()
       .from("products")
       .update(productData as never)
       .eq("id", id)
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
   const { id } = await params
-  const { error } = await supabaseAdmin.from("products").delete().eq("id", id)
+  const { error } = await getSupabaseAdmin().from("products").delete().eq("id", id)
 
     if (error) {
       console.error("Error deleting product:", error)

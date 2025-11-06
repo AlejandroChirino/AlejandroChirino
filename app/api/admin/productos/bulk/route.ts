@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { v4 as uuidv4 } from "uuid"
 import type { ProductFormData } from "@/lib/admin-types"
-import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function POST(request: Request) {
   const { productData, quantity }: { productData: ProductFormData; quantity: number } = await request.json()
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       id: uuidv4(),
     }))
 
-    const { data, error } = await supabaseAdmin.from("products").insert(payload as never).select()
+  const { data, error } = await getSupabaseAdmin().from("products").insert(payload as never).select()
     if (error) {
       console.error("Error en la creación masiva:", error)
       return NextResponse.json({ error: "Error en la creación masiva" }, { status: 500 })

@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient"
-import { supabaseAdmin } from "./supabaseAdmin"
+import { getSupabaseAdmin } from "./supabaseAdmin"
 
 // Nombre de tablas públicas según nuestro esquema
 export type PublicTable = keyof import("./database.types").Database["public"]["Tables"]
@@ -14,6 +14,6 @@ export const db = {
 // Wrapper tipado para el cliente de servidor (service role)
 export const dbAdmin = {
   from<T extends PublicTable>(table: T) {
-    return supabaseAdmin.from(table)
+    return getSupabaseAdmin().from(table)
   },
 }

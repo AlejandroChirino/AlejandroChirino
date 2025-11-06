@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "20")
 
-    let query = supabaseAdmin
+    let query = getSupabaseAdmin()
       .from("products")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       updated_at: now,
     }
 
-    const { data: product, error } = await supabaseAdmin
+    const { data: product, error } = await getSupabaseAdmin()
       .from("products")
       .insert([productData as never])
       .select()
@@ -136,7 +136,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "No se proporcionaron IDs" }, { status: 400 })
     }
 
-    const { error } = await supabaseAdmin.from("products").delete().in("id", ids)
+  const { error } = await getSupabaseAdmin().from("products").delete().in("id", ids)
 
     if (error) {
       console.error("Error deleting products:", error)

@@ -18,7 +18,7 @@ export function Visibility({ formData, updateField }: VisibilityProps) {
           <Checkbox
             id="featured"
             checked={formData.featured}
-            onCheckedChange={(checked) => updateField("featured", checked === true)}
+            onCheckedChange={(checked) => updateField("featured", checked)}
           />
           <label htmlFor="featured" className="text-sm font-medium text-gray-700">
             Producto destacado
@@ -30,7 +30,7 @@ export function Visibility({ formData, updateField }: VisibilityProps) {
           <Checkbox
             id="is_new"
             checked={formData.is_new}
-            onCheckedChange={(checked) => updateField("is_new", checked === true)}
+            onCheckedChange={(checked) => updateField("is_new", checked)}
           />
           <label htmlFor="is_new" className="text-sm font-medium text-gray-700">
             Producto nuevo
@@ -42,7 +42,7 @@ export function Visibility({ formData, updateField }: VisibilityProps) {
           <Checkbox
             id="is_vip"
             checked={formData.is_vip}
-            onCheckedChange={(checked) => updateField("is_vip", checked === true)}
+            onCheckedChange={(checked) => updateField("is_vip", checked)}
           />
           <label htmlFor="is_vip" className="text-sm font-medium text-gray-700">
             Producto VIP

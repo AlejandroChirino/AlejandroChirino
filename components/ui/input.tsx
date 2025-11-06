@@ -1,11 +1,9 @@
-import { forwardRef, useId } from "react"
+import { forwardRef } from "react"
 import { cn } from "@/lib/utils"
 import type { InputProps } from "@/lib/types"
 
 const Input = forwardRef<HTMLInputElement, InputProps>(({ className, error, label, id, ...props }, ref) => {
-  // useId garantiza estabilidad entre SSR y cliente, evitando hydration mismatches
-  const reactId = useId()
-  const inputId = id || reactId
+  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`
 
   return (
     <div className="w-full">

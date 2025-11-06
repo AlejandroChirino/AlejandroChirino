@@ -45,9 +45,8 @@ export function Pricing({ formData, errors, updateField }: PricingProps) {
           id="on_sale"
           checked={formData.on_sale}
           onCheckedChange={(checked) => {
-            const isChecked = checked === true
-            updateField("on_sale", isChecked)
-            if (!isChecked) {
+            updateField("on_sale", checked)
+            if (!checked) {
               updateField("sale_price", undefined)
             }
           }}

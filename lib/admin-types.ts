@@ -19,10 +19,8 @@ export interface ProductFormData {
 }
 
 export interface ConfiguracionData {
-  id?: number
   precio_libra: number
   valor_dolar: number
-  updated_at?: string
 }
 
 export interface ProductWithCalculations extends ProductFormData {

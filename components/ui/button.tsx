@@ -11,21 +11,15 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cn(
           // Base styles
-          "inline-flex items-center justify-center rounded-lg font-medium transition-colors transition-shadow shadow-sm",
-          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--brand-green)]",
-          "disabled:cursor-not-allowed disabled:shadow-none",
+          "inline-flex items-center justify-center rounded-lg font-medium transition-colors",
+          "focus:outline-none focus:ring-2 focus:ring-offset-2",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
 
           // Variant styles
           {
-            // Botón primario: verde de marca sólido, estados sin alterar el tono base
-            "bg-[var(--brand-green)] text-[var(--brand-on-green)] hover:shadow-md hover:brightness-105 active:shadow-sm active:brightness-105":
-              variant === "primary",
-            // Secundario: también usa el verde de marca para mantener coherencia
-            "bg-[var(--brand-green)] text-[var(--brand-on-green)] hover:shadow-md hover:brightness-105 active:shadow-sm":
-              variant === "secondary",
-            // Outline: borde y texto en verde, sin fondo; hover con leve tinte (sin tocar el tono base)
-            "border border-[var(--brand-green)] text-[var(--brand-green)] bg-transparent hover:bg-[rgba(0,200,83,0.08)] active:bg-[rgba(0,200,83,0.12)]":
-              variant === "outline",
+            "bg-accent-orange text-white hover:bg-orange-600 focus:ring-orange-500": variant === "primary",
+            "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500": variant === "secondary",
+            "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500": variant === "outline",
           },
 
           // Size styles

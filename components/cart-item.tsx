@@ -43,8 +43,12 @@ export default function CartItem({ item }: CartItemProps) {
       {/* Información del producto */}
       <div className="flex-1 flex flex-col">
         <div className="flex justify-between">
-          <div>
-            <Link href={`/producto/${product.id}`} className="font-medium hover:text-accent-orange transition-colors">
+          <div className="max-w-full">
+            <Link
+              href={`/producto/${product.id}`}
+              className="font-medium hover:text-accent-orange transition-colors block w-full max-w-full break-all"
+              style={{ overflowWrap: "anywhere" }}
+            >
               {product.name}
             </Link>
             <p className="text-sm text-gray-600 mt-1">

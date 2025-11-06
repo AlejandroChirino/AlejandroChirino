@@ -252,13 +252,14 @@ export default function ProductPage({ params }: ProductPageProps) {
   const discountPercentage = Math.round(((originalPrice - product.price) / originalPrice) * 100)
 
   return (
-    <div className="min-h-screen">
+    // Evitar scroll horizontal global en la página de detalle
+    <div className="min-h-screen overflow-x-hidden">
       <Header />
 
       <main className="py-4 md:py-8">
         <div className="max-w-7xl mx-auto px-4">
-          {/* Breadcrumbs */}
-          <Breadcrumbs items={breadcrumbItems} className="mb-6" />
+          {/* Breadcrumbs: prevenir desbordes horizontales */}
+          <Breadcrumbs items={breadcrumbItems} className="mb-6 max-w-full overflow-hidden" />
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* Gallery - Mobile: full width, Desktop: 3/5 */}
@@ -302,7 +303,13 @@ export default function ProductPage({ params }: ProductPageProps) {
             <div className="lg:col-span-2 space-y-6">
               {/* Title and Rating */}
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                {/* Título: manejar cadenas largas sin espacios para no estirar el layout */}
+                <h1
+                  className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 w-full max-w-full break-all"
+                  style={{ overflowWrap: "anywhere" }}
+                >
+                  {product.name}
+                </h1>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (

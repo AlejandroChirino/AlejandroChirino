@@ -29,33 +29,42 @@ const Header = memo(function Header() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="h-16 flex items-center justify-between px-4">
+        {/* Top bar: layout móvil con 3 columnas (menu | logo centrado | iconos) */}
+  <div className="h-16 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center px-3 overflow-hidden">
           {/* Mobile menu button */}
           <button
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors justify-self-start"
             onClick={toggleMobileMenu}
             aria-label="Abrir menú de navegación"
             aria-expanded={isMobileMenuOpen}
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <span className="text-2xl font-bold">
+          {/* Logo (forzar una sola línea y evitar wrap en móviles) */}
+          <Link
+            href="/"
+            className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0 justify-self-center overflow-hidden max-w-full"
+            aria-label="Inicio LA FASHION"
+          >
+            <span className="font-bold whitespace-nowrap flex-shrink-0 leading-none text-[clamp(16px,5vw,1.5rem)]">
               LA <span className="text-accent-orange">⚡</span> FASHION
             </span>
           </Link>
 
           {/* Navigation icons */}
-          <nav className="flex items-center gap-1" role="navigation" aria-label="Navegación principal">
+          <nav
+            className="flex items-center gap-1 sm:gap-2 min-w-0 justify-self-end pr-1"
+            role="navigation"
+            aria-label="Navegación principal"
+          >
             <button
               onClick={toggleSearch}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Buscar productos"
               aria-expanded={isSearchOpen}
             >
-              <Search className="h-5 w-5" />
+              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
             {/* VIP Access - Solo visible en desktop */}
@@ -65,22 +74,26 @@ const Header = memo(function Header() {
               aria-label="Acceso VIP"
               title="Acceso VIP"
             >
-              <Crown className="h-5 w-5 text-accent-orange" />
+              <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-accent-orange" />
             </Link>
 
-            <Link href="/cuenta" className="p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Mi cuenta">
-              <User className="h-5 w-5" />
+            <Link
+              href="/cuenta"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Mi cuenta"
+            >
+              <User className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
 
             <Link
               href="/favoritos"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Mis favoritos"
             >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
 
-            <CartBadge className="p-2 hover:bg-gray-100 rounded-lg transition-colors" />
+            <CartBadge className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0" />
           </nav>
         </div>
 

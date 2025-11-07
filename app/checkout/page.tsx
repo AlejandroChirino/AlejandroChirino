@@ -64,45 +64,52 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <Header />
 
       <main className="py-8">
         <div className="max-w-6xl mx-auto px-4">
           {/* Progress indicator */}
-          <div className="mb-12">
-            <div className="flex items-center justify-center">
+          <div className="mb-10">
+            <div className="flex flex-wrap items-center justify-center gap-y-4 gap-x-6 max-w-full">
               {steps.map((step, index) => (
-                <div key={step.number} className="flex items-center">
-                  <div
-                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors cursor-pointer ${
+                <div key={step.number} className="flex items-center max-w-full">
+                  <button
+                    type="button"
+                    className={`shrink-0 flex items-center justify-center w-9 h-9 rounded-full border-2 transition-colors ${
                       currentStep >= step.number
                         ? "bg-accent-orange border-accent-orange text-white"
-                        : "border-gray-300 text-gray-500"
+                        : "border-gray-300 text-gray-500 bg-white"
                     }`}
                     onClick={() => goToStep(step.number)}
+                    aria-label={`Ir al paso ${step.number}: ${step.title}`}
                   >
                     {currentStep > step.number ? (
                       <Check className="h-5 w-5" />
                     ) : (
                       <span className="text-sm font-medium">{step.number}</span>
                     )}
-                  </div>
+                  </button>
 
-                  <div className="ml-3 text-left">
+                  <div className="ml-3 text-left leading-tight">
                     <div
-                      className={`text-sm font-medium ${
-                        currentStep >= step.number ? "text-accent-orange" : "text-gray-500"
+                      className={`text-xs sm:text-sm font-medium truncate max-w-[70px] sm:max-w-none ${
+                        currentStep >= step.number ? "text-accent-orange" : "text-gray-600"
                       }`}
+                      title={step.title}
                     >
                       {step.title}
                     </div>
-                    <div className="text-xs text-gray-500">{step.description}</div>
+                    <div className="hidden sm:block text-[11px] text-gray-500 truncate max-w-[140px]" title={step.description}>
+                      {step.description}
+                    </div>
                   </div>
 
                   {index < steps.length - 1 && (
                     <div
-                      className={`w-12 h-px mx-6 ${currentStep > step.number ? "bg-accent-orange" : "bg-gray-300"}`}
+                      className={`hidden sm:block w-8 h-px mx-4 ${
+                        currentStep > step.number ? "bg-accent-orange" : "bg-gray-300"
+                      }`}
                     />
                   )}
                 </div>

@@ -12,6 +12,7 @@ export interface CartContextType {
   isLoading: boolean
   addItem: (product: Product, quantity?: number, size?: string, color?: string) => Promise<void>
   updateQuantity: (itemId: string, quantity: number) => Promise<void>
+  updateItemOptions: (itemId: string, options: { size?: string | null; color?: string | null }) => Promise<void>
   removeItem: (itemId: string) => Promise<void>
   clearCart: () => Promise<void>
   isItemInCart: (productId: string, size?: string | null, color?: string | null) => boolean
@@ -181,6 +182,80 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [items, toast],
   )
 
+  // Actualizar talla/color de un producto
+  const updateItemOptions = useCallback(
+    async (itemId: string, options: { size?: string | null; color?: string | null }) => {
+      setIsLoading(true)
+      try {
+        const itemIndex = items.findIndex((item) => item.id === itemId)
+        if (itemIndex === -1) {
+          throw new Error("Item not found")
+        }
+
+        const current = items[itemIndex]
+
+        const newSize = options.size === undefined ? current.size : options.size
+        const newColor = options.color === undefined ? current.color : options.color
+
+        // Validaciones básicas contra el producto
+        if (newSize && current.product.sizes.length > 0 && !current.product.sizes.includes(newSize)) {
+          toast({ title: "Talla inválida", description: "Selecciona una talla disponible", variant: "destructive" })
+          setIsLoading(false)
+          return
+        }
+        if (newColor && current.product.colors.length > 0 && !current.product.colors.includes(newColor)) {
+          toast({ title: "Color inválido", description: "Selecciona un color disponible", variant: "destructive" })
+          setIsLoading(false)
+          return
+        }
+
+        // Si ya existe un item con las nuevas opciones, fusionar cantidades
+        const existingIndex = items.findIndex(
+          (it) =>
+            it.id !== itemId &&
+            it.product.id === current.product.id &&
+            it.size === (newSize || null) &&
+            it.color === (newColor || null),
+        )
+
+        const updatedItems = [...items]
+
+        if (existingIndex >= 0) {
+          const target = { ...updatedItems[existingIndex] }
+          const mergedQty = Math.min(target.quantity + current.quantity, current.product.stock)
+          const capped = mergedQty < target.quantity + current.quantity
+          target.quantity = mergedQty
+          updatedItems[existingIndex] = target
+          // eliminar el item original
+          updatedItems.splice(itemIndex, 1)
+
+          setItems(updatedItems)
+
+          toast({
+            title: "Opciones actualizadas",
+            description: capped
+              ? "Se fusionaron items similares. Cantidad ajustada por stock disponible."
+              : "Se fusionaron items similares correctamente",
+          })
+        } else {
+          // Actualizar el propio item con nuevo id estable
+          const newId = `${current.product.id}-${newSize || "default"}-${newColor || "default"}-${Date.now()}`
+          const updated = { ...current, id: newId, size: newSize || null, color: newColor || null }
+          updatedItems[itemIndex] = updated
+          setItems(updatedItems)
+
+          toast({ title: "Opciones actualizadas", description: "La talla/color han sido actualizados" })
+        }
+      } catch (error) {
+        console.error("Error updating item options:", error)
+        toast({ title: "Error", description: "No se pudieron actualizar las opciones", variant: "destructive" })
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [items, toast],
+  )
+
   // Eliminar un producto del carrito
   const removeItem = useCallback(
     async (itemId: string) => {
@@ -239,6 +314,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     addItem,
     updateQuantity,
+    updateItemOptions,
     removeItem,
     clearCart,
     isItemInCart,

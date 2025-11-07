@@ -48,7 +48,7 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Label htmlFor="fullName">Nombre completo</Label>
+            <Label htmlFor="fullName" className="mb-1 inline-block">Nombre completo</Label>
             <Input
               id="fullName"
               value={data.fullName}
@@ -60,7 +60,7 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
           </div>
 
           <div>
-            <Label htmlFor="phone">Teléfono</Label>
+            <Label htmlFor="phone" className="mb-1 inline-block">Teléfono</Label>
             <Input
               id="phone"
               type="tel"
@@ -74,7 +74,7 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
         </div>
 
         <div>
-          <Label htmlFor="email">Email (opcional)</Label>
+          <Label htmlFor="email" className="mb-1 inline-block">Email (opcional)</Label>
           <Input
             id="email"
             type="email"
@@ -86,7 +86,7 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
         </div>
 
         <div>
-          <Label htmlFor="address">Dirección completa</Label>
+          <Label htmlFor="address" className="mb-1 inline-block">Dirección completa</Label>
           <Input
             id="address"
             value={data.address}
@@ -98,7 +98,7 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
         </div>
 
         <div>
-          <Label htmlFor="city">Ciudad/Municipio</Label>
+          <Label htmlFor="city" className="mb-1 inline-block">Ciudad/Municipio</Label>
           <Input
             id="city"
             value={data.city}
@@ -110,7 +110,7 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Notas adicionales (opcional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Notas adicionales (opcional)</label>
           <textarea
             value={data.notes}
             onChange={(e) => onUpdate({ notes: e.target.value })}

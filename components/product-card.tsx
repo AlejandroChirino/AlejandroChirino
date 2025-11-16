@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { memo, useState } from "react"
+import { memo, useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { formatPrice } from "@/lib/utils"
@@ -23,53 +23,55 @@ const ProductCard = memo(function ProductCard({ product, compact = false }: Prod
   const discountPercentage = hasSale ? Math.round(((p - (s as number)) / p) * 100) : 0
 
   return (
-    <Link
-      href={`/producto/${id}`}
-      className="group block focus:outline-none focus:ring-2 focus:ring-accent-orange rounded-lg"
-      aria-label={`Ver detalles de ${name}`}
-    >
-      <article className="h-full">
-        <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-2 md:mb-4 relative">
-          <Image
-            src={image_url || "/placeholder.svg?height=400&width=300&query=product"}
-            alt={name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes={
-              compact
-                ? "(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                : "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-            }
-            loading="lazy"
-          />
+    <div className="group block focus-within:outline-none focus-within:ring-2 focus-within:ring-accent-orange rounded-lg relative">
+      <Link
+        href={`/producto/${id}`}
+        className="block"
+        aria-label={`Ver detalles de ${name}`}
+      >
+        <article className="h-full">
+          <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-2 md:mb-4 relative">
+            <Image
+              src={image_url || "/placeholder.svg?height=400&width=300&query=product"}
+              alt={name}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes={
+                compact
+                  ? "(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  : "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+              }
+              loading="lazy"
+            />
 
-          {/* Etiqueta de rebaja (reutilizable) */}
-          <ProductDiscountBadge price={p} sale_price={s} on_sale={on_sale} className="absolute top-2 left-2 text-xs" />
-
-          {/* Botón rápido de añadir al carrito */}
-          <QuickAddButton
-            product={{ id, name, price, sale_price, on_sale, image_url, category, sizes: (product as any)?.sizes, colors: (product as any)?.colors }}
-          />
-        </div>
-
-        <div className="space-y-1 md:space-y-2">
-          <h3
-            className={cn(
-              "font-medium text-gray-900 line-clamp-2 group-hover:text-accent-orange transition-colors",
-              compact ? "text-xs md:text-sm" : "text-sm md:text-base",
-            )}
-          >
-            {name}
-          </h3>
-
-          <div className="flex items-center gap-2">
-            <ProductPrice price={p} sale_price={s} on_sale={on_sale} compact={compact} />
+            {/* Etiqueta de rebaja (reutilizable) */}
+            <ProductDiscountBadge price={p} sale_price={s} on_sale={on_sale} className="absolute top-2 left-2 text-xs" />
           </div>
 
-          <span className="sr-only">Categoría: {category}</span>
-        </div>
-      </article>
-    </Link>
+          <div className="space-y-1 md:space-y-2">
+            <h3
+              className={cn(
+                "font-medium text-gray-900 line-clamp-2 group-hover:text-accent-orange transition-colors",
+                compact ? "text-xs md:text-sm" : "text-sm md:text-base",
+              )}
+            >
+              {name}
+            </h3>
+
+            <div className="flex items-center gap-2">
+              <ProductPrice price={p} sale_price={s} on_sale={on_sale} compact={compact} />
+            </div>
+
+            <span className="sr-only">Categoría: {category}</span>
+          </div>
+        </article>
+      </Link>
+
+      {/* Botón QuickAdd separado del Link para evitar navegación accidental */}
+      <QuickAddButton
+        product={{ id, name, price, sale_price, on_sale, image_url, category, sizes: (product as any)?.sizes, colors: (product as any)?.colors }}
+      />
+    </div>
   )
 })
 
@@ -80,10 +82,20 @@ function QuickAddButton({ product }: { product: any }) {
   const [tempColor, setTempColor] = useState<string | null>(null)
   const [fullProduct, setFullProduct] = useState<any | null>(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
+  const parentLinkRef = useRef<HTMLElement | null>(null)
 
   const handleOpen = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    // disable parent link navigation while modal is opening
+    try {
+      const anchor = (e.currentTarget as HTMLElement).closest("a") as HTMLElement | null
+      parentLinkRef.current = anchor
+      if (anchor) anchor.style.pointerEvents = "none"
+    } catch (err) {
+      // ignore
+    }
+
     setLoadingDetails(true)
     try {
       const res = await fetch(`/api/products/${product.id}`)
@@ -95,6 +107,7 @@ function QuickAddButton({ product }: { product: any }) {
       setOpen(true)
     } catch (err) {
       console.error("Error fetching product details for quick add:", err)
+      if (parentLinkRef.current) parentLinkRef.current.style.pointerEvents = ""
     } finally {
       setLoadingDetails(false)
     }
@@ -107,10 +120,28 @@ function QuickAddButton({ product }: { product: any }) {
     try {
       await addItem(fullProduct as any, 1, tempSize || undefined, tempColor || undefined)
       setOpen(false)
+      if (parentLinkRef.current) {
+        parentLinkRef.current.style.pointerEvents = ""
+        parentLinkRef.current = null
+      }
     } catch (err) {
       console.error("Error adding from quick modal:", err)
     }
   }
+
+  // restore pointer-events when modal closes or on unmount
+  useEffect(() => {
+    if (!open && parentLinkRef.current) {
+      parentLinkRef.current.style.pointerEvents = ""
+      parentLinkRef.current = null
+    }
+    return () => {
+      if (parentLinkRef.current) {
+        parentLinkRef.current.style.pointerEvents = ""
+        parentLinkRef.current = null
+      }
+    }
+  }, [open])
 
   return (
     <>

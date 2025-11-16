@@ -16,7 +16,9 @@ import { useFavorites } from "@/hooks/use-favorites"
 // Importar el contexto del carrito
 import { useCart } from "@/contexts/cart-context"
 import { formatPrice } from "@/lib/utils"
+import ProductPrice from "@/components/product-price"
 import ProductCarousel from "@/components/product-carousel"
+import ProductDiscountBadge from "@/components/product-discount-badge"
 import { supabase } from "@/lib/supabaseClient"
 import LoadingSkeleton from "@/components/loading-skeleton"
 
@@ -43,7 +45,7 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
 
         const { data, error } = await supabase
           .from("products")
-          .select("id, name, price, image_url, category")
+          .select("id, name, price, sale_price, on_sale, image_url, category")
           .eq("category", category)
           .neq("id", currentProductId)
           .limit(8)
@@ -246,10 +248,13 @@ export default function ProductPage({ params }: ProductPageProps) {
     },
   ]
 
-  // Calculate discount (mock)
-  const originalPrice = product.price * 1.2
-  const hasDiscount = true
-  const discountPercentage = Math.round(((originalPrice - product.price) / originalPrice) * 100)
+  // Calcular descuento real usando los campos de producto
+  const hasDiscount = !!(product.on_sale && product.sale_price != null && product.sale_price < product.price)
+  const discountPercentage = hasDiscount
+    ? Math.round(((product.price - (product.sale_price || 0)) / product.price) * 100)
+    : 0
+  const displayPrice = hasDiscount && product.sale_price ? product.sale_price : product.price
+  const originalPrice = hasDiscount && product.sale_price ? product.price : undefined
 
   return (
     // Evitar scroll horizontal global en la página de detalle
@@ -292,11 +297,12 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
 
               {/* Discount badge */}
-              {hasDiscount && (
-                <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">
-                  -{discountPercentage}%
-                </div>
-              )}
+              <ProductDiscountBadge
+                price={product.price}
+                sale_price={product.sale_price}
+                on_sale={product.on_sale}
+                className="absolute top-4 left-4"
+              />
             </div>
 
             {/* Product Info - Mobile: full width, Desktop: 2/5 */}
@@ -323,10 +329,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               {/* Price */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl md:text-3xl font-bold text-gray-900">{formatPrice(product.price)}</span>
-                  {hasDiscount && (
-                    <span className="text-lg text-gray-500 line-through">{formatPrice(originalPrice)}</span>
-                  )}
+                  <ProductPrice price={product.price} sale_price={product.sale_price} on_sale={product.on_sale} compact={false} />
                 </div>
                 <p className="text-sm text-gray-600">IVA incluido</p>
               </div>

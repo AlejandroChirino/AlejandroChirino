@@ -121,12 +121,25 @@ export function useProductForm(productId?: string): UseProductFormReturn {
             body: JSON.stringify(payload),
           })
           const data = await response.json()
-          if (!response.ok) throw new Error(data.error || "Error al crear producto")
-          toast({ title: "Producto creado", description: "El producto se creó correctamente" })
-        }
 
-        if (!productId) {
-          resetForm()
+          // Verificar que la respuesta contiene el producto creado
+          if (!response.ok) {
+            const serverMessage = data?.error || data?.message || "Error al crear producto"
+            throw new Error(serverMessage)
+          }
+
+          if (!data || !data.product) {
+            // Respuesta 200 pero sin objeto creado: tratar como error
+            console.error("POST /api/admin/productos returned OK but no product:", data)
+            throw new Error("No se creó el producto. Revisa la consola del servidor para más detalles.")
+          }
+
+          toast({ title: "Producto creado", description: "El producto se creó correctamente" })
+
+          // Sólo limpiar el formulario si el servidor confirma creación
+          if (!productId) {
+            resetForm()
+          }
         }
 
         return true

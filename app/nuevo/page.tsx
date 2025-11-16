@@ -27,7 +27,7 @@ function NewProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
 
         let query = supabase
           .from("products")
-          .select("id, name, price, image_url, category, subcategoria")
+          .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria")
           .gte("created_at", sevenDaysAgoISO)
           .order("created_at", { ascending: false })
 

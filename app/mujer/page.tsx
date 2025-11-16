@@ -21,7 +21,7 @@ function WomenProducts({ selectedSubcategory }: { selectedSubcategory: string | 
         setLoading(true)
         let query = supabase
           .from("products")
-          .select("id, name, price, image_url, category, subcategoria")
+          .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria")
           .eq("category", "mujer")
           .order("created_at", { ascending: false })
 

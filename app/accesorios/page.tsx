@@ -21,7 +21,7 @@ function AccessoriesProducts({ selectedSubcategory }: { selectedSubcategory: str
         setLoading(true)
         let query = supabase
           .from("products")
-          .select("id, name, price, image_url, category, subcategoria")
+          .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria")
           .eq("category", "accesorios")
           .order("created_at", { ascending: false })
 

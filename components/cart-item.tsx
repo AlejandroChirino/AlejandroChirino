@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/utils"
 import type { CartItem as CartItemType } from "@/lib/types"
 import { useFavorites } from "@/hooks/use-favorites"
 import ActionSheet from "@/components/ui/action-sheet"
+import VariantSelector from "@/components/variant-selector"
 
 interface CartItemProps {
   item: CartItemType
@@ -21,6 +22,10 @@ export default function CartItem({ item }: CartItemProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [tempColor, setTempColor] = useState<string | null>(color)
   const [tempSize, setTempSize] = useState<string | null>(size)
+
+  // Defensive defaults for sizes/colors (avoid TypeError if data is missing)
+  const sizes = Array.isArray(product?.sizes) ? product.sizes : []
+  const colors = Array.isArray(product?.colors) ? product.colors : []
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity >= 1 && newQuantity <= product.stock) {
@@ -71,73 +76,92 @@ export default function CartItem({ item }: CartItemProps) {
           </button>
         </div>
 
-        {/* Selector combinado */}
-        {(product.sizes.length > 0 || product.colors.length > 0) && (
-          <div className="mt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setTempColor(color)
-                setTempSize(size)
-                setSheetOpen(true)
-              }}
-              className="h-7 px-3 text-xs rounded-full bg-gray-100 border border-gray-200 flex items-center gap-2 hover:bg-gray-200 transition-colors"
-            >
-              {color && (
-                <span
-                  className="h-3 w-3 rounded-full border border-gray-300"
-                  style={{ backgroundColor: color.toLowerCase() }}
-                  aria-hidden="true"
-                />
-              )}
-              <span className="truncate max-w-[120px]">
-                {color || size ? `${color || ""}${color && size ? " / " : ""}${size || ""}` : "Selecciona"}
-              </span>
-            </button>
-          </div>
-        )}
-
-        <div className="flex-1" />
-
-        {/* Fila inferior */}
-        <div className="mt-1 flex items-center gap-2 flex-nowrap">
-          <div className="flex items-baseline gap-2 min-w-0">
-            <span className="text-accent-orange font-bold">{formatPrice(currentPrice)}</span>
-            {hasDiscount && <span className="text-sm text-gray-500 line-through">{formatPrice(product.price)}</span>}
-          </div>
-          <div className="ml-auto flex items-center gap-1">
-            <button
-              onClick={handleRemove}
-              disabled={isLoading}
-              className="text-gray-400 hover:text-red-500 transition-colors shrink-0"
-              aria-label="Eliminar producto"
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
-            <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 overflow-hidden shrink-0">
-              <button
-                onClick={() => handleQuantityChange(quantity - 1)}
-                disabled={quantity <= 1 || isLoading}
-                className="w-7 h-7 grid place-items-center hover:bg-gray-100 transition-colors disabled:opacity-50"
-                aria-label="Disminuir cantidad"
+        {/* Detalles y controles: nombre arriba, debajo selector + controles a la derecha */}
+        <div className="mt-1">
+          <div className="min-w-0">
+            {/* Nombre (arriba) */}
+            <div className="mb-2">
+              <Link
+                href={`/producto/${product.id}`}
+                className="block font-semibold text-gray-900 hover:text-accent-orange transition-colors truncate"
+                title={product.name}
+                style={{ overflowWrap: "anywhere" }}
               >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span className="px-2 text-xs min-w-[28px] text-center">{quantity}</span>
-              <button
-                onClick={() => handleQuantityChange(quantity + 1)}
-                disabled={quantity >= product.stock || isLoading}
-                className="w-7 h-7 grid place-items-center hover:bg-gray-100 transition-colors disabled:opacity-50"
-                aria-label="Aumentar cantidad"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+                {product.name}
+              </Link>
+            </div>
+
+            {/* Selector y controles en la misma fila: variantes | cantidad | eliminar */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempColor(color)
+                    setTempSize(size)
+                    setSheetOpen(true)
+                  }}
+                  className="h-7 px-3 text-xs rounded-full bg-gray-100 border border-gray-200 flex items-center gap-2 hover:bg-gray-200 transition-colors max-w-full"
+                >
+                  {color && (
+                    <span
+                      className="h-3 w-3 rounded-full border border-gray-300 flex-shrink-0"
+                      style={{ backgroundColor: color.toLowerCase() }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="truncate max-w-[140px] sm:max-w-[220px]">{color || size ? `${color || ""}${color && size ? " / " : ""}${size || ""}` : "Selecciona"}</span>
+                </button>
+              </div>
+
+              {/* Modificador de cantidad centrado entre selector y eliminar */}
+              <div className="shrink-0 flex items-center justify-center">
+                <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 overflow-hidden">
+                  <button
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    disabled={quantity <= 1 || isLoading}
+                    className="w-6 h-6 sm:w-7 sm:h-7 grid place-items-center hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    aria-label="Disminuir cantidad"
+                  >
+                    <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                  </button>
+                  <span className="px-2 text-xs sm:text-sm min-w-[24px] text-center">{quantity}</span>
+                  <button
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    disabled={quantity >= product.stock || isLoading}
+                    className="w-6 h-6 sm:w-7 sm:h-7 grid place-items-center hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    aria-label="Aumentar cantidad"
+                  >
+                    <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Botón eliminar a la derecha, con dimensiones igualadas para evitar desbordes */}
+              <div className="shrink-0">
+                <button
+                  onClick={handleRemove}
+                  disabled={isLoading}
+                  className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 text-gray-400 hover:text-red-500 transition-colors rounded"
+                  aria-label="Eliminar producto"
+                >
+                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Línea inferior exclusiva para el precio */}
+            <div className="mt-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-accent-orange font-bold">{formatPrice(currentPrice)}</span>
+                {hasDiscount && <span className="text-sm text-gray-500 line-through">{formatPrice(product.price)}</span>}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Action Sheet */}
+      {/* ActionSheet retained for advanced edits (kept for backward compatibility) */}
       <ActionSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Opciones del producto">
         <div className="flex items-start gap-4 mb-4">
           <div className="w-20 h-24 relative rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
@@ -161,60 +185,15 @@ export default function CartItem({ item }: CartItemProps) {
           </div>
         </div>
         <div className="space-y-4">
-          {product.colors.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Color</p>
-              <div className="flex flex-wrap gap-2">
-                {product.colors.map((c) => {
-                  const active = c === tempColor
-                  return (
-                    <button
-                      key={c}
-                      onClick={() => setTempColor(c)}
-                      className={`px-3 h-8 rounded-full text-xs border transition-colors ${
-                        active
-                          ? "bg-[var(--brand-green)] text-[var(--brand-on-green)] border-[var(--brand-green)]"
-                          : "bg-white border-gray-200 hover:border-gray-400"
-                      }`}
-                      type="button"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <span
-                          className="h-3 w-3 rounded-full border border-gray-300"
-                          style={{ backgroundColor: c.toLowerCase() }}
-                        />
-                        {c}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-          {product.sizes.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Talla</p>
-              <div className="flex flex-wrap gap-2">
-                {product.sizes.map((s) => {
-                  const active = s === tempSize
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => setTempSize(s)}
-                      className={`h-8 min-w-[42px] px-3 rounded-full text-xs border flex items-center justify-center transition-colors ${
-                        active
-                          ? "bg-[var(--brand-green)] text-[var(--brand-on-green)] border-[var(--brand-green)]"
-                          : "bg-white border-gray-200 hover:border-gray-400"
-                      }`}
-                      type="button"
-                    >
-                      {s}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+          <VariantSelector
+            sizes={sizes}
+            colors={colors}
+            selectedSize={tempSize}
+            selectedColor={tempColor}
+            onSizeChange={(s) => setTempSize(s)}
+            onColorChange={(c) => setTempColor(c)}
+            availableStock={product.stock ?? 0}
+          />
           <div className="pt-2 grid grid-cols-2 gap-2">
             <button
               onClick={() => setSheetOpen(false)}

@@ -56,6 +56,12 @@ export default function CuentaPage() {
     setRegisterSuccess(false)
 
     try {
+      // Validación cliente: contraseña mínima de 6 caracteres
+      if (registerPassword.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres.")
+        setLoading(false)
+        return
+      }
       const { data, error } = await supabase.auth.signUp({
         email: registerEmail,
         password: registerPassword,
@@ -65,7 +71,7 @@ export default function CuentaPage() {
       })
 
       if (error) {
-        setError("Error al crear la cuenta. El email podría ya estar en uso.")
+        setError(error.message || "Error al crear la cuenta. El email podría ya estar en uso.")
         return
       }
 
@@ -101,6 +107,7 @@ export default function CuentaPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="email"
                     placeholder="tu@email.com"
                     required
                   />
@@ -113,6 +120,7 @@ export default function CuentaPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     required
                   />
@@ -134,6 +142,7 @@ export default function CuentaPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="name"
                     placeholder="Tu nombre"
                     required
                   />
@@ -146,6 +155,7 @@ export default function CuentaPage() {
                     value={registerEmail}
                     onChange={(e) => setRegisterEmail(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="email"
                     placeholder="tu@email.com"
                     required
                   />
@@ -158,6 +168,7 @@ export default function CuentaPage() {
                     value={registerPassword}
                     onChange={(e) => setRegisterPassword(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="new-password"
                     placeholder="••••••••"
                     required
                   />

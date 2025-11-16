@@ -10,7 +10,7 @@ async function FeaturedProducts() {
   try {
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, name, price, image_url, category")
+      .select("id, name, price, sale_price, on_sale, image_url, category")
       .eq("featured", true)
       .limit(4)
       .order("created_at", { ascending: false })
@@ -47,7 +47,7 @@ async function AccessoriesPreview() {
   try {
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, name, price, image_url, category")
+      .select("id, name, price, sale_price, on_sale, image_url, category")
       .eq("category", "accesorios")
       .limit(4)
       .order("created_at", { ascending: false })
@@ -93,7 +93,7 @@ async function NewProductsPreview() {
 
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, name, price, image_url, category")
+      .select("id, name, price, sale_price, on_sale, image_url, category")
       .gte("created_at", sevenDaysAgoISO)
       .limit(4)
       .order("created_at", { ascending: false })

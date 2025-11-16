@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import type { TablesUpdate } from "@/lib/database.types"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: any }) {
   try {
     // Verificar que Supabase esté configurado
     if (!supabase) {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: any }) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 500 })
@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: any }) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: "Database not configured" }, { status: 500 })

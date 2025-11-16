@@ -1,15 +1,26 @@
+"use client"
+
 import { cn } from "@/lib/utils"
-import { memo } from "react"
+import { memo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { formatPrice } from "@/lib/utils"
 import type { ProductCardProps } from "@/lib/types"
+import { ShoppingBag } from "lucide-react"
+import ProductPrice from "@/components/product-price"
+import { useCart } from "@/contexts/cart-context"
+import ActionSheet from "@/components/ui/action-sheet"
+import ProductDiscountBadge from "@/components/product-discount-badge"
+import QuickAddPreview from "@/components/quick-add-preview"
 
 const ProductCard = memo(function ProductCard({ product, compact = false }: ProductCardProps) {
   const { id, name, price, sale_price, on_sale, image_url, category } = product
 
-  // Calcular porcentaje de descuento
-  const discountPercentage = sale_price && on_sale ? Math.round(((price - sale_price) / price) * 100) : 0
+  // Normalizar y calcular descuento similar a la página de detalle
+  const p = Number(price)
+  const s = sale_price == null ? null : Number(sale_price)
+  const hasSale = !!(on_sale && s != null && Number.isFinite(s) && s < p)
+  const discountPercentage = hasSale ? Math.round(((p - (s as number)) / p) * 100) : 0
 
   return (
     <Link
@@ -32,12 +43,13 @@ const ProductCard = memo(function ProductCard({ product, compact = false }: Prod
             loading="lazy"
           />
 
-          {/* Etiqueta de rebaja */}
-          {on_sale && discountPercentage > 0 && (
-            <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-              -{discountPercentage}%
-            </div>
-          )}
+          {/* Etiqueta de rebaja (reutilizable) */}
+          <ProductDiscountBadge price={p} sale_price={s} on_sale={on_sale} className="absolute top-2 left-2 text-xs" />
+
+          {/* Botón rápido de añadir al carrito */}
+          <QuickAddButton
+            product={{ id, name, price, sale_price, on_sale, image_url, category, sizes: (product as any)?.sizes, colors: (product as any)?.colors }}
+          />
         </div>
 
         <div className="space-y-1 md:space-y-2">
@@ -51,28 +63,7 @@ const ProductCard = memo(function ProductCard({ product, compact = false }: Prod
           </h3>
 
           <div className="flex items-center gap-2">
-            {/* Precio con rebaja */}
-            {on_sale && sale_price ? (
-              <>
-                <p className={cn("text-red-600 font-bold", compact ? "text-sm md:text-base" : "text-base md:text-lg")}>
-                  {formatPrice(sale_price)}
-                </p>
-                <p
-                  className={cn("text-gray-500 line-through", compact ? "text-xs md:text-sm" : "text-sm md:text-base")}
-                >
-                  {formatPrice(price)}
-                </p>
-              </>
-            ) : (
-              <p
-                className={cn(
-                  "text-accent-orange font-bold",
-                  compact ? "text-sm md:text-base" : "text-base md:text-lg",
-                )}
-              >
-                {formatPrice(price)}
-              </p>
-            )}
+            <ProductPrice price={p} sale_price={s} on_sale={on_sale} compact={compact} />
           </div>
 
           <span className="sr-only">Categoría: {category}</span>
@@ -81,5 +72,94 @@ const ProductCard = memo(function ProductCard({ product, compact = false }: Prod
     </Link>
   )
 })
+
+function QuickAddButton({ product }: { product: any }) {
+  const { addItem, isLoading } = useCart()
+  const [open, setOpen] = useState(false)
+  const [tempSize, setTempSize] = useState<string | null>(null)
+  const [tempColor, setTempColor] = useState<string | null>(null)
+  const [fullProduct, setFullProduct] = useState<any | null>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
+
+  const handleOpen = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setLoadingDetails(true)
+    try {
+      const res = await fetch(`/api/products/${product.id}`)
+      const json = await res.json()
+      const fetched = json.product || json
+      setFullProduct(fetched)
+      setTempSize(fetched?.sizes && fetched.sizes.length > 0 ? fetched.sizes[0] : null)
+      setTempColor(fetched?.colors && fetched.colors.length > 0 ? fetched.colors[0] : null)
+      setOpen(true)
+    } catch (err) {
+      console.error("Error fetching product details for quick add:", err)
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
+  const handleAdd = async (e?: React.MouseEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
+    if (!fullProduct) return
+    try {
+      await addItem(fullProduct as any, 1, tempSize || undefined, tempColor || undefined)
+      setOpen(false)
+    } catch (err) {
+      console.error("Error adding from quick modal:", err)
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClickCapture={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          handleOpen(e as unknown as React.MouseEvent)
+        }}
+        onPointerDownCapture={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onTouchStartCapture={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onMouseDownCapture={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow hover:scale-105 transition-transform"
+        aria-label="Seleccionar talla y añadir al carrito"
+      >
+        <ShoppingBag className="h-4 w-4 text-gray-800" />
+      </button>
+
+      <ActionSheet open={open} onClose={() => setOpen(false)} title="Selecciona talla y color">
+        {loadingDetails && (
+          <div className="p-6 text-center">Cargando opciones...</div>
+        )}
+        {!loadingDetails && !fullProduct && (
+          <div className="p-6 text-center">No se pudieron cargar los datos del producto.</div>
+        )}
+        {!loadingDetails && fullProduct && (
+          <QuickAddPreview
+            product={fullProduct}
+            tempSize={tempSize}
+            tempColor={tempColor}
+            onSizeChange={(s) => setTempSize(s)}
+            onColorChange={(c) => setTempColor(c)}
+            onCancel={() => setOpen(false)}
+            onAdd={() => handleAdd()}
+          />
+        )}
+      </ActionSheet>
+    </>
+  )
+}
 
 export default ProductCard

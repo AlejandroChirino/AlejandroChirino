@@ -1,8 +1,8 @@
 "use client"
 
-import { memo, useState, useCallback, useEffect } from "react"
+import { memo, useState, useCallback, useEffect, useRef } from "react"
 import Link from "next/link"
-import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag } from "lucide-react"
+import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft } from "lucide-react"
 // Importar el CartBadge
 import CartBadge from "@/components/cart-badge"
 
@@ -26,6 +26,8 @@ const Header = memo(function Header() {
     setIsSearchOpen(false)
   }, [])
 
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null)
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
@@ -33,6 +35,7 @@ const Header = memo(function Header() {
   <div className="h-16 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center px-3 overflow-hidden">
           {/* Mobile menu button */}
           <button
+            ref={menuButtonRef}
             className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors justify-self-start"
             onClick={toggleMobileMenu}
             aria-label="Abrir menú de navegación"
@@ -164,7 +167,7 @@ const Header = memo(function Header() {
 
       {/* Mobile menu overlay (full-screen, white, slide-in) */}
       {isMobileMenuOpen && (
-        <MobileMenuOverlay onClose={closeMobileMenu} />
+        <MobileMenuOverlay onClose={closeMobileMenu} openerRef={menuButtonRef} />
       )}
     </>
   )
@@ -173,10 +176,14 @@ const Header = memo(function Header() {
 export default Header
 
 // Subcomponente del Menú Móvil para aislar cambios y no afectar desktop
-function MobileMenuOverlay({ onClose }: { onClose: () => void }) {
+function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; openerRef?: React.RefObject<HTMLButtonElement> }) {
   const [slideIn, setSlideIn] = useState(false)
   const [bouncePhase, setBouncePhase] = useState(false)
-  const [openSub, setOpenSub] = useState<Record<string, boolean>>({})
+  const [activeCategory, setActiveCategory] = useState<null | { label: string; items: { label: string; href: string }[] }>(null)
+  const overlayRef = useRef<HTMLDivElement | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const backButtonRef = useRef<HTMLButtonElement | null>(null)
+  const openedFromRef = useRef<HTMLElement | null>(null)
 
   // Animación de entrada
   useEffect(() => {
@@ -194,11 +201,28 @@ function MobileMenuOverlay({ onClose }: { onClose: () => void }) {
   const handleClose = useCallback(() => {
     setSlideIn(false)
     // Esperar la duración de la transición antes de desmontar
-    setTimeout(() => onClose(), 300)
-  }, [onClose])
+    setTimeout(() => {
+      onClose()
+      try {
+        openerRef?.current?.focus()
+      } catch (e) {}
+    }, 300)
+  }, [onClose, openerRef])
 
-  const toggleSub = useCallback((key: string) => {
-    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }))
+  const openSubPanel = useCallback((label: string, items: { label: string; href: string }[]) => {
+    // store the element that opened the subpanel so we can return focus when closing
+    openedFromRef.current = document.activeElement as HTMLElement | null
+    setActiveCategory({ label, items })
+  }, [])
+
+  const closeSubPanel = useCallback(() => {
+    setActiveCategory(null)
+    // after the slide animation, return focus to the control that opened the subpanel
+    setTimeout(() => {
+      try {
+        openedFromRef.current?.focus()
+      } catch (e) {}
+    }, 300)
   }, [])
 
   const MenuItem = ({ href, label, onClick, colorClass }: { href: string; label: string; onClick?: () => void; colorClass?: string }) => (
@@ -214,38 +238,58 @@ function MobileMenuOverlay({ onClose }: { onClose: () => void }) {
     </Link>
   )
 
-  const ExpandableItem = ({
-    label,
-    slug,
-    items,
-  }: {
-    label: string
-    slug: string
-    items: { label: string; href: string }[]
-  }) => (
-    <div className="border-b border-gray-100">
-      <button
-        type="button"
-        className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
-        onClick={() => toggleSub(slug)}
-        aria-expanded={!!openSub[slug]}
-        aria-controls={`sub-${slug}`}
-      >
-        <span>{label}</span>
-        <ChevronRight className={`h-5 w-5 transition-transform ${openSub[slug] ? "rotate-90" : ""} text-[#4CAF50]`} />
-      </button>
-      <div
-        id={`sub-${slug}`}
-        className={`overflow-hidden transition-[max-height] duration-300 ease-out ${openSub[slug] ? "max-h-96" : "max-h-0"}`}
-      >
-        <div className="pl-4 pb-2">
-          {items.map((it) => (
-            <MenuItem key={it.label} href={it.href} label={it.label} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+  // focus management: focus close button on open, focus back button when opening subpanel
+  useEffect(() => {
+    if (slideIn) {
+      // small timeout to wait DOM focusable elements
+      const t = setTimeout(() => closeButtonRef.current?.focus(), 50)
+      return () => clearTimeout(t)
+    }
+  }, [slideIn])
+
+  useEffect(() => {
+    if (activeCategory) {
+      const t = setTimeout(() => backButtonRef.current?.focus(), 50)
+      return () => clearTimeout(t)
+    }
+  }, [activeCategory])
+
+  // keyboard handling and focus trap inside overlay
+  useEffect(() => {
+    const root = overlayRef.current
+    if (!root) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        if (activeCategory) closeSubPanel()
+        else handleClose()
+        return
+      }
+
+      if (e.key === "Tab") {
+        const focusable = Array.from(root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ))
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        } else if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      }
+    }
+
+    root.addEventListener("keydown", handleKeyDown)
+    return () => root.removeEventListener("keydown", handleKeyDown)
+  }, [activeCategory, handleClose, closeSubPanel])
+
+  // Flyout behaviour: when a category with subitems is activated, open a secondary panel
+  // that slides from the right. We keep the main panel in DOM for animation and screen-readers.
 
   // Subcategorías de ejemplo (puedes ajustar los href según tu routing real)
   const subHombre = [
@@ -269,6 +313,7 @@ function MobileMenuOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={overlayRef}
       className={`fixed inset-0 z-40 lg:hidden bg-white transform transition-transform ease-out ${durationClass} ${translateClass} shadow-[0_0_24px_rgba(0,0,0,0.06)]`}
       role="dialog"
       aria-modal="true"
@@ -280,6 +325,7 @@ function MobileMenuOverlay({ onClose }: { onClose: () => void }) {
           LA <span className="text-accent-orange">L</span> FASHION
         </Link>
         <button
+          ref={closeButtonRef}
           onClick={handleClose}
           aria-label="Cerrar menú"
           className="p-2 rounded-lg hover:bg-gray-100 active:scale-95 transition"
@@ -288,21 +334,92 @@ function MobileMenuOverlay({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Contenido del menú */}
-      <div className="h-[calc(100vh-64px-72px)] overflow-y-auto px-4">
-        <nav className="divide-y divide-gray-100" role="navigation" aria-label="Navegación móvil">
-          <MenuItem href="/" label="Inicio" />
+      {/* Contenido del menú con panels para flyout */}
+      <div className="h-[calc(100vh-64px-72px)] relative px-0">
+        {/* Contenedor relativo que mantiene ambos paneles (main y sub) */}
+        <div className="absolute inset-0 flex">
+          {/* Panel principal */}
+          <div
+            className={`w-full px-4 overflow-y-auto transition-transform duration-300 ease-out ${activeCategory ? "-translate-x-full" : "translate-x-0"}`}
+            aria-hidden={!!activeCategory}
+          >
+            <nav className="divide-y divide-gray-100" role="navigation" aria-label="Navegación móvil">
+              <MenuItem href="/" label="Inicio" />
 
-          <ExpandableItem label="Hombre" slug="hombre" items={subHombre} />
-          <ExpandableItem label="Mujer" slug="mujer" items={subMujer} />
-          <ExpandableItem label="Accesorios" slug="accesorios" items={subAccesorios} />
+              <div className="border-b border-gray-100">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
+                  onClick={() => openSubPanel("Hombre", subHombre)}
+                  aria-expanded={activeCategory?.label === "Hombre"}
+                  aria-controls="sub-hombre"
+                >
+                  <span>Hombre</span>
+                  <ChevronRight className="h-5 w-5 text-[#4CAF50]" />
+                </button>
+              </div>
 
-          <MenuItem href="/nuevo" label="Nuevo" colorClass="text-[#4CAF50]" />
-          <MenuItem href="/colaboraciones" label="Colaboraciones" />
-          <MenuItem href="/mundo-la-fashion" label="Mundo La L" />
-          <MenuItem href="/rebajas" label="Rebajas" colorClass="text-[#F44336]" />
-          <MenuItem href="/favoritos" label="Favoritos" />
-        </nav>
+              <div className="border-b border-gray-100">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
+                  onClick={() => openSubPanel("Mujer", subMujer)}
+                  aria-expanded={activeCategory?.label === "Mujer"}
+                  aria-controls="sub-mujer"
+                >
+                  <span>Mujer</span>
+                  <ChevronRight className="h-5 w-5 text-[#4CAF50]" />
+                </button>
+              </div>
+
+              <div className="border-b border-gray-100">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
+                  onClick={() => openSubPanel("Accesorios", subAccesorios)}
+                  aria-expanded={activeCategory?.label === "Accesorios"}
+                  aria-controls="sub-accesorios"
+                >
+                  <span>Accesorios</span>
+                  <ChevronRight className="h-5 w-5 text-[#4CAF50]" />
+                </button>
+              </div>
+
+              <MenuItem href="/nuevo" label="Nuevo" colorClass="text-[#4CAF50]" />
+              <MenuItem href="/colaboraciones" label="Colaboraciones" />
+              <MenuItem href="/mundo-la-fashion" label="Mundo La L" />
+              <MenuItem href="/rebajas" label="Rebajas" colorClass="text-[#F44336]" />
+              <MenuItem href="/favoritos" label="Favoritos" />
+            </nav>
+          </div>
+
+          {/* Panel secundario (flyout) */}
+          <div
+            className={`w-full absolute inset-y-0 right-0 bg-white px-4 overflow-y-auto transition-transform duration-300 ease-out ${activeCategory ? "translate-x-0" : "translate-x-full"}`}
+            role="region"
+            aria-labelledby="submenu-title"
+            aria-hidden={!activeCategory}
+          >
+            {/* Cabecera del subpanel con botón volver */}
+            <div className="flex items-center gap-3 py-4 border-b border-gray-100">
+              <button
+                ref={backButtonRef}
+                onClick={closeSubPanel}
+                aria-label="Volver"
+                className="p-2 rounded hover:bg-gray-100"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <h3 id="submenu-title" className="text-lg font-bold">{activeCategory?.label}</h3>
+            </div>
+
+            <nav className="pt-2">
+              {activeCategory?.items.map((it) => (
+                <MenuItem key={it.label} href={it.href} label={it.label} />
+              ))}
+            </nav>
+          </div>
+        </div>
       </div>
 
       {/* Footer fijo con iconos VIP y Carrito */}

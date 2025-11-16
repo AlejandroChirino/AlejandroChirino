@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-full max-w-sm">
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-xs sm:top-4 sm:right-4 sm:left-auto sm:transform-none sm:max-w-sm">
         {toasts.map((toast) => (
           <div
             key={toast.id}
@@ -63,18 +63,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               toast.visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
             )}
           >
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               {toast.title && (
                 <h3
                   className={cn(
-                    "font-semibold text-sm",
+                    "font-semibold text-sm truncate",
                     toast.variant === "destructive" ? "text-red-600" : "text-gray-900",
                   )}
                 >
                   {toast.title}
                 </h3>
               )}
-              {toast.description && <p className="text-sm text-gray-600 mt-1">{toast.description}</p>}
+              {toast.description && (
+                <p className="text-sm text-gray-600 mt-1 truncate line-clamp-2">{toast.description}</p>
+              )}
             </div>
             <button
               onClick={() => dismissToast(toast.id)}

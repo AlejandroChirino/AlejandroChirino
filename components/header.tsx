@@ -5,8 +5,9 @@ import Link from "next/link"
 import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft } from "lucide-react"
 // Importar el CartBadge
 import CartBadge from "@/components/cart-badge"
+import { createBrowserClient } from "@/lib/supabase/client"
 
-const Header = memo(function Header() {
+const Header = memo(function Header({ initialUser }: { initialUser?: any | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
@@ -27,6 +28,72 @@ const Header = memo(function Header() {
   }, [])
 
   const menuButtonRef = useRef<HTMLButtonElement | null>(null)
+
+  // Estado de usuario para mostrar perfil / logout
+  const [user, setUser] = useState<any | null>(null)
+  const initialUserRef = useRef<any | null>(initialUser ?? null)
+
+  useEffect(() => {
+    let mounted = true
+
+    // If the server passed an initial value, it can be either a Promise
+    // (thenable) or a plain user object. Handle both safely to avoid
+    // runtime errors when Next serializes/hydrates props.
+    const initial = initialUserRef.current
+    if (initial) {
+      // If a thenable was accidentally passed in, handle it, otherwise
+      // assume it's already the resolved user object.
+      if (typeof (initial as any)?.then === "function") {
+        try {
+          const maybePromise = (initial as any).then((u: any) => {
+            if (!mounted) return
+            setUser(u)
+          })
+          if (maybePromise && typeof maybePromise.catch === "function") {
+            maybePromise.catch(() => {})
+          }
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setUser(initial as any)
+      }
+    }
+
+    const supabase = createBrowserClient()
+
+    // then subscribe to client auth changes (if available)
+    let sub: any = null
+    try {
+      const maybeSub = supabase?.auth?.onAuthStateChange?.((_event: any, session: any) => {
+        if (!mounted) return
+        setUser(session?.user ?? null)
+      })
+      sub = maybeSub?.data ?? maybeSub
+    } catch (e) {
+      // ignore subscription errors
+    }
+
+    // also attempt to get current client user if no server data
+    try {
+      const maybeGet = supabase?.auth?.getUser?.()
+      if (maybeGet && typeof maybeGet.then === "function") {
+        maybeGet.then((res: any) => {
+          if (!mounted) return
+          setUser((prev) => prev ?? res?.data?.user ?? null)
+        }).catch(() => {})
+      } else if (maybeGet?.data?.user) {
+        setUser((prev) => prev ?? maybeGet.data.user ?? null)
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    return () => {
+      mounted = false
+      try { sub?.subscription?.unsubscribe?.() } catch (e) {}
+    }
+  }, [])
 
   return (
     <>
@@ -80,13 +147,26 @@ const Header = memo(function Header() {
               <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-accent-orange" />
             </Link>
 
-            <Link
-              href="/cuenta"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Mi cuenta"
-            >
-              <User className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/cuenta/perfil"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                  aria-label="Perfil de usuario"
+                >
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Link>
+                {/* Sign-out is intentionally only available inside the profile page. */}
+              </>
+            ) : (
+              <Link
+                href="/cuenta"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Mi cuenta"
+              >
+                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Link>
+            )}
 
             <Link
               href="/favoritos"

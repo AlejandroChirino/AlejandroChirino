@@ -115,7 +115,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             size: size || null,
             color: color || null,
           }
-          setItems((prev) => [...prev, newItem])
+          // Prepend new items so the most recently added appear first (stack behavior)
+          setItems((prev) => [newItem, ...prev])
         }
 
         toast({

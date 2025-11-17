@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 import { Crown, Lock } from "lucide-react"
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
@@ -12,6 +14,9 @@ import LoadingSkeleton from "@/components/loading-skeleton"
 import type { Product, VipFilters as VipFiltersType } from "@/lib/types"
 
 export default function VipPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -21,6 +26,46 @@ export default function VipPage() {
     sortBy: "newest",
     sortOrder: "desc",
   })
+
+  // Inicializar filtros desde query params (category=subcategory)
+  useEffect(() => {
+    try {
+      const cat = searchParams.get("category")
+      const sub = searchParams.get("sub")
+      const newFilters: Partial<VipFiltersType> = {}
+      if (cat && (cat === "hombre" || cat === "mujer" || cat === "accesorios")) {
+        newFilters.category = cat as any
+      }
+      if (sub) {
+        // intentar mapear slug a label dentro de la categoría indicada
+        const categoryKey = (newFilters.category as string) || "accesorios"
+        const label = labelFromSlug(categoryKey as any, sub)
+        if (label) newFilters.subcategoria = label
+      }
+      if (Object.keys(newFilters).length > 0) setFilters((prev) => ({ ...prev, ...newFilters }))
+    } catch (e) {
+      // ignore
+    }
+  }, [searchParams])
+
+  // Mantener la URL en sync con los filtros (category + sub)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams()
+      if (filters.category && filters.category !== "all") params.set("category", filters.category)
+      if ((filters as any).subcategoria) {
+        const subLabel = (filters as any).subcategoria as string
+        // necesitamos elegir una categoríaKey para slugify; preferir filters.category
+        const categoryKey = (filters.category as string) || "accesorios"
+        params.set("sub", slugFromLabel(categoryKey as any, subLabel))
+      }
+      const base = "/vip"
+      const qs = params.toString()
+      router.replace(qs ? `${base}?${qs}` : base)
+    } catch (e) {
+      // ignore
+    }
+  }, [filters, router])
 
   // Simulación de autenticación (reemplazar con lógica real)
   useEffect(() => {

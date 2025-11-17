@@ -2,6 +2,7 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ProductFormData } from "@/lib/admin-types"
+import { SUBCATEGORIAS, type ProductCategory } from "@/lib/types"
 
 interface CategorizationProps {
   formData: ProductFormData
@@ -9,32 +10,18 @@ interface CategorizationProps {
   updateField: (field: keyof ProductFormData, value: any) => void
 }
 
-const categories = [
-  { value: "mujer", label: "Mujer" },
-  { value: "hombre", label: "Hombre" },
-  { value: "accesorios", label: "Accesorios" },
-]
+// Build categories from SUBCATEGORIAS keys. Keep a stable ordering for the common categories.
+const categories = ["mujer", "hombre", "accesorios"] as const
+const CATEGORY_LABELS: Record<typeof categories[number], string> = {
+  mujer: "Mujer",
+  hombre: "Hombre",
+  accesorios: "Accesorios",
+}
 
-const subcategorias = {
-  mujer: [
-    { value: "vestidos", label: "Vestidos" },
-    { value: "blusas", label: "Blusas" },
-    { value: "pantalones", label: "Pantalones" },
-    { value: "faldas", label: "Faldas" },
-    { value: "zapatos", label: "Zapatos" },
-  ],
-  hombre: [
-    { value: "camisas", label: "Camisas" },
-    { value: "pantalones", label: "Pantalones" },
-    { value: "zapatos", label: "Zapatos" },
-    { value: "accesorios", label: "Accesorios" },
-  ],
-  accesorios: [
-    { value: "bolsos", label: "Bolsos" },
-    { value: "joyas", label: "Joyas" },
-    { value: "cinturones", label: "Cinturones" },
-    { value: "otros", label: "Otros" },
-  ],
+function getSubcategoriesFor(category: ProductCategory) {
+  const list = (SUBCATEGORIAS[category] || []) as readonly string[]
+  // Exclude the "Ver todo" pseudo-subcategory used in filters/menus
+  return list.filter((l) => l !== "Ver todo").map((label) => ({ value: label, label }))
 }
 
 export function Categorization({ formData, errors, updateField }: CategorizationProps) {
@@ -58,8 +45,8 @@ export function Categorization({ formData, errors, updateField }: Categorization
             </SelectTrigger>
             <SelectContent>
               {categories.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
+                <SelectItem key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -81,7 +68,7 @@ export function Categorization({ formData, errors, updateField }: Categorization
             </SelectTrigger>
             <SelectContent>
               {formData.category &&
-                subcategorias[formData.category as keyof typeof subcategorias]?.map((subcat) => (
+                getSubcategoriesFor(formData.category as ProductCategory).map((subcat) => (
                   <SelectItem key={subcat.value} value={subcat.value}>
                     {subcat.label}
                   </SelectItem>

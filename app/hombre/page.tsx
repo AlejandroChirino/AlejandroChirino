@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
@@ -24,6 +26,7 @@ function MenProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
           .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria")
           .eq("category", "hombre")
           .order("created_at", { ascending: false })
+        console.debug("[Hombre] fetchProducts selectedSubcategory:", selectedSubcategory)
 
         if (selectedSubcategory) {
           query = query.eq("subcategoria", selectedSubcategory)
@@ -77,7 +80,57 @@ function MenProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
 }
 
 export default function HombrePage() {
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // Derive initial selectedSubcategory synchronously from searchParams so
+  // server and client render match (avoids hydration mismatch).
+    const initialSub = (() => {
+      try {
+        const s = searchParams.get("sub")
+        if (s) {
+          const label = labelFromSlug("hombre", s)
+          if (label === "Ver todo") return null
+          return label ?? null
+        }
+      } catch (e) {
+        // ignore
+      }
+      return null
+    })()
+
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(initialSub)
+
+  useEffect(() => {
+    try {
+      const sub = searchParams.get("sub")
+      console.debug("[Hombre] useEffect searchParams -> sub:", sub)
+      if (sub) {
+        const label = labelFromSlug("hombre", sub)
+        console.debug("[Hombre] labelFromSlug ->", label)
+        if (label) {
+          if (label === "Ver todo") setSelectedSubcategory(null)
+          else setSelectedSubcategory(label)
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    try {
+      const base = "/hombre"
+      if (!selectedSubcategory) {
+        router.replace(base)
+      } else {
+        const encoded = encodeURIComponent(slugFromLabel("hombre", selectedSubcategory))
+        router.replace(`${base}?sub=${encoded}`)
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [selectedSubcategory, router])
 
   return (
     <div className="min-h-screen">

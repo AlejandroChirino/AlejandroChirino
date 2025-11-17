@@ -19,7 +19,10 @@ export default function SubcategoryFilter({
 }: SubcategoryFilterProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const subcategories = SUBCATEGORIAS[category as keyof typeof SUBCATEGORIAS] || []
+  // Avoid duplicating the explicit "Ver todo" button if SUBCATEGORIAS contains it
+  const subcategories = (SUBCATEGORIAS[category as keyof typeof SUBCATEGORIAS] || []).filter(
+    (s) => s !== "Ver todo"
+  )
 
   if (subcategories.length === 0) return null
 

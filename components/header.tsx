@@ -7,6 +7,8 @@ import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag, Chevron
 // Importar el CartBadge
 import CartBadge from "@/components/cart-badge"
 import { createBrowserClient } from "@/lib/supabase/client"
+import { SUBCATEGORIAS } from "@/lib/types"
+import { slugFromLabel } from "@/lib/subcategoryUtils"
 
 const Header = memo(function Header({ initialUser }: { initialUser?: any | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -253,6 +255,7 @@ export default Header
 
 // Subcomponente del Menú Móvil para aislar cambios y no afectar desktop
 function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; openerRef?: React.RefObject<HTMLButtonElement> }) {
+  const router = useRouter()
   const [slideIn, setSlideIn] = useState(false)
   const [bouncePhase, setBouncePhase] = useState(false)
   const [activeCategory, setActiveCategory] = useState<null | { label: string; items: { label: string; href: string }[] }>(null)
@@ -302,16 +305,23 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
   }, [])
 
   const MenuItem = ({ href, label, onClick, colorClass }: { href: string; label: string; onClick?: () => void; colorClass?: string }) => (
-    <Link
-      href={href}
-      className={`block py-4 text-lg font-semibold tracking-wide ${colorClass ?? "text-gray-900"} hover:text-accent-orange transition-colors`}
-      onClick={() => {
+    <button
+      type="button"
+      className={`block w-full text-left py-4 text-lg font-semibold tracking-wide ${colorClass ?? "text-gray-900"} hover:text-accent-orange transition-colors`}
+      onClick={async () => {
+        try {
+          console.debug("[MobileMenu] navigating to:", href, "label:", label)
+          await router.push(href)
+        } catch (e) {
+          // fallback: change location
+          try { window.location.href = href } catch (err) {}
+        }
         onClick?.()
         handleClose()
       }}
     >
       {label}
-    </Link>
+    </button>
   )
 
   // focus management: focus close button on open, focus back button when opening subpanel
@@ -367,22 +377,28 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
   // Flyout behaviour: when a category with subitems is activated, open a secondary panel
   // that slides from the right. We keep the main panel in DOM for animation and screen-readers.
 
-  // Subcategorías de ejemplo (puedes ajustar los href según tu routing real)
-  const subHombre = [
-    { label: "Camisetas", href: "/hombre?sub=camisetas" },
-    { label: "Pantalones", href: "/hombre?sub=pantalones" },
-    { label: "Calzado", href: "/hombre?sub=calzado" },
-  ]
-  const subMujer = [
-    { label: "Tops", href: "/mujer?sub=tops" },
-    { label: "Vestidos", href: "/mujer?sub=vestidos" },
-    { label: "Calzado", href: "/mujer?sub=calzado" },
-  ]
-  const subAccesorios = [
-    { label: "Gorras", href: "/accesorios?sub=gorras" },
-    { label: "Cinturones", href: "/accesorios?sub=cinturones" },
-    { label: "Bolsos", href: "/accesorios?sub=bolsos" },
-  ]
+  // Construir subitems dinámicamente a partir de SUBCATEGORIAS
+  const makeItems = (categoryKey: keyof typeof SUBCATEGORIAS, basePath: string) => {
+    const items = SUBCATEGORIAS[categoryKey] || []
+    // Always include "Ver todo" as the first item (no ?sub param)
+    const verTodo = { label: "Ver todo", href: basePath }
+    const mapped = items.map((label) => ({
+      label,
+      href: `${basePath}?sub=${encodeURIComponent(slugFromLabel(categoryKey, label))}`,
+    }))
+
+    // Prepend Ver todo but ensure there are no duplicate labels (SUBCATEGORIAS may already include "Ver todo")
+    const combined = [verTodo, ...mapped]
+    const dedupedMap = new Map<string, { label: string; href: string }>()
+    for (const it of combined) {
+      if (!dedupedMap.has(it.label)) dedupedMap.set(it.label, it)
+    }
+    return Array.from(dedupedMap.values())
+  }
+
+  const subHombre = makeItems("hombre", "/hombre")
+  const subMujer = makeItems("mujer", "/mujer")
+  const subAccesorios = makeItems("accesorios", "/accesorios")
 
   const translateClass = !slideIn ? "-translate-x-full" : bouncePhase ? "translate-x-1" : "translate-x-0"
   const durationClass = bouncePhase ? "duration-150" : "duration-300"
@@ -491,7 +507,7 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
 
             <nav className="pt-2">
               {activeCategory?.items.map((it) => (
-                <MenuItem key={it.label} href={it.href} label={it.label} />
+                <MenuItem key={it.href} href={it.href} label={it.label} />
               ))}
             </nav>
           </div>

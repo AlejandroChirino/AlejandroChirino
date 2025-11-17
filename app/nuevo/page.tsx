@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
@@ -30,6 +32,7 @@ function NewProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
           .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria")
           .gte("created_at", sevenDaysAgoISO)
           .order("created_at", { ascending: false })
+        console.debug("[Nuevo] fetchProducts selectedSubcategory:", selectedSubcategory)
 
         // Filtrar por subcategoría si está seleccionada
         if (selectedSubcategory) {
@@ -106,7 +109,52 @@ function NewProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
 }
 
 export default function NuevoPage() {
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const initialSub = (() => {
+    try {
+      const s = searchParams.get("sub")
+      if (s) {
+        const label = labelFromSlug("nuevo", s)
+        if (label === "Ver todo") return null
+        return label ?? null
+      }
+    } catch (e) {
+      // ignore
+    }
+    return null
+  })()
+
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(initialSub)
+
+  useEffect(() => {
+    try {
+      const sub = searchParams.get("sub")
+      if (sub) {
+        const label = labelFromSlug("nuevo", sub)
+        if (label) {
+          if (label === "Ver todo") setSelectedSubcategory(null)
+          else setSelectedSubcategory(label)
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    try {
+      const base = "/nuevo"
+      if (!selectedSubcategory) router.replace(base)
+      else {
+        const encoded = encodeURIComponent(slugFromLabel("nuevo", selectedSubcategory))
+        router.replace(`${base}?sub=${encoded}`)
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [selectedSubcategory, router])
 
   return (
     <div className="min-h-screen">

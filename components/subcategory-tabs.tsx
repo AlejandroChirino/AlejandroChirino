@@ -15,7 +15,11 @@ export default function SubcategoryTabs({
   onSubcategoryChange,
   className = "",
 }: SubcategoryTabsProps) {
-  const subcategories = SUBCATEGORIAS[category as keyof typeof SUBCATEGORIAS] || []
+  // SUBCATEGORIAS may include a "Ver todo" entry; we render an explicit
+  // "Ver todo" button above, so filter it out to avoid duplicates.
+  const subcategories = (SUBCATEGORIAS[category as keyof typeof SUBCATEGORIAS] || []).filter(
+    (s) => s !== "Ver todo"
+  )
 
   if (subcategories.length === 0) return null
 

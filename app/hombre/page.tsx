@@ -7,12 +7,30 @@ import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
-import SubcategoryTabs from "@/components/subcategory-tabs"
+import ProductFilterBar from "@/components/product-filter-bar"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 
-// Men products component
-function MenProducts({ selectedSubcategory }: { selectedSubcategory: string | null }) {
+// Products list component used by Hombre page
+function ProductsList({
+  selectedSubcategory,
+  selectedColors,
+  selectedSizes,
+  selectedSort,
+  selectedOnSale,
+  selectedFeatured,
+  selectedIsVip,
+  selectedIsNew,
+}: {
+  selectedSubcategory: string | null
+  selectedColors: string[]
+  selectedSizes: string[]
+  selectedSort: string | null
+  selectedOnSale: boolean
+  selectedFeatured: boolean
+  selectedIsVip: boolean
+  selectedIsNew: boolean
+}) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,25 +39,28 @@ function MenProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
     async function fetchProducts() {
       try {
         setLoading(true)
-        let query = supabase
-          .from("products")
-          .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria")
-          .eq("category", "hombre")
-          .order("created_at", { ascending: false })
-        console.debug("[Hombre] fetchProducts selectedSubcategory:", selectedSubcategory)
-
-        if (selectedSubcategory) {
-          query = query.eq("subcategoria", selectedSubcategory)
+        const params = new URLSearchParams()
+        params.set("category", "hombre")
+        params.set("subcategoria", selectedSubcategory ?? "all")
+        if (selectedOnSale) params.set("on_sale", "true")
+        if (selectedFeatured) params.set("featured", "true")
+        if (selectedIsVip) params.set("is_vip", "true")
+        if (selectedIsNew) params.set("is_new", "true")
+        if (selectedSort) {
+          const [sortBy, sortOrder] = selectedSort.split("-")
+          params.set("sortBy", sortBy === "newest" ? "created_at" : sortBy)
+          params.set("sortOrder", sortOrder === "asc" ? "asc" : "desc")
         }
+        for (const c of selectedColors) params.append("colors", c)
+        for (const s of selectedSizes) params.append("sizes", s)
 
-        const { data, error } = await query
-
-        if (error) {
+        const res = await fetch(`/api/products?${params.toString()}`)
+        if (!res.ok) {
           setError("Error al cargar los productos")
           return
         }
-
-        setProducts(data || [])
+        const data = await res.json()
+        setProducts(Array.isArray(data) ? data : data?.products || [])
       } catch (err) {
         setError("Error al cargar los productos")
       } finally {
@@ -48,27 +69,11 @@ function MenProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
     }
 
     fetchProducts()
-  }, [selectedSubcategory])
+  }, [selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
-  if (loading) {
-    return <LoadingSkeleton count={8} compact />
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-gray-500 py-16">
-        <p>{error}</p>
-      </div>
-    )
-  }
-
-  if (products.length === 0) {
-    return (
-      <div className="text-center text-gray-500 py-16">
-        <p>No hay productos disponibles en esta {selectedSubcategory ? "subcategoría" : "categoría"}</p>
-      </div>
-    )
-  }
+  if (loading) return <LoadingSkeleton count={8} compact />
+  if (error) return <div className="text-center text-gray-500 py-16"><p>{error}</p></div>
+  if (products.length === 0) return <div className="text-center text-gray-500 py-16"><p>No hay productos disponibles en esta {selectedSubcategory ? "subcategoría" : "categoría"}</p></div>
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
@@ -78,6 +83,8 @@ function MenProducts({ selectedSubcategory }: { selectedSubcategory: string | nu
     </div>
   )
 }
+
+// Men products component
 
 export default function HombrePage() {
   const searchParams = useSearchParams()
@@ -100,6 +107,45 @@ export default function HombrePage() {
     })()
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(initialSub)
+
+  const [availableColors, setAvailableColors] = useState<string[]>([])
+  const [availableSizes, setAvailableSizes] = useState<string[]>([])
+
+  // filter state
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedSort, setSelectedSort] = useState<string | null>(null)
+  const [selectedOnSale, setSelectedOnSale] = useState<boolean>(false)
+  const [selectedFeatured, setSelectedFeatured] = useState<boolean>(false)
+  const [selectedIsVip, setSelectedIsVip] = useState<boolean>(false)
+  const [selectedIsNew, setSelectedIsNew] = useState<boolean>(false)
+
+  useEffect(() => {
+    let mounted = true
+    async function fetchOptions() {
+      try {
+        const params = new URLSearchParams()
+        params.set("category", "hombre")
+        if (selectedSubcategory) params.set("subcategoria", selectedSubcategory)
+        else params.set("subcategoria", "all")
+        if (selectedOnSale) params.set("on_sale", "true")
+        if (selectedFeatured) params.set("featured", "true")
+        if (selectedIsVip) params.set("is_vip", "true")
+        if (selectedIsNew) params.set("is_new", "true")
+
+        const res = await fetch(`/api/admin/options?${params.toString()}`)
+        if (!res.ok) return
+        const json = await res.json()
+        if (!mounted) return
+        setAvailableColors(json.colors || [])
+        setAvailableSizes(json.sizes || [])
+      } catch (err) {
+        // ignore
+      }
+    }
+    fetchOptions()
+    return () => { mounted = false }
+  }, [selectedSubcategory, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
   useEffect(() => {
     try {
@@ -143,15 +189,53 @@ export default function HombrePage() {
             <p className="text-gray-600">Descubre nuestra colección exclusiva para hombre</p>
           </div>
 
-          {/* Filtros de subcategoría */}
-          <SubcategoryTabs
+          <ProductFilterBar
             category="hombre"
-            selectedSubcategory={selectedSubcategory}
-            onSubcategoryChange={setSelectedSubcategory}
+            availableColors={availableColors}
+            availableSizes={availableSizes}
+            selectedColors={selectedColors}
+              selectedSizes={selectedSizes}
+            selectedSort={selectedSort ?? undefined}
+            selectedOnSale={selectedOnSale}
+            selectedFeatured={selectedFeatured}
+            selectedIsVip={selectedIsVip}
+            selectedIsNew={selectedIsNew}
+            onApplyFilters={(f) => {
+              setSelectedSubcategory(f.subcategoria ?? null)
+              setSelectedColors(f.colors ?? [])
+              setSelectedSizes(f.sizes ?? [])
+              setSelectedSort(f.sort ?? null)
+              setSelectedOnSale(Boolean(f.on_sale))
+              setSelectedFeatured(Boolean(f.featured))
+              setSelectedIsVip(Boolean(f.is_vip))
+              setSelectedIsNew(Boolean(f.is_new))
+            }}
+            onColorsChange={(c) => setSelectedColors(c)}
+            onSizeChange={(s) => setSelectedSizes(s)}
+            onSortChange={(s) => setSelectedSort(s)}
+            onClearFilters={() => {
+              setSelectedSubcategory(null)
+              setSelectedColors([])
+              setSelectedSizes([])
+              setSelectedSort(null)
+              setSelectedOnSale(false)
+              setSelectedFeatured(false)
+              setSelectedIsVip(false)
+              setSelectedIsNew(false)
+            }}
           />
 
           {/* Grid de productos */}
-          <MenProducts selectedSubcategory={selectedSubcategory} />
+          <ProductsList
+            selectedSubcategory={selectedSubcategory}
+            selectedColors={selectedColors}
+            selectedSizes={selectedSizes}
+            selectedSort={selectedSort}
+            selectedOnSale={selectedOnSale}
+            selectedFeatured={selectedFeatured}
+            selectedIsVip={selectedIsVip}
+            selectedIsNew={selectedIsNew}
+          />
         </div>
       </main>
 

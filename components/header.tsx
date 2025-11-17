@@ -202,6 +202,9 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
         {/* Desktop navigation */}
         <nav className="hidden lg:block h-12 border-t border-gray-100" role="navigation" aria-label="Categorías">
           <div className="container mx-auto h-full flex items-center gap-8 px-4">
+            <Link href="/todo" className="text-sm font-medium hover:text-accent-orange transition-colors">
+              TODO
+            </Link>
             <Link href="/" className="text-sm font-medium hover:text-accent-orange transition-colors">
               INICIO
             </Link>
@@ -436,6 +439,7 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
             aria-hidden={!!activeCategory}
           >
             <nav className="divide-y divide-gray-100" role="navigation" aria-label="Navegación móvil">
+              <MenuItem href="/todo" label="Todo" />
               <MenuItem href="/" label="Inicio" />
 
               <div className="border-b border-gray-100">

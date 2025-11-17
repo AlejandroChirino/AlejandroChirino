@@ -137,6 +137,7 @@ export const SUBCATEGORIAS = {
     "Maquillaje y Cosméticos",
     "Medias y Calcetines",
     "Accesorios de Cabello",
+    "Gorras y sombreros",
     "Lencería y Protectores",
     "Otros Accesorios",
   ],

@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/components/signout-button"
+import Link from "next/link"
 import ProfileEditor from "@/components/profile-editor"
 
 export default async function PerfilPage() {
@@ -30,7 +31,18 @@ export default async function PerfilPage() {
             <div className="bg-white p-6 rounded-lg border">
               <h3 className="text-lg font-semibold mb-4">Acciones</h3>
               <p className="mb-4">Cerrar sesión y volver al inicio.</p>
-              <SignOutButton className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200" />
+              <div className="flex flex-col gap-3">
+                {profileData?.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-center"
+                  >
+                    Panel de administración
+                  </Link>
+                )}
+
+                <SignOutButton className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200" />
+              </div>
             </div>
           </div>
         </div>

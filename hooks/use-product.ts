@@ -21,6 +21,12 @@ export function useProduct(productId: string): UseProductReturn {
 
         if (!response.ok) {
           if (response.status === 404) {
+            // Notify other parts of the app that this product no longer exists
+            try {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("product-not-found", { detail: { productId } }))
+              }
+            } catch (e) {}
             throw new Error("Producto no encontrado")
           }
           throw new Error("Error al cargar el producto")

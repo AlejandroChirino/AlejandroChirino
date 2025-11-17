@@ -109,7 +109,8 @@ export default function VipPage() {
         const response = await fetch(`/api/vip/products?${params}`)
         if (response.ok) {
           const data = await response.json()
-          setProducts(data)
+          // API now returns sorted/filtered results using effective price server-side
+          setProducts(Array.isArray(data) ? data : data?.products || [])
         }
       } catch (error) {
         console.error("Error fetching VIP products:", error)

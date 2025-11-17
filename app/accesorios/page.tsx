@@ -7,12 +7,30 @@ import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
-import SubcategoryTabs from "@/components/subcategory-tabs"
+import ProductFilterBar from "@/components/product-filter-bar"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 
 // Accessories products component
-function AccessoriesProducts({ selectedSubcategory }: { selectedSubcategory: string | null }) {
+function AccessoriesProducts({
+  selectedSubcategory,
+  selectedColors,
+  selectedSizes,
+  selectedSort,
+  selectedOnSale,
+  selectedFeatured,
+  selectedIsVip,
+  selectedIsNew,
+}: {
+  selectedSubcategory: string | null
+  selectedColors: string[]
+  selectedSizes: string[]
+  selectedSort: string | null
+  selectedOnSale: boolean
+  selectedFeatured: boolean
+  selectedIsVip: boolean
+  selectedIsNew: boolean
+}) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,26 +39,28 @@ function AccessoriesProducts({ selectedSubcategory }: { selectedSubcategory: str
     async function fetchProducts() {
       try {
         setLoading(true)
-        let query = supabase
-          .from("products")
-          .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria")
-          .eq("category", "accesorios")
-          .order("created_at", { ascending: false })
-
-        console.debug("[Accesorios] fetchProducts selectedSubcategory:", selectedSubcategory)
-
-        if (selectedSubcategory) {
-          query = query.eq("subcategoria", selectedSubcategory)
+        const params = new URLSearchParams()
+        params.set("category", "accesorios")
+        params.set("subcategoria", selectedSubcategory ?? "all")
+        if (selectedOnSale) params.set("on_sale", "true")
+        if (selectedFeatured) params.set("featured", "true")
+        if (selectedIsVip) params.set("is_vip", "true")
+        if (selectedIsNew) params.set("is_new", "true")
+        if (selectedSort) {
+          const [sortBy, sortOrder] = selectedSort.split("-")
+          params.set("sortBy", sortBy === "newest" ? "created_at" : sortBy)
+          params.set("sortOrder", sortOrder === "asc" ? "asc" : "desc")
         }
+        for (const c of selectedColors) params.append("colors", c)
+        for (const s of selectedSizes) params.append("sizes", s)
 
-        const { data, error } = await query
-
-        if (error) {
+        const res = await fetch(`/api/products?${params.toString()}`)
+        if (!res.ok) {
           setError("Error al cargar los productos")
           return
         }
-
-        setProducts(data || [])
+        const data = await res.json()
+        setProducts(Array.isArray(data) ? data : data?.products || [])
       } catch (err) {
         setError("Error al cargar los productos")
       } finally {
@@ -49,7 +69,7 @@ function AccessoriesProducts({ selectedSubcategory }: { selectedSubcategory: str
     }
 
     fetchProducts()
-  }, [selectedSubcategory])
+  }, [selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
   if (loading) {
     return <LoadingSkeleton count={8} compact />
@@ -147,6 +167,44 @@ export default function AccesoriosPage() {
     }
   }, [selectedSubcategory, router])
 
+  // Compute available colors and sizes for this category
+  const [availableColors, setAvailableColors] = useState<string[]>([])
+  const [availableSizes, setAvailableSizes] = useState<string[]>([])
+  // filter state
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedSort, setSelectedSort] = useState<string | null>(null)
+  const [selectedOnSale, setSelectedOnSale] = useState<boolean>(false)
+  const [selectedFeatured, setSelectedFeatured] = useState<boolean>(false)
+  const [selectedIsVip, setSelectedIsVip] = useState<boolean>(false)
+  const [selectedIsNew, setSelectedIsNew] = useState<boolean>(false)
+  useEffect(() => {
+    let mounted = true
+    async function fetchOptions() {
+      try {
+        const params = new URLSearchParams()
+        params.set("category", "accesorios")
+        if (selectedSubcategory) params.set("subcategoria", selectedSubcategory)
+        else params.set("subcategoria", "all")
+        if (selectedOnSale) params.set("on_sale", "true")
+        if (selectedFeatured) params.set("featured", "true")
+        if (selectedIsVip) params.set("is_vip", "true")
+        if (selectedIsNew) params.set("is_new", "true")
+
+        const res = await fetch(`/api/admin/options?${params.toString()}`)
+        if (!res.ok) return
+        const json = await res.json()
+        if (!mounted) return
+        setAvailableColors(json.colors || [])
+        setAvailableSizes(json.sizes || [])
+      } catch (err) {
+        // ignore
+      }
+    }
+    fetchOptions()
+    return () => { mounted = false }
+  }, [selectedSubcategory])
+
   return (
     <div className="min-h-screen">
       {/* Header ya incluido en el layout raíz */}
@@ -161,19 +219,54 @@ export default function AccesoriosPage() {
             </p>
           </div>
 
-          {/* Filtros de subcategoría */}
-          <SubcategoryTabs
+          <ProductFilterBar
             category="accesorios"
-            selectedSubcategory={selectedSubcategory}
-            onSubcategoryChange={(label) => {
-              // allow the tabs to emit "Ver todo" but treat it as null
-              if (label === "Ver todo") setSelectedSubcategory(null)
-              else setSelectedSubcategory(label)
+            availableColors={availableColors}
+            availableSizes={availableSizes}
+            selectedColors={selectedColors}
+            selectedSizes={selectedSizes}
+            selectedSort={selectedSort ?? undefined}
+            selectedOnSale={selectedOnSale}
+            selectedFeatured={selectedFeatured}
+            selectedIsVip={selectedIsVip}
+            selectedIsNew={selectedIsNew}
+            onApplyFilters={(f) => {
+              if (f.subcategoria === "Ver todo") setSelectedSubcategory(null)
+              else setSelectedSubcategory(f.subcategoria ?? null)
+              setSelectedColors(f.colors ?? [])
+              setSelectedSizes(f.sizes ?? [])
+              setSelectedSort(f.sort ?? null)
+              setSelectedOnSale(Boolean(f.on_sale))
+              setSelectedFeatured(Boolean(f.featured))
+              setSelectedIsVip(Boolean(f.is_vip))
+              setSelectedIsNew(Boolean(f.is_new))
+            }}
+            onColorsChange={(c) => setSelectedColors(c)}
+            onSizeChange={(s) => setSelectedSizes(s)}
+            onSortChange={(s) => setSelectedSort(s)}
+            onClearFilters={() => {
+              setSelectedSubcategory(null)
+              setSelectedColors([])
+              setSelectedSizes([])
+              setSelectedSort(null)
+              setSelectedOnSale(false)
+              setSelectedFeatured(false)
+              setSelectedIsVip(false)
+              setSelectedIsNew(false)
             }}
           />
 
           {/* Grid de productos */}
-          <AccessoriesProducts selectedSubcategory={selectedSubcategory} />
+          <AccessoriesProducts
+            selectedSubcategory={selectedSubcategory}
+            selectedColors={selectedColors}
+            selectedSizes={selectedSizes}
+            selectedSort={selectedSort}
+            selectedOnSale={selectedOnSale}
+            selectedFeatured={selectedFeatured}
+            selectedIsVip={selectedIsVip}
+            selectedIsNew={selectedIsNew}
+          />
         </div>
       </main>
 

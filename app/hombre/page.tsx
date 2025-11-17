@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
@@ -81,7 +81,7 @@ export default function HombrePage() {
 
   return (
     <div className="min-h-screen">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">

@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
     // Aplicar filtros
     if (search) {
-      query = query.ilike("name", `%${search}%`)
+      // Use RPC-backed trigram search for better relevance and typo tolerance.
+      // We'll call the RPC below and skip adding ilike to the main query.
     }
     if (category && category !== "all") {
       query = query.eq("category", category)
@@ -45,6 +46,58 @@ export async function GET(request: NextRequest) {
     // Paginación
     const from = (page - 1) * limit
     const to = from + limit - 1
+
+    // If there's an active search term, prefer the RPC (pg_trgm) for relevance.
+    if (search) {
+      try {
+        // To support pagination with the existing RPC (which accepts limit_count but
+        // not offset), request enough rows (from + limit) and slice server-side.
+        const rpcLimit = Math.max(50, from + limit)
+        const rpcParams: any = {
+          q: search,
+          category_filter: category === "all" ? null : category,
+          min_price: null,
+          max_price: null,
+          limit_count: rpcLimit,
+        }
+
+        const { data: rpcProducts, error: rpcError } = await getSupabaseAdmin().rpc("search_products_rpc", rpcParams)
+
+        if (rpcError) {
+          console.warn("RPC search_products_rpc failed in admin/products, falling back:", rpcError)
+          // fall back to previous ilike behavior below
+        } else {
+          const products = Array.isArray(rpcProducts) ? rpcProducts.slice(from, from + limit) : []
+
+          // For pagination total, run a count using ilike as a fallback method.
+          // Note: this count may differ slightly from exact trigram matches, but is sufficient for pages.
+          let countQuery = getSupabaseAdmin().from("products").select("id", { count: "exact" })
+          countQuery = countQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+          if (category && category !== "all") countQuery = countQuery.eq("category", category)
+          const { count } = (await countQuery) as any
+
+          return NextResponse.json({
+            products,
+            pagination: {
+              page,
+              limit,
+              total: count || 0,
+              totalPages: Math.ceil((count || 0) / limit),
+            },
+          })
+        }
+      } catch (err) {
+        console.error("Error using RPC in admin/products:", err)
+        // fall through to ilike fallback
+      }
+    }
+
+    // If no search or RPC failed, use the legacy query behavior (ilike + filters + pagination)
+    if (search) {
+      query = query.ilike("name", `%${search}%`)
+    }
+
+    // Apply category/subcategoria/flags already set earlier
     query = query.range(from, to)
 
     const { data: products, error, count } = await query

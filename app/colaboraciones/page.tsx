@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Suspense } from "react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ColaboracionCard from "@/components/colaboracion-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
@@ -96,7 +96,7 @@ function ColaboracionesList() {
 export default function ColaboracionesPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">

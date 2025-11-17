@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useState, useCallback, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft } from "lucide-react"
 // Importar el CartBadge
@@ -9,23 +10,40 @@ import { createBrowserClient } from "@/lib/supabase/client"
 
 const Header = memo(function Header({ initialUser }: { initialUser?: any | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const router = useRouter()
 
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen((prev) => !prev)
   }, [])
 
   const toggleSearch = useCallback(() => {
-    setIsSearchOpen((prev) => !prev)
-  }, [])
+    // Open the dedicated search page in a new tab/window.
+    // If the current URL has a `q` param, forward it so the search input
+    // on `/buscar` auto-puebla.
+    try {
+      if (typeof window !== "undefined") {
+        const currentQ = new URLSearchParams(window.location.search).get("q")
+        const url = currentQ ? `/buscar?q=${encodeURIComponent(currentQ)}` : `/buscar`
+        window.open(url, "_blank")
+        return
+      }
+    } catch (e) {
+      // fallback to router push if window.open fails
+    }
+
+    try {
+      router.push(`/buscar`)
+    } catch (e) {
+      try { window.location.href = `/buscar` } catch (err) {}
+    }
+  }, [router])
 
   const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false)
   }, [])
 
-  const closeSearch = useCallback(() => {
-    setIsSearchOpen(false)
-  }, [])
+  // legacy search UI removed — searches handled on /buscar
 
   const menuButtonRef = useRef<HTMLButtonElement | null>(null)
 
@@ -132,7 +150,6 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
               onClick={toggleSearch}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Buscar productos"
-              aria-expanded={isSearchOpen}
             >
               <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
@@ -218,28 +235,7 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
           </div>
         </nav>
 
-        {/* Search bar */}
-        {isSearchOpen && (
-          <div className="border-t border-gray-200 p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="search"
-                placeholder="Buscar productos..."
-                className="w-full h-10 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-orange"
-                autoFocus
-                aria-label="Buscar productos"
-              />
-              <button
-                onClick={closeSearch}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
-                aria-label="Cerrar búsqueda"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Search UI removed from header — `/buscar` page handles searching */}
       </header>
 
       {/* Spacer */}

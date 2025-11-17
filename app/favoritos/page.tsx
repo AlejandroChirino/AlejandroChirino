@@ -1,4 +1,3 @@
-import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import { createServerClient } from "@/lib/supabase/server"
@@ -40,7 +39,7 @@ export default async function FavoritosPage() {
 
   return (
     <div className="min-h-screen">
-      <Header initialUser={userData?.user ?? null} />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">

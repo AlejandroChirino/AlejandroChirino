@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import CartItem from "@/components/cart-item"
 import { useCart } from "@/contexts/cart-context"
@@ -16,7 +16,7 @@ export default function CarritoPage() {
 
   return (
   <div className="min-h-screen overflow-x-hidden">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className={cn("py-8", itemCount > 0 ? "pb-28 lg:pb-8" : "")}>
         <div className="max-w-7xl mx-auto px-4">

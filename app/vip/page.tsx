@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Crown, Lock } from "lucide-react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import VipBenefits from "@/components/vip-benefits"
@@ -80,7 +80,7 @@ export default function VipPage() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen">
-        <Header />
+        {/* Header ya incluido en el layout raíz */}
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center py-16">
@@ -98,7 +98,7 @@ export default function VipPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen">
-        <Header />
+        {/* Header ya incluido en el layout raíz */}
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center py-16">
@@ -121,7 +121,7 @@ export default function VipPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">

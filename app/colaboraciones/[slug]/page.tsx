@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, Users, ExternalLink } from "lucide-react"
 import Link from "next/link"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import Breadcrumbs from "@/components/breadcrumbs"
 import ProductCard from "@/components/product-card"
@@ -59,7 +59,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <Header />
+        {/* Header ya incluido en el layout raíz */}
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4">
             <div className="animate-pulse space-y-8">
@@ -88,7 +88,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">

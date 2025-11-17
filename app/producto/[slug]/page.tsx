@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { notFound } from "next/navigation"
 import { Heart, Share2, Star, Truck, Shield, RotateCcw } from "lucide-react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import Breadcrumbs from "@/components/breadcrumbs"
 import ProductGallery from "@/components/product-gallery"
@@ -110,7 +110,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <Header />
+        {/* Header ya incluido en el layout raíz */}
         <main className="py-4 md:py-8">
           <div className="max-w-7xl mx-auto px-4">
             {/* Loading skeleton */}
@@ -259,7 +259,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   return (
     // Evitar scroll horizontal global en la página de detalle
     <div className="min-h-screen overflow-x-hidden">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-4 md:py-8">
         <div className="max-w-7xl mx-auto px-4">

@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import Button from "@/components/ui/button"
@@ -20,6 +20,7 @@ export default function BuscarPage() {
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(!!initialQuery)
   const [category, setCategory] = useState<ProductCategory | "all">("all")
+  // (previously had debug panel state; removed for production cleanliness)
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -27,21 +28,28 @@ export default function BuscarPage() {
       if (!query.trim()) return
 
       setLoading(true)
+      // reset local error/response state for this search
       try {
         const params = new URLSearchParams({
           q: query,
           ...(cat !== "all" && { category: cat }),
         })
 
-        const response = await fetch(`/api/search?${params}`)
+        const url = `/api/search?${params}`
+        setLastRequest({ url, params: Object.fromEntries(params.entries()) })
+
+        const response = await fetch(url)
         if (response.ok) {
           const results = await response.json()
           setProducts(results)
         } else {
+          const text = await response.text()
           setProducts([])
+          console.error("Search error response:", response.status, text)
         }
       } catch (error) {
         console.error("Error searching products:", error)
+        setLastError(error)
         setProducts([])
       } finally {
         setLoading(false)
@@ -56,6 +64,8 @@ export default function BuscarPage() {
       debouncedSearch(initialQuery, category)
     }
   }, [initialQuery, category, debouncedSearch])
+
+  // debug toggles removed
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,7 +93,7 @@ export default function BuscarPage() {
 
   return (
     <div className="min-h-screen">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">
@@ -91,18 +101,27 @@ export default function BuscarPage() {
 
           {/* Search form */}
           <form onSubmit={handleSearch} className="mb-8 space-y-4">
-            <div className="flex gap-4">
+            <div className="relative flex gap-4">
               <Input
                 type="text"
                 value={searchQuery}
                 onChange={handleInputChange}
                 placeholder="Buscar productos..."
-                className="flex-1"
+                className="flex-1 pr-12"
                 aria-label="Buscar productos"
               />
-              <Button type="submit" loading={loading} disabled={!searchQuery.trim()}>
-                Buscar
-              </Button>
+              {/* Botón integrado en la misma barra - pequeño y absoluto */}
+              <div className="absolute right-0 top-0 bottom-0 flex items-center pr-1">
+                <Button
+                  type="submit"
+                  size="sm"
+                  loading={loading}
+                  disabled={!searchQuery.trim()}
+                  className="h-8 rounded-full"
+                >
+                  Buscar
+                </Button>
+              </div>
             </div>
 
             {/* Category filter */}
@@ -130,6 +149,8 @@ export default function BuscarPage() {
               ))}
             </div>
           </form>
+
+          {/* Debug UI removed for production. */}
 
           {/* Loading state */}
           {loading && (

@@ -1,5 +1,4 @@
 import { Suspense } from "react"
-import Header from "@/components/header"
 import Footer from "@/components/footer"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import { supabase } from "@/lib/supabaseClient"
@@ -133,8 +132,6 @@ async function NewProductsPreview() {
 export default function HomePage() {
   return (
     <div className="min-h-screen">
-      <Header />
-
       <main>
         {/* Hero section */}
         <section className="relative h-screen bg-gradient-to-br from-gray-50 to-gray-100">

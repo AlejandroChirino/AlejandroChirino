@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { createBrowserClient } from "@/lib/supabase/client"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import Button from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -86,7 +86,7 @@ export default function CuentaPage() {
 
   return (
     <div className="min-h-screen">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-4xl mx-auto px-4">

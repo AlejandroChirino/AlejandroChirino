@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import CustomerForm from "@/components/checkout/customer-form"
 import DeliverySelection from "@/components/checkout/delivery-selection"
@@ -65,7 +65,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-6xl mx-auto px-4">

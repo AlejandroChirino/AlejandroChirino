@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, useCallback, Suspense } from "react"
+import { useSearchParams } from 'next/navigation'
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { debounce } from "@/lib/utils"
 import type { Product, ProductCategory } from "@/lib/types"
 
-export default function BuscarPage() {
+function BuscarContent() {
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get("q") || ""
 
@@ -95,105 +95,120 @@ export default function BuscarPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header ya incluido en el layout raíz */}
+    <>
+      <h1 className="text-3xl font-bold mb-8">Buscar Productos</h1>
 
+      {/* Search form */}
+      <form onSubmit={handleSearch} className="mb-8 space-y-4">
+        <div className="relative flex gap-4">
+          <Input
+            type="text"
+            value={searchQuery}
+            onChange={handleInputChange}
+            placeholder="Buscar productos..."
+            className="flex-1 pr-12"
+            aria-label="Buscar productos"
+          />
+          {/* Botón integrado en la misma barra - pequeño y absoluto */}
+          <div className="absolute right-0 top-0 bottom-0 flex items-center pr-1">
+            <Button
+              type="submit"
+              size="sm"
+              loading={loading}
+              disabled={!searchQuery.trim()}
+              className="h-8 rounded-full"
+            >
+              Buscar
+            </Button>
+          </div>
+        </div>
+
+        {/* Category filter */}
+        <div className="flex flex-wrap gap-2">
+          <span className="text-sm font-medium text-gray-700 py-2">Categoría:</span>
+          {[
+            { value: "all", label: "Todas" },
+            { value: "mujer", label: "Mujer" },
+            { value: "hombre", label: "Hombre" },
+            { value: "accesorios", label: "Accesorios" },
+            { value: "unisex", label: "Unisex" },
+          ].map((cat) => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => handleCategoryChange(cat.value as ProductCategory | "all")}
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                category === cat.value
+                  ? "bg-accent-orange text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </form>
+
+      {/* Debug UI removed for production. */}
+
+      {/* Loading state */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-orange" />
+            <span>Buscando productos...</span>
+          </div>
+        </div>
+      )}
+
+      {/* No search performed */}
+      {!loading && !hasSearched && (
+        <div className="text-center text-gray-500 py-16">
+          <p>Ingresa un término de búsqueda para encontrar productos</p>
+        </div>
+      )}
+
+      {/* No results */}
+      {!loading && hasSearched && products.length === 0 && searchQuery.trim() && (
+        <div className="text-center text-gray-500 py-16">
+          <p>No se encontraron productos para "{searchQuery}"</p>
+          <p className="text-sm mt-2">Intenta con otros términos de búsqueda</p>
+        </div>
+      )}
+
+      {/* Results */}
+      {!loading && products.length > 0 && (
+        <div>
+          <p className="mb-6 text-gray-600">
+            Se encontraron {products.length} productos para "{searchQuery}"
+            {category !== "all" && ` en la categoría ${category}`}
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} compact />
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+export default function BuscarPage() {
+  return (
+    <div className="min-h-screen">
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-8">Buscar Productos</h1>
-
-          {/* Search form */}
-          <form onSubmit={handleSearch} className="mb-8 space-y-4">
-            <div className="relative flex gap-4">
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={handleInputChange}
-                placeholder="Buscar productos..."
-                className="flex-1 pr-12"
-                aria-label="Buscar productos"
-              />
-              {/* Botón integrado en la misma barra - pequeño y absoluto */}
-              <div className="absolute right-0 top-0 bottom-0 flex items-center pr-1">
-                <Button
-                  type="submit"
-                  size="sm"
-                  loading={loading}
-                  disabled={!searchQuery.trim()}
-                  className="h-8 rounded-full"
-                >
-                  Buscar
-                </Button>
-              </div>
-            </div>
-
-            {/* Category filter */}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm font-medium text-gray-700 py-2">Categoría:</span>
-              {[
-                { value: "all", label: "Todas" },
-                { value: "mujer", label: "Mujer" },
-                { value: "hombre", label: "Hombre" },
-                { value: "accesorios", label: "Accesorios" },
-                { value: "unisex", label: "Unisex" },
-              ].map((cat) => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => handleCategoryChange(cat.value as ProductCategory | "all")}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    category === cat.value
-                      ? "bg-accent-orange text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </form>
-
-          {/* Debug UI removed for production. */}
-
-          {/* Loading state */}
-          {loading && (
+          <Suspense fallback={
             <div className="text-center py-8">
               <div className="inline-flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-orange" />
-                <span>Buscando productos...</span>
+                <span>Cargando búsqueda...</span>
               </div>
             </div>
-          )}
-
-          {/* No search performed */}
-          {!loading && !hasSearched && (
-            <div className="text-center text-gray-500 py-16">
-              <p>Ingresa un término de búsqueda para encontrar productos</p>
-            </div>
-          )}
-
-          {/* No results */}
-          {!loading && hasSearched && products.length === 0 && searchQuery.trim() && (
-            <div className="text-center text-gray-500 py-16">
-              <p>No se encontraron productos para "{searchQuery}"</p>
-              <p className="text-sm mt-2">Intenta con otros términos de búsqueda</p>
-            </div>
-          )}
-
-          {/* Results */}
-          {!loading && products.length > 0 && (
-            <div>
-              <p className="mb-6 text-gray-600">
-                Se encontraron {products.length} productos para "{searchQuery}"
-                {category !== "all" && ` en la categoría ${category}`}
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} compact />
-                ))}
-              </div>
-            </div>
-          )}
+          }>
+            <BuscarContent />
+          </Suspense>
         </div>
       </main>
 

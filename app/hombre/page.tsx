@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams, useRouter } from 'next/navigation'
 import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
@@ -85,26 +85,23 @@ function ProductsList({
 }
 
 // Men products component
-
-export default function HombrePage() {
+function HombreContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // Derive initial selectedSubcategory synchronously from searchParams so
-  // server and client render match (avoids hydration mismatch).
-    const initialSub = (() => {
-      try {
-        const s = searchParams.get("sub")
-        if (s) {
-          const label = labelFromSlug("hombre", s)
-          if (label === "Ver todo") return null
-          return label ?? null
-        }
-      } catch (e) {
-        // ignore
+  const initialSub = (() => {
+    try {
+      const s = searchParams.get("sub")
+      if (s) {
+        const label = labelFromSlug("hombre", s)
+        if (label === "Ver todo") return null
+        return label ?? null
       }
-      return null
-    })()
+    } catch (e) {
+      // ignore
+    }
+    return null
+  })()
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(initialSub)
 
@@ -179,63 +176,71 @@ export default function HombrePage() {
   }, [selectedSubcategory, router])
 
   return (
-    <div className="min-h-screen">
-      {/* Header ya incluido en el layout raíz */}
+    <>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Ropa para Hombre</h1>
+        <p className="text-gray-600">Descubre nuestra colección exclusiva para hombre</p>
+      </div>
 
+      <ProductFilterBar
+        category="hombre"
+        availableColors={availableColors}
+        availableSizes={availableSizes}
+        selectedColors={selectedColors}
+        selectedSizes={selectedSizes}
+        selectedSort={selectedSort ?? undefined}
+        selectedOnSale={selectedOnSale}
+        selectedFeatured={selectedFeatured}
+        selectedIsVip={selectedIsVip}
+        selectedIsNew={selectedIsNew}
+        onApplyFilters={(f) => {
+          setSelectedSubcategory(f.subcategoria ?? null)
+          setSelectedColors(f.colors ?? [])
+          setSelectedSizes(f.sizes ?? [])
+          setSelectedSort(f.sort ?? null)
+          setSelectedOnSale(Boolean(f.on_sale))
+          setSelectedFeatured(Boolean(f.featured))
+          setSelectedIsVip(Boolean(f.is_vip))
+          setSelectedIsNew(Boolean(f.is_new))
+        }}
+        onColorsChange={(c) => setSelectedColors(c)}
+        onSizeChange={(s) => setSelectedSizes(s)}
+        onSortChange={(s) => setSelectedSort(s)}
+        onClearFilters={() => {
+          setSelectedSubcategory(null)
+          setSelectedColors([])
+          setSelectedSizes([])
+          setSelectedSort(null)
+          setSelectedOnSale(false)
+          setSelectedFeatured(false)
+          setSelectedIsVip(false)
+          setSelectedIsNew(false)
+        }}
+      />
+
+      {/* Grid de productos */}
+      <ProductsList
+        selectedSubcategory={selectedSubcategory}
+        selectedColors={selectedColors}
+        selectedSizes={selectedSizes}
+        selectedSort={selectedSort}
+        selectedOnSale={selectedOnSale}
+        selectedFeatured={selectedFeatured}
+        selectedIsVip={selectedIsVip}
+        selectedIsNew={selectedIsNew}
+      />
+    </>
+  )
+}
+
+export default function HombrePage() {
+  return (
+    <div className="min-h-screen">
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Ropa para Hombre</h1>
-            <p className="text-gray-600">Descubre nuestra colección exclusiva para hombre</p>
-          </div>
-
-          <ProductFilterBar
-            category="hombre"
-            availableColors={availableColors}
-            availableSizes={availableSizes}
-            selectedColors={selectedColors}
-              selectedSizes={selectedSizes}
-            selectedSort={selectedSort ?? undefined}
-            selectedOnSale={selectedOnSale}
-            selectedFeatured={selectedFeatured}
-            selectedIsVip={selectedIsVip}
-            selectedIsNew={selectedIsNew}
-            onApplyFilters={(f) => {
-              setSelectedSubcategory(f.subcategoria ?? null)
-              setSelectedColors(f.colors ?? [])
-              setSelectedSizes(f.sizes ?? [])
-              setSelectedSort(f.sort ?? null)
-              setSelectedOnSale(Boolean(f.on_sale))
-              setSelectedFeatured(Boolean(f.featured))
-              setSelectedIsVip(Boolean(f.is_vip))
-              setSelectedIsNew(Boolean(f.is_new))
-            }}
-            onColorsChange={(c) => setSelectedColors(c)}
-            onSizeChange={(s) => setSelectedSizes(s)}
-            onSortChange={(s) => setSelectedSort(s)}
-            onClearFilters={() => {
-              setSelectedSubcategory(null)
-              setSelectedColors([])
-              setSelectedSizes([])
-              setSelectedSort(null)
-              setSelectedOnSale(false)
-              setSelectedFeatured(false)
-              setSelectedIsVip(false)
-              setSelectedIsNew(false)
-            }}
-          />
-
-          {/* Grid de productos */}
-          <ProductsList
-            selectedSubcategory={selectedSubcategory}
-            selectedColors={selectedColors}
-            selectedSizes={selectedSizes}
-            selectedSort={selectedSort}
-            selectedOnSale={selectedOnSale}
-            selectedFeatured={selectedFeatured}
-            selectedIsVip={selectedIsVip}
-            selectedIsNew={selectedIsNew}
-          />
+          <Suspense fallback={<LoadingSkeleton count={8} compact />}>
+            <HombreContent />
+          </Suspense>
         </div>
       </main>
 

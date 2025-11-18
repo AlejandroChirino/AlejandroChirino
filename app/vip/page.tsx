@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams, useRouter } from 'next/navigation'
 import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
-import { Crown, Lock } from "lucide-react"
+import { Crown, Lock } from 'lucide-react'
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
@@ -13,7 +13,7 @@ import ArticulosEnCamino from "@/components/articulos-en-camino"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import type { Product, VipFilters as VipFiltersType } from "@/lib/types"
 
-export default function VipPage() {
+function VipContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -125,17 +125,9 @@ export default function VipPage() {
   // Pantalla de carga de autenticación
   if (checkingAuth) {
     return (
-      <div className="min-h-screen">
-        {/* Header ya incluido en el layout raíz */}
-        <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-orange mx-auto mb-4" />
-              <p className="text-gray-600">Verificando acceso VIP...</p>
-            </div>
-          </div>
-        </main>
-        <Footer />
+      <div className="text-center py-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-orange mx-auto mb-4" />
+        <p className="text-gray-600">Verificando acceso VIP...</p>
       </div>
     )
   }
@@ -143,104 +135,104 @@ export default function VipPage() {
   // Pantalla de acceso denegado
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen">
-        {/* Header ya incluido en el layout raíz */}
-        <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center py-16">
-              <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h1 className="text-3xl font-bold mb-4">Acceso Restringido</h1>
-              <p className="text-gray-600 mb-6">Esta sección está disponible solo para miembros VIP autenticados.</p>
-              <a
-                href="/cuenta"
-                className="inline-block bg-accent-orange text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                Iniciar Sesión
-              </a>
-            </div>
-          </div>
-        </main>
-        <Footer />
+      <div className="text-center py-16">
+        <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+        <h1 className="text-3xl font-bold mb-4">Acceso Restringido</h1>
+        <p className="text-gray-600 mb-6">Esta sección está disponible solo para miembros VIP autenticados.</p>
+        <a
+          href="/cuenta"
+          className="inline-block bg-accent-orange text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
+        >
+          Iniciar Sesión
+        </a>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header ya incluido en el layout raíz */}
+    <>
+      {/* Hero Section */}
+      <div className="text-center mb-12">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-accent-orange to-orange-600 rounded-full mb-6">
+          <Crown className="h-10 w-10 text-white" />
+        </div>
+        <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+          ACCESO VIP
+        </h1>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          Bienvenido a tu zona exclusiva. Descubre productos únicos, ofertas especiales y experiencias
+          personalizadas.
+        </p>
+      </div>
 
-      <main className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-accent-orange to-orange-600 rounded-full mb-6">
-              <Crown className="h-10 w-10 text-white" />
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              ACCESO VIP
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Bienvenido a tu zona exclusiva. Descubre productos únicos, ofertas especiales y experiencias
-              personalizadas.
-            </p>
+      {/* Beneficios VIP */}
+      <VipBenefits />
+
+      {/* Artículos en Camino */}
+      <section className="mb-16">
+        <ArticulosEnCamino />
+      </section>
+
+      {/* Productos VIP */}
+      <section>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">Productos Exclusivos</h2>
+            <p className="text-gray-600">Colección limitada solo para miembros VIP</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Filtros */}
+          <div className="lg:col-span-1">
+            <VipFilters filters={filters} onFiltersChange={setFilters} />
           </div>
 
-          {/* Beneficios VIP */}
-          <VipBenefits />
-
-          {/* Artículos en Camino */}
-          <section className="mb-16">
-            <ArticulosEnCamino />
-          </section>
-
-          {/* Productos VIP */}
-          <section>
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">Productos Exclusivos</h2>
-                <p className="text-gray-600">Colección limitada solo para miembros VIP</p>
+          {/* Lista de productos */}
+          <div className="lg:col-span-3">
+            {loading ? (
+              <LoadingSkeleton count={8} compact />
+            ) : products.length === 0 ? (
+              <div className="text-center py-16">
+                <Crown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No hay productos disponibles</h3>
+                <p className="text-gray-600">Ajusta los filtros o vuelve más tarde para ver nuevos productos VIP</p>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Filtros */}
-              <div className="lg:col-span-1">
-                <VipFilters filters={filters} onFiltersChange={setFilters} />
-              </div>
-
-              {/* Lista de productos */}
-              <div className="lg:col-span-3">
-                {loading ? (
-                  <LoadingSkeleton count={8} compact />
-                ) : products.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Crown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No hay productos disponibles</h3>
-                    <p className="text-gray-600">Ajusta los filtros o vuelve más tarde para ver nuevos productos VIP</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between mb-6">
-                      <p className="text-gray-600">
-                        {products.length} producto{products.length !== 1 ? "s" : ""} exclusivo
-                        {products.length !== 1 ? "s" : ""}
-                      </p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <p className="text-gray-600">
+                    {products.length} producto{products.length !== 1 ? "s" : ""} exclusivo
+                    {products.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {products.map((product) => (
+                    <div key={product.id} className="relative">
+                      <ProductCard product={product} compact />
+                      <div className="absolute top-2 left-2 bg-gradient-to-r from-accent-orange to-orange-600 text-white px-2 py-1 rounded text-xs font-medium">
+                        VIP
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {products.map((product) => (
-                        <div key={product.id} className="relative">
-                          <ProductCard product={product} compact />
-                          <div className="absolute top-2 left-2 bg-gradient-to-r from-accent-orange to-orange-600 text-white px-2 py-1 rounded text-xs font-medium">
-                            VIP
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </section>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
+
+export default function VipPage() {
+  return (
+    <div className="min-h-screen bg-white">
+      <main className="py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <Suspense fallback={<LoadingSkeleton count={8} compact />}>
+            <VipContent />
+          </Suspense>
         </div>
       </main>
 

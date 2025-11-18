@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams, useRouter } from 'next/navigation'
 import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
@@ -10,6 +10,7 @@ import LoadingSkeleton from "@/components/loading-skeleton"
 import ProductFilterBar from "@/components/product-filter-bar"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
+import { Suspense } from "react"
 
 // New products component
 function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew }:
@@ -109,7 +110,7 @@ function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selec
   )
 }
 
-export default function NuevoPage() {
+function NuevoContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -201,66 +202,74 @@ export default function NuevoPage() {
   }, [selectedSubcategory, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
   return (
-    <div className="min-h-screen">
-      {/* Header ya incluido en el layout raíz */}
+    <>
+      {/* Hero section */}
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">NUEVO</h1>
+        <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          Descubre nuestras últimas novedades. Productos añadidos en los últimos 7 días.
+        </p>
+      </div>
 
+      <ProductFilterBar
+        category="nuevo"
+        availableColors={availableColors}
+        availableSizes={availableSizes}
+        selectedColors={selectedColors}
+        selectedSizes={selectedSizes}
+        selectedSort={selectedSort ?? undefined}
+        selectedOnSale={selectedOnSale}
+        selectedFeatured={selectedFeatured}
+        selectedIsVip={selectedIsVip}
+        selectedIsNew={selectedIsNew}
+        onApplyFilters={(f) => {
+          setSelectedSubcategory(f.subcategoria ?? null)
+          setSelectedColors(f.colors ?? [])
+          setSelectedSizes(f.sizes ?? [])
+          setSelectedSort(f.sort ?? null)
+          setSelectedOnSale(Boolean(f.on_sale))
+          setSelectedFeatured(Boolean(f.featured))
+          setSelectedIsVip(Boolean(f.is_vip))
+          setSelectedIsNew(Boolean(f.is_new))
+        }}
+        onColorsChange={(c) => setSelectedColors(c)}
+        onSizeChange={(s) => setSelectedSizes(s)}
+        onSortChange={(s) => setSelectedSort(s)}
+        onClearFilters={() => {
+          setSelectedSubcategory(null)
+          setSelectedColors([])
+          setSelectedSizes([])
+          setSelectedSort(null)
+          setSelectedOnSale(false)
+          setSelectedFeatured(false)
+          setSelectedIsVip(false)
+          setSelectedIsNew(false)
+        }}
+      />
+
+      {/* Grid de productos */}
+      <NewProducts
+        selectedSubcategory={selectedSubcategory}
+        selectedColors={selectedColors}
+        selectedSizes={selectedSizes}
+        selectedSort={selectedSort}
+        selectedOnSale={selectedOnSale}
+        selectedFeatured={selectedFeatured}
+        selectedIsVip={selectedIsVip}
+        selectedIsNew={selectedIsNew}
+      />
+    </>
+  )
+}
+
+export default function NuevoPage() {
+  return (
+    <div className="min-h-screen">
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          {/* Hero section */}
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">NUEVO</h1>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Descubre nuestras últimas novedades. Productos añadidos en los últimos 7 días.
-            </p>
-          </div>
-
-          <ProductFilterBar
-            category="nuevo"
-            availableColors={availableColors}
-            availableSizes={availableSizes}
-            selectedColors={selectedColors}
-            selectedSizes={selectedSizes}
-            selectedSort={selectedSort ?? undefined}
-            selectedOnSale={selectedOnSale}
-            selectedFeatured={selectedFeatured}
-            selectedIsVip={selectedIsVip}
-            selectedIsNew={selectedIsNew}
-            onApplyFilters={(f) => {
-              setSelectedSubcategory(f.subcategoria ?? null)
-              setSelectedColors(f.colors ?? [])
-              setSelectedSizes(f.sizes ?? [])
-              setSelectedSort(f.sort ?? null)
-              setSelectedOnSale(Boolean(f.on_sale))
-              setSelectedFeatured(Boolean(f.featured))
-              setSelectedIsVip(Boolean(f.is_vip))
-              setSelectedIsNew(Boolean(f.is_new))
-            }}
-            onColorsChange={(c) => setSelectedColors(c)}
-            onSizeChange={(s) => setSelectedSizes(s)}
-            onSortChange={(s) => setSelectedSort(s)}
-            onClearFilters={() => {
-              setSelectedSubcategory(null)
-              setSelectedColors([])
-              setSelectedSizes([])
-              setSelectedSort(null)
-              setSelectedOnSale(false)
-              setSelectedFeatured(false)
-              setSelectedIsVip(false)
-              setSelectedIsNew(false)
-            }}
-          />
-
-          {/* Grid de productos */}
-          <NewProducts
-            selectedSubcategory={selectedSubcategory}
-            selectedColors={selectedColors}
-            selectedSizes={selectedSizes}
-            selectedSort={selectedSort}
-            selectedOnSale={selectedOnSale}
-            selectedFeatured={selectedFeatured}
-            selectedIsVip={selectedIsVip}
-            selectedIsNew={selectedIsNew}
-          />
+          <Suspense fallback={<LoadingSkeleton count={8} compact />}>
+            <NuevoContent />
+          </Suspense>
         </div>
       </main>
 

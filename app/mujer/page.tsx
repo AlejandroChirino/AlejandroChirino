@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams, useRouter } from 'next/navigation'
 import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
@@ -11,26 +11,23 @@ import ProductFilterBar from "@/components/product-filter-bar"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 
-// Women products component
-
-
-export default function MujerPage() {
+function MujerContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-    const initialSub = (() => {
-      try {
-        const s = searchParams.get("sub")
-        if (s) {
-          const label = labelFromSlug("mujer", s)
-          if (label === "Ver todo") return null
-          return label ?? null
-        }
-      } catch (e) {
-        // ignore
+  const initialSub = (() => {
+    try {
+      const s = searchParams.get("sub")
+      if (s) {
+        const label = labelFromSlug("mujer", s)
+        if (label === "Ver todo") return null
+        return label ?? null
       }
-      return null
-    })()
+    } catch (e) {
+      // ignore
+    }
+    return null
+  })()
 
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(initialSub)
 
@@ -146,71 +143,79 @@ export default function MujerPage() {
   }, [selectedSubcategory, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
   return (
-    <div className="min-h-screen">
-      {/* Header ya incluido en el layout raíz */}
+    <>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Ropa para Mujer</h1>
+        <p className="text-gray-600">Descubre nuestra colección exclusiva para mujer</p>
+      </div>
 
+      <ProductFilterBar
+        category="mujer"
+        availableColors={availableColors}
+        availableSizes={availableSizes}
+        selectedColors={selectedColors}
+        selectedSizes={selectedSizes}
+        selectedSort={selectedSort ?? undefined}
+        selectedOnSale={selectedOnSale}
+        selectedFeatured={selectedFeatured}
+        selectedIsVip={selectedIsVip}
+        selectedIsNew={selectedIsNew}
+        onApplyFilters={(f) => {
+          setSelectedSubcategory(f.subcategoria ?? null)
+          setSelectedColors(f.colors ?? [])
+          setSelectedSizes(f.sizes ?? [])
+          setSelectedSort(f.sort ?? null)
+          setSelectedOnSale(Boolean(f.on_sale))
+          setSelectedFeatured(Boolean(f.featured))
+          setSelectedIsVip(Boolean(f.is_vip))
+          setSelectedIsNew(Boolean(f.is_new))
+        }}
+        onColorsChange={(c) => setSelectedColors(c)}
+        onSizeChange={(s) => setSelectedSizes(s)}
+        onSortChange={(s) => setSelectedSort(s)}
+        onClearFilters={() => {
+          setSelectedSubcategory(null)
+          setSelectedColors([])
+          setSelectedSizes([])
+          setSelectedSort(null)
+          setSelectedOnSale(false)
+          setSelectedFeatured(false)
+          setSelectedIsVip(false)
+          setSelectedIsNew(false)
+        }}
+      />
+
+      {/* Grid de productos */}
+      {loading ? (
+        <LoadingSkeleton count={8} compact />
+      ) : error ? (
+        <div className="text-center text-gray-500 py-16"><p>{error}</p></div>
+      ) : products.length === 0 ? (
+        <div className="text-center text-gray-500 py-16">
+          <p>No hay productos disponibles en esta {selectedSubcategory ? "subcategoría" : "categoría"}</p>
+          <div className="mt-4">
+            <button onClick={() => { setSelectedColors([]); setSelectedSizes([]); setSelectedSort(null); setSelectedOnSale(false); setSelectedFeatured(false); setSelectedIsVip(false); setSelectedIsNew(false); setSelectedSubcategory(null); }} className="px-4 py-2 rounded-md bg-accent-orange text-white">Limpiar filtros</button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} compact />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+export default function MujerPage() {
+  return (
+    <div className="min-h-screen">
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Ropa para Mujer</h1>
-            <p className="text-gray-600">Descubre nuestra colección exclusiva para mujer</p>
-          </div>
-
-          <ProductFilterBar
-            category="mujer"
-            availableColors={availableColors}
-            availableSizes={availableSizes}
-            selectedColors={selectedColors}
-            selectedSizes={selectedSizes}
-            selectedSort={selectedSort ?? undefined}
-            selectedOnSale={selectedOnSale}
-            selectedFeatured={selectedFeatured}
-            selectedIsVip={selectedIsVip}
-            selectedIsNew={selectedIsNew}
-            onApplyFilters={(f) => {
-              setSelectedSubcategory(f.subcategoria ?? null)
-              setSelectedColors(f.colors ?? [])
-              setSelectedSizes(f.sizes ?? [])
-              setSelectedSort(f.sort ?? null)
-              setSelectedOnSale(Boolean(f.on_sale))
-              setSelectedFeatured(Boolean(f.featured))
-              setSelectedIsVip(Boolean(f.is_vip))
-              setSelectedIsNew(Boolean(f.is_new))
-            }}
-            onColorsChange={(c) => setSelectedColors(c)}
-            onSizeChange={(s) => setSelectedSizes(s)}
-            onSortChange={(s) => setSelectedSort(s)}
-            onClearFilters={() => {
-              setSelectedSubcategory(null)
-              setSelectedColors([])
-              setSelectedSizes([])
-              setSelectedSort(null)
-              setSelectedOnSale(false)
-              setSelectedFeatured(false)
-              setSelectedIsVip(false)
-              setSelectedIsNew(false)
-            }}
-          />
-
-          {/* Grid de productos */}
-          {loading ? (
-            <LoadingSkeleton count={8} compact />
-          ) : error ? (
-            <div className="text-center text-gray-500 py-16"><p>{error}</p></div>
-          ) : products.length === 0 ? (
-            <div className="text-center text-gray-500 py-16">
-              <p>No hay productos disponibles en esta {selectedSubcategory ? "subcategoría" : "categoría"}</p>
-              <div className="mt-4">
-                <button onClick={() => { setSelectedColors([]); setSelectedSizes([]); setSelectedSort(null); setSelectedOnSale(false); setSelectedFeatured(false); setSelectedIsVip(false); setSelectedIsNew(false); setSelectedSubcategory(null); }} className="px-4 py-2 rounded-md bg-accent-orange text-white">Limpiar filtros</button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} compact />
-              ))}
-            </div>
-          )}
+          <Suspense fallback={<LoadingSkeleton count={8} compact />}>
+            <MujerContent />
+          </Suspense>
         </div>
       </main>
 

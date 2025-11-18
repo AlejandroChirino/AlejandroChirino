@@ -164,6 +164,7 @@ export interface SearchFilters {
 export interface ProductCardProps {
   product: Pick<Product, "id" | "name" | "price" | "sale_price" | "on_sale" | "image_url" | "category" | "subcategoria">
   compact?: boolean
+  square?: boolean
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -218,6 +219,7 @@ export interface CarouselProps {
   title?: string
   className?: string
   autoPlay?: boolean
+  square?: boolean
   autoPlayInterval?: number
 }
 

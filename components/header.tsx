@@ -13,6 +13,8 @@ import { slugFromLabel } from "@/lib/subcategoryUtils"
 const Header = memo(function Header({ initialUser }: { initialUser?: any | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  // State to hide/show header on scroll (hide when scrolling down)
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false)
   const router = useRouter()
 
   const toggleMobileMenu = useCallback(() => {
@@ -48,6 +50,8 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
   // legacy search UI removed — searches handled on /buscar
 
   const menuButtonRef = useRef<HTMLButtonElement | null>(null)
+  const lastScrollY = useRef(0)
+  const ticking = useRef(false)
 
   // Estado de usuario para mostrar perfil / logout
   const [user, setUser] = useState<any | null>(null)
@@ -115,9 +119,45 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
     }
   }, [])
 
+  // Hide header on scroll down, show on scroll up
+  useEffect(() => {
+    const THRESHOLD = 10
+
+    const onScroll = () => {
+      const currentY = window.scrollY || window.pageYOffset
+      if (ticking.current) return
+      ticking.current = true
+
+      requestAnimationFrame(() => {
+        const delta = currentY - lastScrollY.current
+        if (Math.abs(delta) < THRESHOLD) {
+          // ignore small deltas
+          ticking.current = false
+          return
+        }
+
+        if (currentY > lastScrollY.current && currentY > 50) {
+          // scrolling down and past top area -> hide
+          setIsHeaderHidden(true)
+        } else {
+          // scrolling up -> show
+          setIsHeaderHidden(false)
+        }
+
+        lastScrollY.current = currentY
+        ticking.current = false
+      })
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  const headerTransformClass = isHeaderHidden ? "-translate-y-full" : "translate-y-0"
+
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+      <header className={`fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 transform transition-transform duration-300 ${headerTransformClass}`}>
         {/* Top bar: layout móvil con 3 columnas (menu | logo centrado | iconos) */}
   <div className="h-16 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center px-3 overflow-hidden">
           {/* Mobile menu button */}
@@ -243,8 +283,8 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
         {/* Search UI removed from header — `/buscar` page handles searching */}
       </header>
 
-      {/* Spacer */}
-      <div className="h-16 lg:h-28" />
+      {/* Spacer: collapse when header is hidden so content moves up */}
+      <div className={`${isHeaderHidden ? "h-0" : "h-16 lg:h-28"}`} />
 
       {/* Mobile menu overlay (full-screen, white, slide-in) */}
       {isMobileMenuOpen && (

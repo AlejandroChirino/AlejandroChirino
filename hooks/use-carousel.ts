@@ -145,12 +145,13 @@ export function useCarousel({
 
     // Touch events
     const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault()
+      // Do not call preventDefault here to allow child links/buttons to receive taps
       handleStart(e.touches[0].clientX)
     }
 
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault()
+      // Avoid preventing default to keep native scrolling/click behavior; movement handling
+      // is managed in handleMove which updates internal drag state and pages.
       handleMove(e.touches[0].clientX)
     }
 

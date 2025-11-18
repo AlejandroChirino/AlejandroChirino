@@ -13,7 +13,7 @@ import ActionSheet from "@/components/ui/action-sheet"
 import ProductDiscountBadge from "@/components/product-discount-badge"
 import QuickAddPreview from "@/components/quick-add-preview"
 
-const ProductCard = memo(function ProductCard({ product, compact = false }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, compact = false, square = false }: ProductCardProps) {
   const { id, name, price, sale_price, on_sale, image_url, category } = product
 
   // Normalizar y calcular descuento similar a la página de detalle
@@ -23,14 +23,14 @@ const ProductCard = memo(function ProductCard({ product, compact = false }: Prod
   const discountPercentage = hasSale ? Math.round(((p - (s as number)) / p) * 100) : 0
 
   return (
-    <div className="group block focus-within:outline-none focus-within:ring-2 focus-within:ring-accent-orange rounded-lg relative">
+    <div className={cn("group block focus-within:outline-none focus-within:ring-2 focus-within:ring-accent-orange relative", square ? "rounded-none" : "rounded-lg")}>
       <Link
         href={`/producto/${id}`}
         className="block"
         aria-label={`Ver detalles de ${name}`}
       >
         <article className="h-full">
-          <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-2 md:mb-4 relative">
+          <div className={cn("aspect-[3/4] bg-gray-100 overflow-hidden mb-2 md:mb-4 relative", square ? "rounded-none" : "rounded-lg")}>
             <Image
               src={image_url || "/placeholder.svg?height=400&width=300&query=product"}
               alt={name}

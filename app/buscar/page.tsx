@@ -20,6 +20,9 @@ export default function BuscarPage() {
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(!!initialQuery)
   const [category, setCategory] = useState<ProductCategory | "all">("all")
+  // Debug/telemetry state for last request/error (used by debounced search)
+  const [lastRequest, setLastRequest] = useState<any>(null)
+  const [lastError, setLastError] = useState<any>(null)
   // (previously had debug panel state; removed for production cleanliness)
 
   // Debounced search function

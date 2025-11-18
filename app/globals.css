@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -5,7 +7,7 @@
 
 body {
   overflow-x: hidden;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
 }
 
 html {
@@ -26,6 +28,27 @@ html {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Utility para tracking consistente en textos en negrita */
+  .tracked-strong {
+    @apply tracking-tighter;
+  }
+
+  /* Botón cuadrado reutilizable para la página principal */
+  .btn-square-main {
+    @apply border border-gray-800 text-gray-800 bg-transparent px-6 py-3 rounded-none hover:bg-gray-50 transition-colors;
+  }
+
+  /* Variante pequeña para botones con borde y texto blanco sobre fondos oscuros */
+  .btn-white-outline-sm {
+    @apply border border-white text-white bg-transparent px-4 py-2 rounded-none text-sm tracking-tight;
+  }
+
+  /* Fuente Bebas Neue para secciones especiales (REBAJAS) */
+  .font-bebas {
+    font-family: 'Bebas Neue', system-ui, -apple-system, sans-serif;
+    letter-spacing: 0.02em;
   }
 }
 

@@ -13,6 +13,7 @@ interface ProductCarouselProps {
   title?: string
   className?: string
   autoPlay?: boolean
+  square?: boolean
 }
 
 const ProductCarousel = memo(function ProductCarousel({
@@ -20,9 +21,10 @@ const ProductCarousel = memo(function ProductCarousel({
   title,
   className = "",
   autoPlay = false,
+  square = false,
 }: ProductCarouselProps) {
   const isMobile = useMobile()
-  const itemsPerPage = isMobile ? 4 : 4 // 2x2 en móvil, 4x1 en desktop
+  const itemsPerPage = isMobile ? 2 : 4 // móvil: 1 fila (2 visibles), desktop: 4 en fila
 
   const {
     currentPage,
@@ -47,12 +49,7 @@ const ProductCarousel = memo(function ProductCarousel({
     return products.slice(startIndex, startIndex + itemsPerPage)
   }, [products, currentPage, itemsPerPage])
 
-  // Calcular productos parcialmente visibles (solo móvil)
-  const partiallyVisibleProducts = useMemo(() => {
-    if (!isMobile) return []
-    const nextPageStart = (currentPage + 1) * itemsPerPage
-    return products.slice(nextPageStart, nextPageStart + 2) // Mostrar 2 productos del siguiente grupo
-  }, [products, currentPage, itemsPerPage, isMobile])
+  // Ya no usamos la sección parcialmente visible: layout móvil será fila única
 
   if (products.length === 0) {
     return (
@@ -119,31 +116,17 @@ const ProductCarousel = memo(function ProductCarousel({
           }}
         >
           {isMobile ? (
-            // Layout móvil: 2x2 grid
-            <div className="grid grid-cols-2 gap-3">
+            // Layout móvil: fila única horizontal (scroll-like), cada columna ocupa 50% del ancho
+            <div className="grid grid-flow-col auto-cols-[50%] gap-3">
               {visibleProducts.map((product) => (
-                <CarouselProductCard key={product.id} product={product} isMobile={isMobile} />
+                <CarouselProductCard key={product.id} product={product} isMobile={isMobile} square={square} />
               ))}
             </div>
           ) : (
             // Layout desktop: 4 productos en fila
             <div className="grid grid-cols-4 gap-4">
               {visibleProducts.map((product) => (
-                <CarouselProductCard key={product.id} product={product} isMobile={isMobile} />
-              ))}
-            </div>
-          )}
-
-          {/* Productos parcialmente visibles - Solo móvil */}
-          {isMobile && partiallyVisibleProducts.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 mt-3 opacity-50">
-              {partiallyVisibleProducts.map((product) => (
-                <CarouselProductCard
-                  key={`partial-${product.id}`}
-                  product={product}
-                  isPartiallyVisible
-                  isMobile={isMobile}
-                />
+                <CarouselProductCard key={product.id} product={product} isMobile={isMobile} square={square} />
               ))}
             </div>
           )}

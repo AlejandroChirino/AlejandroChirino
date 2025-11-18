@@ -1,14 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
-import Header from "@/components/header"
+import { useState } from "react"
+import { createBrowserClient } from "@/lib/supabase/client"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
+import Button from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 export default function CuentaPage() {
-  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
@@ -16,15 +16,9 @@ export default function CuentaPage() {
   const [registerPassword, setRegisterPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-
-  useEffect(() => {
-    // Verificar si hay una cookie de admin activa
-    const cookies = typeof document !== "undefined" ? document.cookie : ""
-    const hasAdminSession = cookies.split(";").some((c) => c.trim() === `admin_session=lalfashion0@gmail.com`)
-    if (hasAdminSession) {
-      router.replace("/admin")
-    }
-  }, [router])
+  const [registerSuccess, setRegisterSuccess] = useState(false)
+  const router = useRouter()
+  const supabase = createBrowserClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,31 +26,24 @@ export default function CuentaPage() {
     setError("")
 
     try {
-      // Verificar si son las credenciales de admin
-      if (email === "lalfashion0@gmail.com" && password === "08938774163Aa*") {
-        // Establecer cookie de admin (httpOnly no es posible desde el cliente, pero es suficiente para el middleware)
-        // Caduca en 1 día
-        document.cookie = `admin_session=${email}; Max-Age=${60 * 60 * 24}; Path=/`
-        // Redirigir al panel de administración sin recargar la página completa
-        router.replace("/admin")
-        return
-      }
-
-      // Para usuarios normales, usar Supabase Auth
+      // Usar Supabase Auth para todos los inicios de sesión
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        setError("Credenciales incorrectas")
+        setError("Credenciales incorrectas. Por favor, inténtalo de nuevo.")
         return
       }
 
-      // Usuario normal logueado exitosamente. Supabase establece sb-access-token en cookies; navegar a /cuenta para que middleware/SSR lo detecte
+      // Redirección gestionada por el middleware
+      // Simplemente refrescamos la página para que el middleware actúe
       router.refresh()
+      router.push('/') // Redirige al home, el middleware se encargará si es admin
+
     } catch (error) {
-      setError("Error al iniciar sesión")
+      setError("Ocurrió un error inesperado al iniciar sesión.")
     } finally {
       setLoading(false)
     }
@@ -66,26 +53,32 @@ export default function CuentaPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
+    setRegisterSuccess(false)
 
     try {
+      // Validación cliente: contraseña mínima de 6 caracteres
+      if (registerPassword.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres.")
+        setLoading(false)
+        return
+      }
       const { data, error } = await supabase.auth.signUp({
         email: registerEmail,
         password: registerPassword,
         options: {
-          data: {
-            name: name,
-          },
+          // El trigger en la DB se encargará de crear el perfil
         },
       })
 
       if (error) {
-        setError("Error al crear la cuenta")
+        setError(error.message || "Error al crear la cuenta. El email podría ya estar en uso.")
         return
       }
 
-      alert("Cuenta creada exitosamente. Revisa tu email para confirmar.")
+      setRegisterSuccess(true)
+      
     } catch (error) {
-      setError("Error al crear la cuenta")
+      setError("Ocurrió un error inesperado al crear la cuenta.")
     } finally {
       setLoading(false)
     }
@@ -93,47 +86,48 @@ export default function CuentaPage() {
 
   return (
     <div className="min-h-screen">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-4xl mx-auto px-4">
           <h1 className="text-3xl font-bold mb-8">Mi Cuenta</h1>
 
           {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">{error}</div>}
+          {registerSuccess && <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">¡Cuenta creada! Revisa tu email para confirmar tu registro.</div>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-6 rounded-lg border">
               <h2 className="text-xl font-semibold mb-4">Iniciar Sesión</h2>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
+                  <label htmlFor="login-email" className="block text-sm font-medium mb-2">Email</label>
                   <input
+                    id="login-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="email"
                     placeholder="tu@email.com"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Contraseña</label>
+                  <label htmlFor="login-password" className="block text-sm font-medium mb-2">Contraseña</label>
                   <input
+                    id="login-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     required
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-accent-orange text-white py-3 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
-                >
+                <Button type="submit" disabled={loading} className="w-full py-3 text-base">
                   {loading ? "Iniciando..." : "Iniciar Sesión"}
-                </button>
+                </Button>
               </form>
             </div>
 
@@ -141,45 +135,47 @@ export default function CuentaPage() {
               <h2 className="text-xl font-semibold mb-4">Crear Cuenta</h2>
               <form onSubmit={handleRegister} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Nombre</label>
+                  <label htmlFor="register-name" className="block text-sm font-medium mb-2">Nombre</label>
                   <input
+                    id="register-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="name"
                     placeholder="Tu nombre"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
+                  <label htmlFor="register-email" className="block text-sm font-medium mb-2">Email</label>
                   <input
+                    id="register-email"
                     type="email"
                     value={registerEmail}
                     onChange={(e) => setRegisterEmail(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="email"
                     placeholder="tu@email.com"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Contraseña</label>
+                  <label htmlFor="register-password" className="block text-sm font-medium mb-2">Contraseña</label>
                   <input
+                    id="register-password"
                     type="password"
                     value={registerPassword}
                     onChange={(e) => setRegisterPassword(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
+                    autoComplete="new-password"
                     placeholder="••••••••"
                     required
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
+                <Button type="submit" disabled={loading} className="w-full py-3 text-base">
                   {loading ? "Creando..." : "Crear Cuenta"}
-                </button>
+                </Button>
               </form>
             </div>
           </div>

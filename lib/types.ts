@@ -127,20 +127,19 @@ export const SUBCATEGORIAS = {
     "Bikinis",
   ],
   accesorios: [
-    "Carteras",
-    "Mochilas",
-    "Bolsos de mano",
-    "Gorras",
-    "Gafas",
-    "Cadenas / Dijes",
+    "Ver todo",
+    "Bolsos y Carteras",
+    "Joyas y Bisutería",
+    "Cadenas y Collares",
     "Relojes",
-    "Aretes / Anillos",
-    "Cintos",
-    "Medias / Felpas",
-    "Aplicadores y brochas",
-    "Maquillaje / Labiales",
-    "Cinta para senos",
-    "Colágeno",
+    "Gafas y Lentes",
+    "Cintos y Cinturones",
+    "Maquillaje y Cosméticos",
+    "Medias y Calcetines",
+    "Accesorios de Cabello",
+    "Gorras y sombreros",
+    "Lencería y Protectores",
+    "Otros Accesorios",
   ],
   nuevo: ["Hombre", "Mujer", "Accesorios", "Zapatillas nuevas", "Ropa nueva", "Rebajas nuevas"],
   rebajas: ["Hombre", "Mujer", "Accesorios", "Artículos destacados"],
@@ -165,6 +164,7 @@ export interface SearchFilters {
 export interface ProductCardProps {
   product: Pick<Product, "id" | "name" | "price" | "sale_price" | "on_sale" | "image_url" | "category" | "subcategoria">
   compact?: boolean
+  square?: boolean
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -219,6 +219,7 @@ export interface CarouselProps {
   title?: string
   className?: string
   autoPlay?: boolean
+  square?: boolean
   autoPlayInterval?: number
 }
 

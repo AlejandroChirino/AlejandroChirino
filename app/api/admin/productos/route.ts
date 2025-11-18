@@ -1,75 +1,106 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
-import type { Database } from "@/lib/database.types"
-
-// Sanitiza y tipa parámetros de consulta
-function parseQueryParams(searchParams: URLSearchParams) {
-  const page = Number.parseInt(searchParams.get("page") || "1")
-  const limit = Number.parseInt(searchParams.get("limit") || "20")
-  const search = searchParams.get("search")?.trim() || null
-  const category = searchParams.get("category") || null
-  const subcategoria = searchParams.get("subcategoria") || null
-  const is_vip = searchParams.get("is_vip")
-  const is_new = searchParams.get("is_new")
-  const featured = searchParams.get("featured")
-  const on_sale = searchParams.get("on_sale")
-
-  return {
-    page: Number.isFinite(page) && page > 0 ? page : 1,
-    limit: Number.isFinite(limit) && limit > 0 && limit <= 100 ? limit : 20,
-    search,
-    category: category && category !== "all" ? category : null,
-    subcategoria: subcategoria && subcategoria !== "all" ? subcategoria : null,
-    is_vip: is_vip === null ? null : is_vip === "true",
-    is_new: is_new === null ? null : is_new === "true",
-    featured: featured === null ? null : featured === "true",
-    on_sale: on_sale === null ? null : on_sale === "true",
-  }
-}
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const { page, limit, search, category, subcategoria, is_vip, is_new, featured, on_sale } =
-      parseQueryParams(searchParams)
+    const search = searchParams.get("search")
+    const category = searchParams.get("category")
+    const subcategoria = searchParams.get("subcategoria")
+    const is_vip = searchParams.get("is_vip")
+    const is_new = searchParams.get("is_new")
+    const featured = searchParams.get("featured")
+    const on_sale = searchParams.get("on_sale")
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "20")
 
-    // Seleccionar todas las columnas para evitar fallos si el esquema no coincide exactamente
-    // y pedir count exacto para la paginación
-    let query = supabase
+    let query = getSupabaseAdmin()
       .from("products")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
 
     // Aplicar filtros
     if (search) {
-      // Buscar en nombre o descripción
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+      // Use RPC-backed trigram search for better relevance and typo tolerance.
+      // We'll call the RPC below and skip adding ilike to the main query.
     }
-    if (category) {
+    if (category && category !== "all") {
       query = query.eq("category", category)
     }
-    if (subcategoria) {
+    if (subcategoria && subcategoria !== "all") {
       query = query.eq("subcategoria", subcategoria)
     }
     if (is_vip !== null) {
-      query = query.eq("is_vip", is_vip)
+      query = query.eq("is_vip", is_vip === "true")
     }
     if (is_new !== null) {
-      query = query.eq("is_new", is_new)
+      query = query.eq("is_new", is_new === "true")
     }
     if (featured !== null) {
-      query = query.eq("featured", featured)
+      query = query.eq("featured", featured === "true")
     }
     if (on_sale !== null) {
-      query = query.eq("on_sale", on_sale)
+      query = query.eq("on_sale", on_sale === "true")
     }
 
     // Paginación
     const from = (page - 1) * limit
     const to = from + limit - 1
+
+    // If there's an active search term, prefer the RPC (pg_trgm) for relevance.
+    if (search) {
+      try {
+        // To support pagination with the existing RPC (which accepts limit_count but
+        // not offset), request enough rows (from + limit) and slice server-side.
+        const rpcLimit = Math.max(50, from + limit)
+        const rpcParams: any = {
+          q: search,
+          category_filter: category === "all" ? null : category,
+          min_price: null,
+          max_price: null,
+          limit_count: rpcLimit,
+        }
+
+        const { data: rpcProducts, error: rpcError } = await getSupabaseAdmin().rpc("search_products_rpc", rpcParams)
+
+        if (rpcError) {
+          console.warn("RPC search_products_rpc failed in admin/products, falling back:", rpcError)
+          // fall back to previous ilike behavior below
+        } else {
+          const products = Array.isArray(rpcProducts) ? rpcProducts.slice(from, from + limit) : []
+
+          // For pagination total, run a count using ilike as a fallback method.
+          // Note: this count may differ slightly from exact trigram matches, but is sufficient for pages.
+          let countQuery = getSupabaseAdmin().from("products").select("id", { count: "exact" })
+          countQuery = countQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+          if (category && category !== "all") countQuery = countQuery.eq("category", category)
+          const { count } = (await countQuery) as any
+
+          return NextResponse.json({
+            products,
+            pagination: {
+              page,
+              limit,
+              total: count || 0,
+              totalPages: Math.ceil((count || 0) / limit),
+            },
+          })
+        }
+      } catch (err) {
+        console.error("Error using RPC in admin/products:", err)
+        // fall through to ilike fallback
+      }
+    }
+
+    // If no search or RPC failed, use the legacy query behavior (ilike + filters + pagination)
+    if (search) {
+      query = query.ilike("name", `%${search}%`)
+    }
+
+    // Apply category/subcategoria/flags already set earlier
     query = query.range(from, to)
 
-  const { data: products, error, count } = await query
+    const { data: products, error, count } = await query
 
     if (error) {
       console.error("Error fetching products:", error)
@@ -77,12 +108,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      products: products ?? [],
+      products,
       pagination: {
         page,
         limit,
-        total: count ?? 0,
-        totalPages: Math.max(1, Math.ceil((count ?? 0) / limit)),
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     })
   } catch (error) {
@@ -95,29 +126,45 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Obtener configuración para calcular inversión
-    type ConfigRow = Database["public"]["Tables"]["configuracion"]["Row"]
-    const { data: config } = await supabase.from("configuracion").select("*").single()
+    // --- LÓGICA DE CÁLCULO DE INVERSIÓN ELIMINADA ---
+    // La base de datos (Trigger) ahora es la única responsable de calcular 'inversion_cup'.
+    // Esto resuelve el conflicto de doble cálculo.
 
-    if (!config) {
-      return NextResponse.json({ error: "Error al obtener configuración" }, { status: 500 })
+    // Construir payload tipado para la tabla products (Insert)
+    type ProductsInsert = import("@/lib/database.types").Database["public"]["Tables"]["products"]["Insert"]
+    const now = new Date().toISOString()
+    const productData: ProductsInsert = {
+      id: body.id,
+      name: body.name,
+      description: body.description ?? null,
+      // Usamos ?? null para asegurar que los campos numéricos opcionales acepten null
+      price: body.price ?? null, 
+      sale_price: body.sale_price ?? null,
+      on_sale: body.on_sale ?? null,
+      image_url: body.image_url ?? null,
+      category: body.category,
+      subcategoria: body.subcategoria ?? null,
+      sizes: body.sizes ?? [],
+      colors: body.colors ?? [],
+      stock: body.stock ?? 0,
+      featured: body.featured ?? false,
+      is_vip: body.is_vip ?? null,
+      is_new: body.is_new ?? null,
+
+      // Enviamos los valores de origen para que el TRIGGER DE LA DB los lea.
+      peso: body.peso ?? null, 
+      precio_compra: body.precio_compra ?? null,
+
+      // Enviamos NULL, permitiendo que el TRIGGER lo sobrescriba con el valor calculado.
+      inversion_cup: null, 
+      colaboracion_id: body.colaboracion_id ?? null,
+      created_at: now,
+      updated_at: now,
     }
 
-    // Calcular inversión en CUP
-    const { precio_libra, valor_dolar } = config as ConfigRow
-    const inversion_cup = (body.peso * precio_libra + body.precio_compra) * valor_dolar
-
-    const productData = {
-      ...body,
-      inversion_cup,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    type ProductInsert = Database["public"]["Tables"]["products"]["Insert"]
-    const { data: product, error } = await (supabase as any)
+    const { data: product, error } = await getSupabaseAdmin()
       .from("products")
-      .insert([productData as ProductInsert])
+      .insert([productData as never])
       .select()
       .single()
 
@@ -142,7 +189,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "No se proporcionaron IDs" }, { status: 400 })
     }
 
-    const { error } = await supabase.from("products").delete().in("id", ids)
+  const { error } = await getSupabaseAdmin().from("products").delete().in("id", ids)
 
     if (error) {
       console.error("Error deleting products:", error)

@@ -3,35 +3,22 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import CartItem from "@/components/cart-item"
-import CartSummary from "@/components/cart-summary"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "@/components/ui/use-toast"
+import { cn, formatPrice } from "@/lib/utils"
+import Button from "@/components/ui/button"
 
 export default function CarritoPage() {
-  const { items, itemCount } = useCart()
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
-
-  const handleCheckout = () => {
-    setIsCheckingOut(true)
-
-    // Simulación de proceso de checkout
-    setTimeout(() => {
-      toast({
-        title: "Pedido realizado",
-        description: "Tu pedido ha sido procesado correctamente",
-      })
-      setIsCheckingOut(false)
-    }, 2000)
-  }
+  const { items, itemCount, subtotal } = useCart()
 
   return (
-    <div className="min-h-screen">
-      <Header />
+  <div className="min-h-screen overflow-x-hidden">
+      {/* Header ya incluido en el layout raíz */}
 
-      <main className="py-8">
+      <main className={cn("py-8", itemCount > 0 ? "pb-28 lg:pb-8" : "")}>
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-3xl font-bold mb-8">Tu Bolsa</h1>
 
@@ -48,33 +35,46 @@ export default function CarritoPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div>
               {/* Lista de productos */}
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-lg border p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold">Productos ({itemCount})</h2>
-                    <Link href="/" className="text-accent-orange flex items-center hover:underline">
-                      <ArrowLeft className="h-4 w-4 mr-1" />
-                      Seguir comprando
-                    </Link>
-                  </div>
-
-                  <div className="divide-y">
-                    {items.map((item) => (
-                      <CartItem key={item.id} item={item} />
-                    ))}
-                  </div>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold">Productos ({itemCount})</h2>
+                  <Link href="/" className="text-accent-orange flex items-center hover:underline">
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Seguir comprando
+                  </Link>
                 </div>
-              </div>
 
-              {/* Resumen de compra */}
-              <div className="lg:col-span-1">
-                <CartSummary onCheckout={handleCheckout} />
+                <div className="divide-y divide-gray-200">
+                  {items.map((item) => (
+                    <CartItem key={item.id} item={item} />
+                  ))}
+                </div>
               </div>
             </div>
           )}
         </div>
+
+        {/* Barra fija inferior en móvil */}
+        {itemCount > 0 && (
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-[0_-6px_16px_rgba(0,0,0,0.06)] p-4 z-40">
+            <div className="max-w-7xl mx-auto px-2">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs text-gray-500">Subtotal</p>
+                  <p className="text-lg font-bold">{formatPrice(subtotal)}</p>
+                </div>
+                <p className="text-xs text-gray-500">El envío se calcula en el checkout</p>
+              </div>
+              <Link href="/checkout" className="block">
+                <Button className="w-full" size="lg">
+                  Proceder al checkout
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />

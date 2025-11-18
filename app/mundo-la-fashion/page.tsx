@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Suspense } from "react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import ContentRenderer from "@/components/mundo-la-fashion/content-renderer"
 import { Sparkles, Filter } from "lucide-react"
@@ -116,7 +116,7 @@ function MundoContent() {
 export default function MundoLaFashionPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main>
         {/* Hero Section */}

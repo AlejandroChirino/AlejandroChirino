@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
-import Input from "@/components/ui/input"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Upload, ImageIcon, X, AlertCircle, RefreshCw } from "lucide-react"
 import type { ProductFormData } from "@/lib/admin-types"
 
@@ -193,16 +194,19 @@ export function ImageUpload({ formData, updateField }: ImageUploadProps) {
         </>
       )}
 
-      <Input
-        label="URL de imagen (alternativo)"
-        value={formData.image_url || ""}
-        onChange={(e) => {
-          updateField("image_url", e.target.value)
-          setError(null)
-        }}
-        placeholder="https://ejemplo.com/imagen.jpg o https://drive.google.com/..."
-        disabled={uploading}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="image_url_alt">URL de imagen (alternativo)</Label>
+        <Input
+          id="image_url_alt"
+          value={formData.image_url || ""}
+          onChange={(e) => {
+            updateField("image_url", e.target.value)
+            setError(null)
+          }}
+          placeholder="https://ejemplo.com/imagen.jpg o https://drive.google.com/..."
+          disabled={uploading}
+        />
+      </div>
 
       <p className="text-xs text-gray-500">Formatos soportados: JPG, PNG, GIF, WebP. Tamaño máximo: 5MB</p>
       <p className="text-xs text-amber-600">

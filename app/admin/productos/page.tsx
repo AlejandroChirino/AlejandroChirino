@@ -8,6 +8,7 @@ import { ProductsTable } from "@/components/admin/products-table"
 import { ProductsFilters } from "@/components/admin/products-filters"
 import { useAdminProducts } from "@/hooks/use-admin-products"
 import { useToast } from "@/components/ui/use-toast"
+import { ConfiguracionPreciosModal } from "@/components/admin/configuracion-precios-modal"
 
 export default function AdminProductosPage() {
   const router = useRouter()
@@ -134,6 +135,9 @@ export default function AdminProductosPage() {
             )}
           </>
         )}
+
+        {/* Modal de configuración (solo UI/frontend) */}
+        <ConfiguracionPreciosModal isOpen={showConfigModal} onClose={() => setShowConfigModal(false)} />
       </div>
     </div>
   )

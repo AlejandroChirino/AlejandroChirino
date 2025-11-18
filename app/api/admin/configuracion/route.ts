@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET() {
   try {
-    const { data: config, error } = await supabase.from("configuracion").select("*").single()
+  const resp = await getSupabaseAdmin().from("configuracion").select("*").single()
+  const config = resp.data as { id: number; precio_libra: number; valor_dolar: number; updated_at?: string } | null
+  const error = resp.error
 
     if (error) {
       console.error("Error fetching config:", error)
@@ -21,13 +23,13 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const { data: config, error } = await supabase
+    const { data: config, error } = await getSupabaseAdmin()
       .from("configuracion")
       .update({
         precio_libra: body.precio_libra,
         valor_dolar: body.valor_dolar,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq("id", 1)
       .select()
       .single()

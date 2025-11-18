@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { notFound } from "next/navigation"
 import { Heart, Share2, Star, Truck, Shield, RotateCcw } from "lucide-react"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import Breadcrumbs from "@/components/breadcrumbs"
 import ProductGallery from "@/components/product-gallery"
@@ -16,8 +16,10 @@ import { useFavorites } from "@/hooks/use-favorites"
 // Importar el contexto del carrito
 import { useCart } from "@/contexts/cart-context"
 import { formatPrice } from "@/lib/utils"
+import ProductPrice from "@/components/product-price"
 import ProductCarousel from "@/components/product-carousel"
-import { supabase } from "@/lib/supabase"
+import ProductDiscountBadge from "@/components/product-discount-badge"
+import { supabase } from "@/lib/supabaseClient"
 import LoadingSkeleton from "@/components/loading-skeleton"
 
 interface ProductPageProps {
@@ -30,7 +32,7 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function fetchSimilarProducts() {
       try {
         setLoading(true)
@@ -43,7 +45,7 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
 
         const { data, error } = await supabase
           .from("products")
-          .select("id, name, price, image_url, category")
+          .select("id, name, price, sale_price, on_sale, image_url, category")
           .eq("category", category)
           .neq("id", currentProductId)
           .limit(8)
@@ -108,7 +110,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <Header />
+        {/* Header ya incluido en el layout raíz */}
         <main className="py-4 md:py-8">
           <div className="max-w-7xl mx-auto px-4">
             {/* Loading skeleton */}
@@ -158,25 +160,30 @@ export default function ProductPage({ params }: ProductPageProps) {
   }
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: `Mira este producto: ${product.name}`,
-          url: window.location.href,
-        })
-      } catch (error) {
-        console.log("Error sharing:", error)
+    // Asegurar ejecución solo en cliente
+    if (typeof navigator !== "undefined" && typeof window !== "undefined") {
+      if (typeof (navigator as any).share === "function") {
+        try {
+          await (navigator as any).share({
+            title: product.name,
+            text: `Mira este producto: ${product.name}`,
+            url: window.location.href,
+          })
+          return
+        } catch (error) {
+          console.log("Error sharing:", error)
+        }
       }
-    } else {
-      // Fallback to clipboard
-      try {
-        await navigator.clipboard.writeText(window.location.href)
-        setToastMessage("Enlace copiado al portapapeles")
-        setToastType("success")
-        setShowToast(true)
-      } catch (error) {
-        console.log("Error copying to clipboard:", error)
+      // Fallback to clipboard si está disponible
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        try {
+          await navigator.clipboard.writeText(window.location.href)
+          setToastMessage("Enlace copiado al portapapeles")
+          setToastType("success")
+          setShowToast(true)
+        } catch (error) {
+          console.log("Error copying to clipboard:", error)
+        }
       }
     }
   }
@@ -241,19 +248,23 @@ export default function ProductPage({ params }: ProductPageProps) {
     },
   ]
 
-  // Calculate discount (mock)
-  const originalPrice = product.price * 1.2
-  const hasDiscount = true
-  const discountPercentage = Math.round(((originalPrice - product.price) / originalPrice) * 100)
+  // Calcular descuento real usando los campos de producto
+  const hasDiscount = !!(product.on_sale && product.sale_price != null && product.sale_price < product.price)
+  const discountPercentage = hasDiscount
+    ? Math.round(((product.price - (product.sale_price || 0)) / product.price) * 100)
+    : 0
+  const displayPrice = hasDiscount && product.sale_price ? product.sale_price : product.price
+  const originalPrice = hasDiscount && product.sale_price ? product.price : undefined
 
   return (
-    <div className="min-h-screen">
-      <Header />
+    // Evitar scroll horizontal global en la página de detalle
+    <div className="min-h-screen overflow-x-hidden">
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-4 md:py-8">
         <div className="max-w-7xl mx-auto px-4">
-          {/* Breadcrumbs */}
-          <Breadcrumbs items={breadcrumbItems} className="mb-6" />
+          {/* Breadcrumbs: prevenir desbordes horizontales */}
+          <Breadcrumbs items={breadcrumbItems} className="mb-6 max-w-full overflow-hidden" />
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* Gallery - Mobile: full width, Desktop: 3/5 */}
@@ -286,18 +297,25 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
 
               {/* Discount badge */}
-              {hasDiscount && (
-                <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">
-                  -{discountPercentage}%
-                </div>
-              )}
+              <ProductDiscountBadge
+                price={product.price}
+                sale_price={product.sale_price}
+                on_sale={product.on_sale}
+                className="absolute top-4 left-4"
+              />
             </div>
 
             {/* Product Info - Mobile: full width, Desktop: 2/5 */}
             <div className="lg:col-span-2 space-y-6">
               {/* Title and Rating */}
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                {/* Título: manejar cadenas largas sin espacios para no estirar el layout */}
+                <h1
+                  className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 w-full max-w-full break-all"
+                  style={{ overflowWrap: "anywhere" }}
+                >
+                  {product.name}
+                </h1>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
@@ -311,10 +329,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               {/* Price */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl md:text-3xl font-bold text-gray-900">{formatPrice(product.price)}</span>
-                  {hasDiscount && (
-                    <span className="text-lg text-gray-500 line-through">{formatPrice(originalPrice)}</span>
-                  )}
+                  <ProductPrice price={product.price} sale_price={product.sale_price} on_sale={product.on_sale} compact={false} />
                 </div>
                 <p className="text-sm text-gray-600">IVA incluido</p>
               </div>

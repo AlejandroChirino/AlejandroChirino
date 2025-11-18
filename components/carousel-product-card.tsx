@@ -13,6 +13,7 @@ const CarouselProductCard = memo(function CarouselProductCard({
   product,
   isPartiallyVisible = false,
   isMobile = false,
+  square = false,
 }: CarouselProductCardProps) {
   const { id, name, price, image_url } = product
 
@@ -20,14 +21,15 @@ const CarouselProductCard = memo(function CarouselProductCard({
     <Link
       href={`/producto/${id}`}
       className={cn(
-        "group block focus:outline-none focus:ring-2 focus:ring-accent-orange rounded-lg transition-all duration-300",
+        "group block focus:outline-none focus:ring-2 focus:ring-accent-orange transition-all duration-300",
+        square ? "rounded-none" : "rounded-lg",
         isPartiallyVisible && "opacity-80 scale-95",
         !isMobile && "hover:scale-105 hover:shadow-lg",
       )}
       aria-label={`Ver detalles de ${name}`}
     >
       <article className="h-full">
-        <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-2 md:mb-3 relative">
+        <div className={cn("aspect-[3/4] bg-gray-100 overflow-hidden mb-2 md:mb-3 relative", square ? "rounded-none" : "rounded-lg")}>
           <Image
             src={image_url || "/placeholder.svg?height=400&width=300&query=product"}
             alt={name}

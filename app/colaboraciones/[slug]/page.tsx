@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, Users, ExternalLink } from "lucide-react"
 import Link from "next/link"
-import Header from "@/components/header"
+// Header provisto por RootLayout
 import Footer from "@/components/footer"
 import Breadcrumbs from "@/components/breadcrumbs"
 import ProductCard from "@/components/product-card"
@@ -20,7 +20,7 @@ interface ColaboracionPageProps {
 }
 
 export default function ColaboracionPage({ params }: ColaboracionPageProps) {
-  const resolvedParams = React.use(params) as { slug: string }
+  const { slug } = React.use(params) as { slug: string }
   const [colaboracion, setColaboracion] = useState<Colaboracion | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,7 +30,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
     async function fetchData() {
       try {
         // Fetch colaboracion details
-        const colaboracionResponse = await fetch(`/api/colaboraciones/${resolvedParams.slug}`)
+        const colaboracionResponse = await fetch(`/api/colaboraciones/${slug}`)
         if (colaboracionResponse.status === 404) {
           notFound()
         }
@@ -40,7 +40,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
         }
 
         // Fetch products
-        const productsResponse = await fetch(`/api/colaboraciones/${resolvedParams.slug}/productos`)
+        const productsResponse = await fetch(`/api/colaboraciones/${slug}/productos`)
         if (productsResponse.ok) {
           const productsData = await productsResponse.json()
           setProducts(productsData)
@@ -54,12 +54,12 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
     }
 
     fetchData()
-  }, [resolvedParams.slug])
+  }, [slug])
 
   if (loading) {
     return (
       <div className="min-h-screen">
-        <Header />
+        {/* Header ya incluido en el layout raíz */}
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4">
             <div className="animate-pulse space-y-8">
@@ -88,7 +88,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">

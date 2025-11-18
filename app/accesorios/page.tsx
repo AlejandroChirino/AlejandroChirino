@@ -1,8 +1,6 @@
 import { Suspense } from "react"
 import Footer from "@/components/footer"
-import dynamic from "next/dynamic"
-
-const AccesoriosClient = dynamic(() => import("./AccesoriosClient"), { ssr: false })
+import AccesoriosClient from "./AccesoriosClient"
 
 export default function AccesoriosPage() {
   return (

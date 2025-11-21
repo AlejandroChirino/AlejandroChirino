@@ -32,7 +32,7 @@ async function FeaturedProducts() {
       )
     }
 
-    return <ProductCarousel products={products} title="Productos Destacados" autoPlay />
+    return <ProductCarousel products={products} autoPlay />
   } catch (error) {
     console.error("Error fetching featured products:", error)
     return (
@@ -183,6 +183,43 @@ async function FeaturedTrends() {
   }
 }
 
+async function FeaturedProductsPreview() {
+  try {
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("id, name, price, sale_price, on_sale, image_url, category")
+      .eq("featured", true)
+      .limit(20)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching featured products:", error)
+      return (
+        <div className="text-center text-gray-500 py-8">
+          <p>Error al cargar productos destacados</p>
+        </div>
+      )
+    }
+
+    if (!products || products.length === 0) {
+      return (
+        <div className="text-center text-gray-500 py-8">
+          <p>No hay productos destacados disponibles</p>
+        </div>
+      )
+    }
+
+    return <ProductCarousel products={products} autoPlay />
+  } catch (error) {
+    console.error("Error fetching featured products:", error)
+    return (
+      <div className="text-center text-gray-500 py-8">
+        <p>Error al cargar productos destacados</p>
+      </div>
+    )
+  }
+}
+
 export default function HomePage() {
   return (
     <div className="min-h-screen">
@@ -227,26 +264,34 @@ export default function HomePage() {
 
         {/* Banner Mujer */}
         <section id="BannerMujer" className="pt-4">
-          <div className="relative w-full h-screen">
-            {/* Background image */}
+          <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '1 / 1' }}>
+            {/* Background image (square, crop left) */}
             <Image
-              src="/pexels-dantemunozphoto-16152528.jpg"
+              src="/IMG_9061.JPG"
               alt="Mujer - La L Fashion"
               fill
               className="absolute inset-0 w-full h-full object-cover"
+              style={{ objectPosition: '40% 50%' }}
               priority
             />
             {/* Dark overlay to ensure contrast */}
             <div className="absolute inset-0 bg-black/40" />
 
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center max-w-4xl mx-auto px-4">
-                <h3 className="text-4xl md:text-6xl font-extrabold text-white mb-4 tracking-tighter tracked-strong">WOMEN</h3>
-                <div className="flex justify-center">
-                  <a href="/mujer" className="btn-white-outline-sm font-medium">
-                    Explorar
-                  </a>
-                </div>
+            <div style={{ position: 'absolute', top: '35%', left: '75%', transform: 'translate(-50%, -50%)' }}>
+              <div className="text-center max-w-md px-4 flex flex-col items-center gap-1">
+                <h3
+                  className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter tracked-strong"
+                  style={{ transform: 'scale(0.9)', transformOrigin: 'center', margin: 0 }}
+                >
+                  WOMEN
+                </h3>
+                <a
+                  href="/mujer"
+                  className="btn-white-outline-sm font-medium inline-block"
+                  style={{ transform: 'scale(0.8)', transformOrigin: 'center' }}
+                >
+                  Explorar
+                </a>
               </div>
             </div>
           </div>
@@ -296,7 +341,7 @@ export default function HomePage() {
 
         {/* Banner Rebajas */}
         <section id="BannerRebajas" className="pt-0">
-          <div className="relative w-full h-screen">
+          <div className="relative w-full h-[80vh]">
             <Image
               src="/pexels-peterfazekas-953782.jpg"
               alt="Rebajas - La L Fashion"
@@ -305,7 +350,7 @@ export default function HomePage() {
               priority
             />
             <div className="absolute inset-0 bg-black/50" />
-            <div className="absolute left-0 right-0 top-[60%] flex items-center justify-center">
+            <div className="absolute left-0 right-0 top-[45%] flex items-center justify-center">
               <div className="text-center px-4">
                 <h2 className="font-bebas text-white text-8xl md:text-[110px] uppercase mb-2">REBAJAS</h2>
                 <h3 className="font-bebas text-white text-6xl md:text-[84px] uppercase mb-4">EXCLUSIVAS</h3>
@@ -320,28 +365,52 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Featured products section */}
-        <section className="py-16 px-4 bg-gray-50">
+        {/* Productos destacados */}
+        <section className="py-8 px-4">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Productos Destacados</h2>
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold mb-4 tracked-strong">Productos destacados</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Descubre los productos más solicitados y vendidos por nuestros clientes. ¡No te los pierdas!
+              </p>
+            </div>
             <Suspense fallback={<LoadingSkeleton count={4} compact />}>
-              <FeaturedProducts />
+              <FeaturedProductsPreview />
             </Suspense>
           </div>
         </section>
 
-        {/* Accessories section */}
-        <section className="py-16 px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Accesorios</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Completa tu look con nuestra selección de accesorios únicos
-              </p>
+        {/* Accesorios */}
+        <section id="BannerAccesorios" className="pt-4">
+          <div className="relative w-full" style={{ aspectRatio: '2 / 2.5' }}>
+            {/* Imagen de fondo */}
+            <Image
+              src="/download%20(5).jpeg"
+              alt="Accesorios - La L Fashion"
+              fill
+              className="absolute inset-0 w-full h-full object-cover"
+              priority
+            />
+            {/* Overlay oscuro para contraste */}
+            <div className="absolute inset-0 bg-black/302" />
+
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+              <div className="text-center max-w-md px-4 flex flex-col items-center gap-1">
+                <h3
+                  className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter tracked-strong"
+                  style={{ transform: 'scale(0.9)', transformOrigin: 'center', margin: 0 }}
+                >
+                  ACCESORIOS
+                </h3>
+                <a
+                  href="/accesorios"
+                  className="btn-white-outline-sm font-medium inline-block"
+                  style={{ transform: 'scale(0.8)', transformOrigin: 'center' }}
+                >
+                  Explorar
+                </a>
+              </div>
             </div>
-            <Suspense fallback={<LoadingSkeleton count={4} compact />}>
-              <AccessoriesPreview />
-            </Suspense>
           </div>
         </section>
       </main>

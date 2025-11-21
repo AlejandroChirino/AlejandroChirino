@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import ActionSheet from "@/components/ui/action-sheet"
 import { SUBCATEGORIAS, type ProductCategory } from "@/lib/types"
 import { ChevronDown, Filter as FilterIcon } from "lucide-react"
@@ -42,7 +42,7 @@ export default function ProductFilterBar({
   onApplyFilters,
 }: ProductFilterBarProps) {
   const [visible, setVisible] = useState(true)
-  const [lastY, setLastY] = useState(0)
+  const lastY = useRef(0)
 
   // small action sheet states
   const [sheetOpen, setSheetOpen] = useState<"sort" | "colors" | "size" | null>(null)
@@ -70,22 +70,27 @@ export default function ProductFilterBar({
   const [optionsLoading, setOptionsLoading] = useState(false)
 
   useEffect(() => {
+    let ticking = false
     const onScroll = () => {
       const y = window.scrollY
-      const delta = y - lastY
-      if (Math.abs(delta) < 8) return
-      if (delta > 0) {
-        // scrolling down
-        setVisible(false)
-      } else {
-        // scrolling up
-        setVisible(true)
-      }
-      setLastY(y)
+      if (ticking) return
+      window.requestAnimationFrame(() => {
+        const delta = y - lastY.current
+        if (Math.abs(delta) >= 8) {
+          if (delta > 0) {
+            setVisible(false)
+          } else {
+            setVisible(true)
+          }
+          lastY.current = y
+        }
+        ticking = false
+      })
+      ticking = true
     }
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
-  }, [lastY])
+  }, [])
 
   // subcategories for this category (exclude Ver todo here; global modal will include it)
   const subcats = (SUBCATEGORIAS[category as keyof typeof SUBCATEGORIAS] || []).filter((s) => s !== "Ver todo")
@@ -163,7 +168,10 @@ export default function ProductFilterBar({
   }, [globalOpen, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
   return (
-    <div className={`w-full bg-white border-b border-gray-100 transition-transform ${visible ? "translate-y-0" : "-translate-y-full"}`} style={{ position: "sticky", top: 64, zIndex: 30 }}>
+    <div
+      className={`w-full bg-white border-b border-gray-100 transform transition-all duration-300 ease-in-out ${visible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}
+      style={{ position: "sticky", top: 64, zIndex: 30 }}
+    >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center gap-1 py-2 flex-wrap sm:flex-nowrap">
           <button

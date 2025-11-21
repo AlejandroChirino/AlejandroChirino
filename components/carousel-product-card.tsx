@@ -7,6 +7,7 @@ import type { ProductCardProps } from "@/lib/types"
 interface CarouselProductCardProps extends ProductCardProps {
   isPartiallyVisible?: boolean
   isMobile?: boolean
+  badgeType?: "nuevo" | "top-ventas"
 }
 
 const CarouselProductCard = memo(function CarouselProductCard({
@@ -14,6 +15,7 @@ const CarouselProductCard = memo(function CarouselProductCard({
   isPartiallyVisible = false,
   isMobile = false,
   square = false,
+  badgeType = "top-ventas",
 }: CarouselProductCardProps) {
   const { id, name, price, image_url } = product
 
@@ -38,6 +40,10 @@ const CarouselProductCard = memo(function CarouselProductCard({
             sizes="(max-width: 768px) 50vw, 25vw"
             loading="lazy"
           />
+          {/* Etiqueta Destacada */}
+          <span className="absolute top-2 left-2 bg-accent-orange text-white text-xs md:text-sm font-bold px-2 py-1 rounded">
+            {badgeType === "nuevo" ? "Nuevo" : "TOP VENTAS"}
+          </span>
         </div>
         <div className="space-y-1">
           <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-accent-orange transition-colors text-xs md:text-sm">
@@ -45,6 +51,23 @@ const CarouselProductCard = memo(function CarouselProductCard({
           </h3>
           <p className="text-accent-orange font-bold text-sm md:text-base">{formatPrice(price)}</p>
         </div>
+        {/* Iconos de Acción Rápida */}
+        {!isMobile && (
+          <div className="absolute bottom-2 right-2 flex gap-2">
+            <button
+              className="bg-white text-gray-900 rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-orange"
+              aria-label="Añadir a Carrito"
+            >
+              🛒
+            </button>
+            <button
+              className="bg-white text-gray-900 rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-orange"
+              aria-label="Vista Rápida"
+            >
+              👁️
+            </button>
+          </div>
+        )}
       </article>
     </Link>
   )

@@ -1,7 +1,7 @@
 "use client"
 
 import { memo, useState, useCallback, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft } from "lucide-react"
 // Importar el CartBadge
@@ -15,7 +15,11 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
   const [searchQuery, setSearchQuery] = useState("")
   // State to hide/show header on scroll (hide when scrolling down)
   const [isHeaderHidden, setIsHeaderHidden] = useState(false)
+  // Detectar si el header está sobre el banner principal
+  const [isOverBanner, setIsOverBanner] = useState(true);
   const router = useRouter()
+  const pathname = usePathname() // Obtener la ruta actual
+  const isHomePage = pathname === "/" // Verificar si estamos en la página principal
 
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen((prev) => !prev)
@@ -104,10 +108,10 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
       if (maybeGet && typeof maybeGet.then === "function") {
         maybeGet.then((res: any) => {
           if (!mounted) return
-          setUser((prev) => prev ?? res?.data?.user ?? null)
+          setUser((prev: any) => prev ?? res?.data?.user ?? null)
         }).catch(() => {})
       } else if (maybeGet?.data?.user) {
-        setUser((prev) => prev ?? maybeGet.data.user ?? null)
+        setUser((prev: any) => prev ?? maybeGet.data.user ?? null)
       }
     } catch (e) {
       // ignore
@@ -153,11 +157,29 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  const headerTransformClass = isHeaderHidden ? "-translate-y-full" : "translate-y-0"
+  // Detectar si el header está sobre el banner principal
+  useEffect(() => {
+    if (!isHomePage) return; // Solo aplicar en la página principal
 
+    const handleScroll = () => {
+      const scrollY = window.scrollY || window.pageYOffset;
+      setIsOverBanner(scrollY < 100); // Cambiar el umbral según el tamaño del banner
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isHomePage]);
+
+  // Ajustar el borde del header para que sea transparente cuando el fondo también lo sea
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 transform transition-transform duration-300 ${headerTransformClass}`}>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transform transition-all duration-500 ease-in-out ${
+          isHomePage && isOverBanner
+            ? "bg-transparent text-white border-transparent"
+            : "bg-white text-gray-900 border-b border-gray-200"
+        } ${isHeaderHidden ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
+      >
         {/* Top bar: layout móvil con 3 columnas (menu | logo centrado | iconos) */}
   <div className="h-16 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center px-3 overflow-hidden">
           {/* Mobile menu button */}
@@ -283,8 +305,15 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
         {/* Search UI removed from header — `/buscar` page handles searching */}
       </header>
 
-      {/* Spacer: collapse when header is hidden so content moves up */}
-      <div className={`${isHeaderHidden ? "h-0" : "h-16 lg:h-28"}`} />
+      {/* Restaurar el espaciador solo en las páginas que no son la principal */}
+      {!isHomePage && (
+        <div className={`${isHeaderHidden ? "h-0" : "h-16 lg:h-28"} bg-white`} />
+      )}
+
+      {/* Ajustar el z-index del header para que no se sobreponga al menú lateral */}
+      {isMobileMenuOpen && (
+        <style>{`header { z-index: 40; }`}</style>
+      )}
 
       {/* Mobile menu overlay (full-screen, white, slide-in) */}
       {isMobileMenuOpen && (
@@ -297,7 +326,7 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
 export default Header
 
 // Subcomponente del Menú Móvil para aislar cambios y no afectar desktop
-function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; openerRef?: React.RefObject<HTMLButtonElement> }) {
+function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; openerRef?: React.RefObject<HTMLButtonElement | null> }) {
   const router = useRouter()
   const [slideIn, setSlideIn] = useState(false)
   const [bouncePhase, setBouncePhase] = useState(false)

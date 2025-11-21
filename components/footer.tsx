@@ -1,86 +1,103 @@
-import { memo } from "react"
-import Link from "next/link"
+import { Instagram, Facebook, MessageCircle } from "lucide-react";
 
-const Footer = memo(function Footer() {
-  const currentYear = new Date().getFullYear()
-
+export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-white py-12" role="contentinfo">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand section */}
-          <div>
-            <h3 className="text-lg font-bold mb-4">La L Fashion</h3>
-            <p className="text-gray-400">Tu tienda de confianza para ropa y zapatos de calidad.</p>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <h4 className="font-semibold mb-4">Categorías</h4>
-            <nav className="space-y-2" role="navigation" aria-label="Categorías del pie de página">
-              <Link href="/mujer" className="block text-gray-400 hover:text-white transition-colors">
-                Mujer
-              </Link>
-              <Link href="/hombre" className="block text-gray-400 hover:text-white transition-colors">
-                Hombre
-              </Link>
-              <Link href="/accesorios" className="block text-gray-400 hover:text-white transition-colors">
-                Accesorios
-              </Link>
-              <Link href="/nuevo" className="block text-gray-400 hover:text-white transition-colors">
-                Nuevo
-              </Link>
-            </nav>
-          </div>
-
-          {/* Help section */}
-          <div>
-            <h4 className="font-semibold mb-4">Ayuda</h4>
-            <nav className="space-y-2" role="navigation" aria-label="Enlaces de ayuda">
-              <Link href="/contacto" className="block text-gray-400 hover:text-white transition-colors">
-                Contacto
-              </Link>
-              <Link href="/envios" className="block text-gray-400 hover:text-white transition-colors">
-                Envíos
-              </Link>
-              <Link href="/devoluciones" className="block text-gray-400 hover:text-white transition-colors">
-                Devoluciones
-              </Link>
-            </nav>
-          </div>
-
-          {/* Social media */}
-          <div>
-            <h4 className="font-semibold mb-4">Síguenos</h4>
-            <div className="flex space-x-4">
-              <a
-                href="https://facebook.com"
-                className="text-gray-400 hover:text-white transition-colors"
-                aria-label="Síguenos en Facebook"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Facebook
-              </a>
-              <a
-                href="https://instagram.com"
-                className="text-gray-400 hover:text-white transition-colors"
-                aria-label="Síguenos en Instagram"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Instagram
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; {currentYear} La L Fashion. Todos los derechos reservados.</p>
+    <footer className="bg-black text-white py-8">
+      {/* Sección Superior: Redes Sociales */}
+      <div className="container mx-auto px-4 text-center mb-8">
+        <div className="flex justify-center gap-6">
+          <a
+            href="https://www.instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="p-2 hover:text-pink-500 transition-colors"
+          >
+            <Instagram className="h-6 w-6" />
+          </a>
+          <a
+            href="https://www.facebook.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            className="p-2 hover:text-blue-600 transition-colors"
+          >
+            <Facebook className="h-6 w-6" />
+          </a>
+          <a
+            href="https://wa.me/1234567890"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="p-2 hover:text-green-500 transition-colors"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </a>
         </div>
       </div>
-    </footer>
-  )
-})
 
-export default Footer
+      {/* Secciones de Navegación y Contacto */}
+      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Ayudas */}
+        <div>
+          <h3 className="text-lg font-bold mb-4">AYUDAS</h3>
+          <ul className="space-y-2">
+            <li>
+              <a
+                href="https://wa.me/5352434599"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gray-400 transition-colors"
+              >
+                Contacto
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        {/* LA L FASHION */}
+        <div>
+          <h3 className="text-lg font-bold mb-4">LA L FASHION</h3>
+          <p className="text-sm text-gray-400">
+            Tu tienda de confianza para ropa y zapatos de calidad.
+          </p>
+        </div>
+
+        {/* Categorías */}
+        <div>
+          <h3 className="text-lg font-bold mb-4">CATEGORÍAS</h3>
+          <ul className="space-y-2">
+            <li>
+              <a href="/mujer" className="hover:text-gray-400 transition-colors">
+                Mujer
+              </a>
+            </li>
+            <li>
+              <a href="/hombre" className="hover:text-gray-400 transition-colors">
+                Hombre
+              </a>
+            </li>
+            <li>
+              <a href="/accesorios" className="hover:text-gray-400 transition-colors">
+                Accesorios
+              </a>
+            </li>
+            <li>
+              <a href="/nuevo" className="hover:text-gray-400 transition-colors">
+                Nuevo
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Información de Contacto y Legal */}
+      <div className="container mx-auto px-4 mt-8 text-center">
+        <p className="text-sm text-gray-400">
+          Dirección: Calle Capotico #435 E/ Calle Coronel Montero y Calle Amado Estevez, ciudad Bayamo, provincia Granma, País Cuba
+        </p>
+        <p className="text-sm text-gray-400 mt-4">© 2025 La L Fashion. Todos los derechos reservados.</p>
+      </div>
+    </footer>
+  );
+}

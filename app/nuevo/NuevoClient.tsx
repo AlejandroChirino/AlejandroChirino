@@ -8,6 +8,7 @@ import LoadingSkeleton from "@/components/loading-skeleton"
 import ProductFilterBar from "@/components/product-filter-bar"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
+import CarouselProductCard from "@/components/carousel-product-card"
 
 function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew }:
   { selectedSubcategory: string | null; selectedColors: string[]; selectedSizes: string[]; selectedSort: string | null; selectedOnSale: boolean; selectedFeatured: boolean; selectedIsVip: boolean; selectedIsNew: boolean }) {
@@ -49,14 +50,10 @@ function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selec
         for (const s of selectedSizes) params.append("sizes", s)
 
         const res = await fetch(`/api/products?${params.toString()}`)
-        if (!res.ok) {
-          setError("Error al cargar los productos nuevos")
-          return
-        }
         const data = await res.json()
-        setProducts(Array.isArray(data) ? data : data?.products || [])
+        setProducts(data.products || [])
       } catch (err) {
-        setError("Error al cargar los productos nuevos")
+        setError("Error al cargar los productos")
       } finally {
         setLoading(false)
       }
@@ -88,7 +85,7 @@ function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selec
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} compact />
+        <CarouselProductCard key={product.id} product={product} badgeType="nuevo" />
       ))}
     </div>
   )

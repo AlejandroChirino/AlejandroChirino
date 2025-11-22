@@ -95,8 +95,8 @@ export default function TodoPage() {
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Todo</h1>
-            <p className="text-gray-600">Todos los artículos de la tienda</p>
+            <h1 className="text-3xl font-bold mb-2 tracking-tighter leading-none">TIENDA COMPLETA</h1>
+            <p className="text-gray-600">Encuentra tu estilo perfecto, la colección completa, lista para ti.</p>
           </div>
 
           <ProductFilterBar

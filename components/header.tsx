@@ -3,7 +3,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
-import { Menu, Search, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft } from "lucide-react"
+import { Menu, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft } from "lucide-react"
 // Importar el CartBadge
 import CartBadge from "@/components/cart-badge"
 import { createBrowserClient } from "@/lib/supabase/client"
@@ -177,46 +177,31 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
         className={`fixed top-0 left-0 right-0 z-50 transform transition-all duration-500 ease-in-out ${
           isHomePage && isOverBanner
             ? "bg-transparent text-white border-transparent"
-            : "bg-white text-gray-900 border-b border-gray-200"
+            : "bg-white text-gray-900"
         } ${isHeaderHidden ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`}
       >
         {/* Top bar: layout móvil con 3 columnas (menu | logo centrado | iconos) */}
-  <div className="h-16 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center px-3 overflow-hidden">
-          {/* Mobile menu button */}
-          <button
-            ref={menuButtonRef}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors justify-self-start"
-            onClick={toggleMobileMenu}
-            aria-label="Abrir menú de navegación"
-            aria-expanded={isMobileMenuOpen}
-          >
-            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
-          </button>
-
-          {/* Logo (forzar una sola línea y evitar wrap en móviles) */}
+  <div className="h-12 flex items-center justify-between px-4 overflow-hidden">
+          {/* Logo (left) */}
           <Link
             href="/"
-            className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0 justify-self-center overflow-hidden max-w-full"
+            className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0 overflow-hidden max-w-full mr-8"
             aria-label="Inicio LA FASHION"
           >
-            <span className="font-bold whitespace-nowrap flex-shrink-0 leading-none text-[clamp(16px,5vw,1.5rem)]">
-              LA <span className="text-accent-orange">⚡</span> FASHION
-            </span>
+            <div className="flex items-end gap-0 whitespace-nowrap">
+              <span className="uppercase font-extrabold text-[1.15rem] leading-none">LA</span>
+              <span className="inline-block text-emerald-500 -mb-0.5 text-[1.30rem] leading-none -ml-0.01 -mr-0.01">⚡</span>
+              <span className="uppercase font-extrabold text-[1.15rem] leading-none text-gray-900">FASHION</span>
+            </div>
           </Link>
 
-          {/* Navigation icons */}
+          {/* Navigation icons on the right: Refresh, Profile, Favorites, Cart, Menu */}
           <nav
-            className="flex items-center gap-1 sm:gap-2 min-w-0 justify-self-end pr-1"
+            className="flex items-center gap-0 min-w-0 ml-auto justify-end"
             role="navigation"
             aria-label="Navegación principal"
           >
-            <button
-              onClick={toggleSearch}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Buscar productos"
-            >
-              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
+            {/* Recargar icon removed per design */}
 
             {/* VIP Access - Solo visible en desktop */}
             <Link
@@ -225,27 +210,24 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
               aria-label="Acceso VIP"
               title="Acceso VIP"
             >
-              <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-accent-orange" />
+              <Crown className="h-5 w-5 text-accent-orange" />
             </Link>
 
             {user ? (
-              <>
-                <Link
-                  href="/cuenta/perfil"
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-                  aria-label="Perfil de usuario"
-                >
-                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                </Link>
-                {/* Sign-out is intentionally only available inside the profile page. */}
-              </>
+              <Link
+                href="/cuenta/perfil"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Perfil de usuario"
+              >
+                <User className="h-4 w-4" />
+              </Link>
             ) : (
               <Link
                 href="/cuenta"
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                 aria-label="Mi cuenta"
               >
-                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                <User className="h-4 w-4" />
               </Link>
             )}
 
@@ -254,10 +236,21 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Mis favoritos"
             >
-              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Heart className="h-4 w-4" />
             </Link>
 
             <CartBadge className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0" />
+
+            {/* Mobile menu button as last element */}
+            <button
+              ref={menuButtonRef}
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={toggleMobileMenu}
+              aria-label="Abrir menú de navegación"
+              aria-expanded={isMobileMenuOpen}
+            >
+              <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+            </button>
           </nav>
         </div>
 
@@ -307,7 +300,7 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
 
       {/* Restaurar el espaciador solo en las páginas que no son la principal */}
       {!isHomePage && (
-        <div className={`${isHeaderHidden ? "h-0" : "h-16 lg:h-28"} bg-white`} />
+        <div className={`${isHeaderHidden ? "h-0" : "h-6 lg:h-28"} bg-transparent`} />
       )}
 
       {/* Ajustar el z-index del header para que no se sobreponga al menú lateral */}

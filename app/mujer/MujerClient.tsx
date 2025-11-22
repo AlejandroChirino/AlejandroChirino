@@ -143,8 +143,8 @@ export default function MujerClient() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Ropa para Mujer</h1>
-        <p className="text-gray-600">Descubre nuestra colección exclusiva para mujer</p>
+        <h1 className="text-3xl font-bold mb-2 tracking-tighter leading-none">ROPA PARA MUJER</h1>
+        <p className="text-gray-600">DESCUBRE NUESTRA COLECCIÓN EXCLUSIVA PARA MUJER</p>
       </div>
 
       <ProductFilterBar

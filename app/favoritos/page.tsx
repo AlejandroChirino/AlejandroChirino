@@ -43,7 +43,7 @@ export default async function FavoritosPage() {
 
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-8">Mis Favoritos</h1>
+          <h1 className="text-3xl font-bold mb-8 tracking-tighter leading-none">MIS FAVORITOS</h1>
 
           {!userId ? (
             <div className="text-center py-16">

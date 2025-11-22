@@ -1,8 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import SignOutButton from "@/components/signout-button"
-import Link from "next/link"
-import ProfileEditor from "@/components/profile-editor"
+import PerfilClient from "./PerfilClient"
 
 export default async function PerfilPage() {
   const supabase = await createServerClient()
@@ -13,36 +11,19 @@ export default async function PerfilPage() {
     redirect("/cuenta")
   }
 
-  const { data: profileData } = await supabase.from("user_profiles").select("id, email, role").eq("id", user.id).single()
+  const { data: profileData } = await supabase.from("user_profiles").select("id, full_name, email, role").eq("id", user.id).single()
 
   return (
     <div className="min-h-screen">
-      <main className="py-8">
+      <main className="py-4">
         <div className="max-w-3xl mx-auto px-4">
-          <h1 className="text-2xl font-bold mb-6">Perfil de usuario</h1>
+          {/* ocultar el header global y su espaciador solo en esta página */}
+          <style>{`header, header + div { display: none !important; } body { padding-top: 0 !important; }`}</style>
 
-          <div className="bg-white p-6 rounded-lg border mb-6">
-            <p className="mb-2"><strong>Email:</strong> {user.email}</p>
-            <p className="mb-2"><strong>UID:</strong> {user.id}</p>
-            <p className="mb-2"><strong>Rol:</strong> {profileData?.role ?? "user"}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ProfileEditor />
-            <div className="bg-white p-6 rounded-lg border">
-              <h3 className="text-lg font-semibold mb-4">Acciones</h3>
-              <p className="mb-4">Cerrar sesión y volver al inicio.</p>
-              <div className="flex flex-col gap-3">
-                {profileData?.role === "admin" && (
-                  <Link
-                    href="/admin"
-                    className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-center"
-                  >
-                    Panel de administración
-                  </Link>
-                )}
-
-                <SignOutButton className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200" />
-              </div>
+          {/* Sección inicial minimalista: PerfilClient maneja la visualización de nombre/email. */}
+          <div className="grid grid-cols-1 gap-6">
+            <div>
+              <PerfilClient name={(profileData as any)?.full_name ?? (user as any)?.email ?? "ALEJANDRO"} email={(profileData as any)?.email ?? (user as any)?.email} />
             </div>
           </div>
         </div>
@@ -50,3 +31,4 @@ export default async function PerfilPage() {
     </div>
   )
 }
+

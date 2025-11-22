@@ -197,7 +197,7 @@ export default function CartItem({ item }: CartItemProps) {
           <div className="pt-2 grid grid-cols-2 gap-2">
             <button
               onClick={() => setSheetOpen(false)}
-              className="h-10 rounded-full border border-gray-300 text-sm font-medium hover:bg-gray-50"
+              className="text-sm text-gray-700"
             >
               Cancelar
             </button>
@@ -206,7 +206,7 @@ export default function CartItem({ item }: CartItemProps) {
                 updateItemOptions(item.id, { color: tempColor || null, size: tempSize || null })
                 setSheetOpen(false)
               }}
-              className="h-10 rounded-full bg-[var(--brand-green)] text-[var(--brand-on-green)] text-sm font-medium hover:brightness-105 transition-colors"
+              className="h-10 rounded-full bg-accent-green text-white text-sm font-medium hover:brightness-105 transition-colors"
             >
               Aplicar cambios
             </button>

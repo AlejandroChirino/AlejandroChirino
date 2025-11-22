@@ -13,7 +13,7 @@ import ActionSheet from "@/components/ui/action-sheet"
 import ProductDiscountBadge from "@/components/product-discount-badge"
 import QuickAddPreview from "@/components/quick-add-preview"
 
-const ProductCard = memo(function ProductCard({ product, compact = false, square = false }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, compact = false, square = true }: ProductCardProps) {
   const { id, name, price, sale_price, on_sale, image_url, category } = product
 
   // Normalizar y calcular descuento similar a la página de detalle

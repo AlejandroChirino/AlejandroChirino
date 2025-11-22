@@ -158,7 +158,7 @@ export default function RebajasPage() {
         <div className="max-w-7xl mx-auto px-4">
           {/* Hero section */}
           <div className="mb-8 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-red-600">Rebajas exclusivas</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-red-600 tracking-tighter leading-tight">REBAJAS EXCLUSIVAS</h1>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">Aprovecha los mejores descuentos de La ⚡ Fashion</p>
           </div>
 

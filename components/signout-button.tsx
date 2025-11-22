@@ -5,7 +5,7 @@ import { createBrowserClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import ConfirmModal from "@/components/confirm-modal"
 
-export default function SignOutButton({ className }: { className?: string }) {
+export default function SignOutButton({ className, label }: { className?: string; label?: string }) {
   const supabase = createBrowserClient()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -33,7 +33,7 @@ export default function SignOutButton({ className }: { className?: string }) {
         aria-label="Cerrar sesión"
         disabled={loading}
       >
-        {loading ? "Saliendo..." : "Salir"}
+        {loading ? "Saliendo..." : (label ?? "Salir")}
       </button>
 
       <ConfirmModal

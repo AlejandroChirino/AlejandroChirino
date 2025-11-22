@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import ActionSheet from "@/components/ui/action-sheet"
 import { SUBCATEGORIAS, type ProductCategory } from "@/lib/types"
-import { ChevronDown, Filter as FilterIcon } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 
 interface ProductFilterBarProps {
   category?: ProductCategory | "nuevo" | "rebajas" | "all"
@@ -169,22 +169,22 @@ export default function ProductFilterBar({
 
   return (
     <div
-      className={`w-full bg-white border-b border-gray-100 transform transition-all duration-300 ease-in-out ${visible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}
+      className={`w-full bg-transparent transform transition-all duration-300 ease-in-out ${visible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}
       style={{ position: "sticky", top: 64, zIndex: 30 }}
     >
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center gap-1 py-2 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-6 py-1 flex-nowrap overflow-hidden">
           <button
             type="button"
             onClick={() => {
               setTempSort(selectedSort ?? null)
               setSheetOpen("sort")
             }}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs text-gray-700"
+            className="inline-flex items-center gap-1 px-0 py-0 text-[12px] sm:text-sm font-medium text-gray-800 hover:text-accent-orange min-w-0"
             aria-label="Ordenar"
           >
             <span className="truncate">Ordenar</span>
-            <ChevronDown className="w-3 h-3 text-gray-400" />
+            <ChevronDown className="w-3 h-3 text-gray-600" />
           </button>
 
           <button
@@ -193,11 +193,11 @@ export default function ProductFilterBar({
               setTempColors(selectedColors ?? [])
               setSheetOpen("colors")
             }}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs text-gray-700"
+            className="inline-flex items-center gap-1 px-0 py-0 text-[11px] sm:text-sm font-medium text-gray-800 hover:text-accent-orange min-w-0"
             aria-label="Colores"
           >
             <span className="truncate">Colores</span>
-            <ChevronDown className="w-3 h-3 text-gray-400" />
+            <ChevronDown className="w-3 h-3 text-gray-600" />
           </button>
 
           <button
@@ -206,47 +206,21 @@ export default function ProductFilterBar({
               setTempSizes(selectedSizes ?? [])
               setSheetOpen("size")
             }}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs text-gray-700"
+            className="inline-flex items-center gap-1 px-0 py-0 text-[11px] sm:text-sm font-medium text-gray-800 hover:text-accent-orange min-w-0"
             aria-label="Talla"
           >
             <span className="truncate">Talla</span>
-            <ChevronDown className="w-3 h-3 text-gray-400" />
+            <ChevronDown className="w-3 h-3 text-gray-600" />
           </button>
-
-          <div className="flex-1" />
-
-          <div className="ml-2">
-            <button
-              type="button"
-              onClick={() => setGlobalOpen(true)}
-              className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs text-gray-700"
-              aria-label="Abrir filtros"
-            >
-              <FilterIcon className="w-4 h-4 text-gray-600" />
-              <span className="hidden sm:inline">Filtrar</span>
-            </button>
-            </div>
-            <div className="ml-2">
-              <button
-                type="button"
-                onClick={() => {
-                  // reset local and notify parent
-                  setLocalSub(null)
-                  setLocalColors([])
-                  setLocalSizes([])
-                  setLocalSort(null)
-                  setLocalOnSale(false)
-                  setLocalFeatured(false)
-                  setLocalIsVip(false)
-                  setLocalIsNew(false)
-                  onClearFilters?.()
-                }}
-                className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700"
-                aria-label="Limpiar filtros"
-              >
-                Limpiar
-              </button>
-            </div>
+          <button
+            type="button"
+            onClick={() => setGlobalOpen(true)}
+            className="inline-flex items-center gap-1 px-0 py-0 text-[11px] sm:text-sm font-medium text-gray-800 hover:text-accent-orange min-w-0"
+            aria-label="Abrir filtros"
+          >
+            <span className="truncate">Filtros</span>
+            <ChevronDown className="w-3 h-3 text-gray-600" />
+          </button>
         </div>
       </div>
 
@@ -258,10 +232,10 @@ export default function ProductFilterBar({
           <button onClick={() => setTempSort("price-desc")} className={`w-full text-left px-3 py-2 ${tempSort === "price-desc" ? "font-semibold" : ""}`}>Precio: mayor a menor</button>
           <button onClick={() => setTempSort("name-asc")} className={`w-full text-left px-3 py-2 ${tempSort === "name-asc" ? "font-semibold" : ""}`}>Nombre: A-Z</button>
 
-          <div className="pt-4 flex gap-2">
-            <button onClick={() => { setTempSort(null) }} className="h-10 rounded-md border px-3">Limpiar</button>
-            <button onClick={() => setSheetOpen(null)} className="flex-1 h-10 rounded-md border">Cancelar</button>
-            <button onClick={() => { if (tempSort) onSortChange?.(tempSort); else onSortChange?.(""); setSheetOpen(null) }} className="flex-1 h-10 rounded-md bg-accent-orange text-white">Aplicar</button>
+          <div className="pt-4 flex gap-2 items-center">
+            <button onClick={() => { setTempSort(null) }} className="text-sm text-red-600">Limpiar</button>
+            <button onClick={() => setSheetOpen(null)} className="text-sm text-gray-700">Cancelar</button>
+            <button onClick={() => { if (tempSort) onSortChange?.(tempSort); else onSortChange?.(""); setSheetOpen(null) }} className="ml-auto flex-1 h-10 rounded-md bg-accent-green text-white">Aplicar</button>
           </div>
         </div>
       </ActionSheet>
@@ -277,17 +251,17 @@ export default function ProductFilterBar({
                 <button key={c} onClick={() => {
                   const next = tempColors.includes(c) ? tempColors.filter(x => x !== c) : [...tempColors, c]
                   setTempColors(next)
-                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "bg-accent-orange text-white" : "bg-white"}`}>
+                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "border-accent-green text-black" : "bg-white"}`}>
                   {c}
                 </button>
               )
             })}
           </div>
 
-          <div className="pt-4 flex gap-2">
-            <button onClick={() => { setTempColors([]) }} className="h-10 rounded-md border px-3">Limpiar</button>
-            <button onClick={() => setSheetOpen(null)} className="flex-1 h-10 rounded-md border">Cancelar</button>
-            <button onClick={() => { onColorsChange?.(tempColors); setSheetOpen(null) }} className="flex-1 h-10 rounded-md bg-accent-orange text-white">Aplicar</button>
+          <div className="pt-4 flex gap-2 items-center">
+            <button onClick={() => { setTempColors([]) }} className="text-sm text-red-600">Limpiar</button>
+            <button onClick={() => setSheetOpen(null)} className="text-sm text-gray-700">Cancelar</button>
+            <button onClick={() => { onColorsChange?.(tempColors); setSheetOpen(null) }} className="ml-auto flex-1 h-10 rounded-md bg-accent-green text-white">Aplicar</button>
           </div>
         </div>
       </ActionSheet>
@@ -303,7 +277,7 @@ export default function ProductFilterBar({
                 <button key={s} onClick={() => {
                   const next = tempSizes.includes(s) ? tempSizes.filter(x => x !== s) : [...tempSizes, s]
                   setTempSizes(next)
-                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "bg-accent-orange text-white" : "bg-white"}`}>
+                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "border-accent-green text-black" : "bg-white"}`}>
                   {s}
                 </button>
               )
@@ -313,7 +287,7 @@ export default function ProductFilterBar({
             <div className="flex gap-2">
               <button onClick={() => { setTempSizes([]) }} className="h-10 rounded-md border px-3">Limpiar</button>
               <button onClick={() => setSheetOpen(null)} className="flex-1 h-10 rounded-md border">Cancelar</button>
-              <button onClick={() => { onSizeChange?.(tempSizes); setSheetOpen(null) }} className="flex-1 h-10 rounded-md bg-accent-orange text-white">Aplicar</button>
+              <button onClick={() => { onSizeChange?.(tempSizes); setSheetOpen(null) }} className="flex-1 h-10 rounded-md bg-accent-green text-white">Aplicar</button>
             </div>
           </div>
         </div>
@@ -332,11 +306,11 @@ export default function ProductFilterBar({
         <div className="mb-4">
           <h4 className="font-medium mb-2">Subcategorías</h4>
           <div className="flex flex-wrap gap-2">
-            <button key="ver-todo" onClick={() => setLocalSub(null)} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${localSub === null ? "bg-accent-orange text-white" : "bg-white"}`}>
+            <button key="ver-todo" onClick={() => setLocalSub(null)} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${localSub === null ? "border-accent-green text-black" : "bg-white"}`}>
               Ver todo
             </button>
             {subcats.map((s) => (
-              <button key={s} onClick={() => setLocalSub(s)} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${localSub === s ? "bg-accent-orange text-white" : "bg-white"}`}>
+              <button key={s} onClick={() => setLocalSub(s)} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${localSub === s ? "border-accent-green text-black" : "bg-white"}`}>
                 {s}
               </button>
             ))}
@@ -349,7 +323,7 @@ export default function ProductFilterBar({
           <div className="flex flex-wrap gap-2">
             {resolvedAvailableColors.length === 0 && <p className="text-sm text-gray-500">No hay colores disponibles</p>}
             {resolvedAvailableColors.map((c) => (
-              <button key={c} onClick={() => onColorsChange?.([...(selectedColors || []), c])} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${selectedColors?.includes(c) ? "bg-accent-orange text-white" : "bg-white"}`}>
+              <button key={c} onClick={() => onColorsChange?.([...(selectedColors || []), c])} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${selectedColors?.includes(c) ? "border-accent-green text-black" : "bg-white"}`}>
                 {c}
               </button>
             ))}
@@ -366,7 +340,7 @@ export default function ProductFilterBar({
                 <button key={s} onClick={() => {
                   const next = localSizes.includes(s) ? localSizes.filter(x => x !== s) : [...localSizes, s]
                   setLocalSizes(next)
-                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "bg-accent-orange text-white" : "bg-white"}`}>
+                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "border-accent-green text-black" : "bg-white"}`}>
                   {s}
                 </button>
               )
@@ -378,16 +352,16 @@ export default function ProductFilterBar({
         <div className="mb-4">
           <h4 className="font-medium mb-2">Más filtros</h4>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setLocalOnSale(!localOnSale)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localOnSale ? "bg-accent-orange text-white" : "bg-white"}`}>
+            <button onClick={() => setLocalOnSale(!localOnSale)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localOnSale ? "border-accent-green text-black" : "bg-white"}`}>
               {localOnSale ? "En oferta" : "Solo en oferta"}
             </button>
-            <button onClick={() => setLocalFeatured(!localFeatured)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localFeatured ? "bg-accent-orange text-white" : "bg-white"}`}>
+            <button onClick={() => setLocalFeatured(!localFeatured)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localFeatured ? "border-accent-green text-black" : "bg-white"}`}>
               {localFeatured ? "Destacados" : "Solo destacados"}
             </button>
-            <button onClick={() => setLocalIsVip(!localIsVip)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localIsVip ? "bg-accent-orange text-white" : "bg-white"}`}>
+            <button onClick={() => setLocalIsVip(!localIsVip)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localIsVip ? "border-accent-green text-black" : "bg-white"}`}>
               {localIsVip ? "VIP" : "Solo VIP"}
             </button>
-            <button onClick={() => setLocalIsNew(!localIsNew)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localIsNew ? "bg-accent-orange text-white" : "bg-white"}`}>
+            <button onClick={() => setLocalIsNew(!localIsNew)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localIsNew ? "border-accent-green text-black" : "bg-white"}`}>
               {localIsNew ? "Novedades" : "Solo novedades"}
             </button>
           </div>
@@ -421,11 +395,11 @@ export default function ProductFilterBar({
               setLocalIsNew(false)
               onClearFilters?.()
               setGlobalOpen(false)
-            }} className="px-4 py-2 rounded-md border">Limpiar</button>
+            }} className="text-sm text-red-600">Limpiar</button>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setGlobalOpen(false)} className="px-4 py-2 rounded-md border">Cancelar</button>
-            <button onClick={applyGlobal} className="px-4 py-2 rounded-md bg-accent-orange text-white">Aplicar</button>
+            <button onClick={() => setGlobalOpen(false)} className="text-sm text-gray-700">Cancelar</button>
+            <button onClick={applyGlobal} className="px-4 py-2 rounded-md bg-accent-green text-white">Aplicar</button>
           </div>
         </div>
       </ActionSheet>

@@ -14,24 +14,23 @@ const CarouselProductCard = memo(function CarouselProductCard({
   product,
   isPartiallyVisible = false,
   isMobile = false,
-  square = false,
   badgeType = "top-ventas",
 }: CarouselProductCardProps) {
   const { id, name, price, image_url } = product
 
+  // Explicitly set rounded-none to ensure square corners
   return (
     <Link
       href={`/producto/${id}`}
       className={cn(
-        "group block focus:outline-none focus:ring-2 focus:ring-accent-orange transition-all duration-300",
-        square ? "rounded-none" : "rounded-lg",
+        "group block focus:outline-none focus:ring-2 focus:ring-accent-orange transition-all duration-300 rounded-none", // Added rounded-none
         isPartiallyVisible && "opacity-80 scale-95",
         !isMobile && "hover:scale-105 hover:shadow-lg",
       )}
       aria-label={`Ver detalles de ${name}`}
     >
       <article className="h-full">
-        <div className={cn("aspect-[3/4] bg-gray-100 overflow-hidden mb-2 md:mb-3 relative", square ? "rounded-none" : "rounded-lg")}>
+        <div className={cn("aspect-[3/4] bg-gray-100 overflow-hidden mb-2 md:mb-3 relative rounded-none")}> {/* Added rounded-none */}
           <Image
             src={image_url || "/placeholder.svg?height=400&width=300&query=product"}
             alt={name}
@@ -41,7 +40,7 @@ const CarouselProductCard = memo(function CarouselProductCard({
             loading="lazy"
           />
           {/* Etiqueta Destacada */}
-          <span className="absolute top-2 left-2 bg-accent-orange text-white text-xs md:text-sm font-bold px-2 py-1 rounded">
+          <span className="absolute top-2 left-2 bg-accent-orange text-white text-xs md:text-sm font-bold px-2 py-1">
             {badgeType === "nuevo" ? "Nuevo" : "TOP VENTAS"}
           </span>
         </div>
@@ -55,13 +54,13 @@ const CarouselProductCard = memo(function CarouselProductCard({
         {!isMobile && (
           <div className="absolute bottom-2 right-2 flex gap-2">
             <button
-              className="bg-white text-gray-900 rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-orange"
+              className="bg-white text-gray-900 p-2 shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-orange rounded-none" // Added rounded-none
               aria-label="Añadir a Carrito"
             >
               🛒
             </button>
             <button
-              className="bg-white text-gray-900 rounded-full p-2 shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-orange"
+              className="bg-white text-gray-900 p-2 shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-orange rounded-none" // Added rounded-none
               aria-label="Vista Rápida"
             >
               👁️

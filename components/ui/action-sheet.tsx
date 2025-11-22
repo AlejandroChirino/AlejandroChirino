@@ -69,7 +69,7 @@ export default function ActionSheet({ open, onClose, title, children, className,
       {/* Backdrop */}
       <div
         className={cn(
-          "absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-250",
+          "absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-250",
           visible ? "opacity-100" : "opacity-0",
         )}
         onClick={onClose}
@@ -81,9 +81,9 @@ export default function ActionSheet({ open, onClose, title, children, className,
         className={cn(
           // bottom sheet styles
           mode === "bottom"
-            ? "mt-auto w-full rounded-t-2xl bg-white shadow-lg border-t border-gray-100"
+            ? "mt-auto w-full rounded-t-3xl bg-white shadow-lg"
             : // center mode: modal centered on lg+, full width on mobile if requested
-              `w-full lg:max-w-3xl bg-white shadow-lg border border-gray-100 rounded-lg ${fullScreenOnMobile ? "h-full lg:h-auto rounded-none lg:rounded-lg" : "rounded-lg"}`,
+              `w-full lg:max-w-3xl bg-white shadow-lg rounded-lg ${fullScreenOnMobile ? "h-full lg:h-auto rounded-none lg:rounded-lg" : "rounded-lg"}`,
           "transition-transform duration-300 ease-out",
           // animation: translate for bottom, scale/fade for center
           mode === "bottom" ? (visible ? "translate-y-0" : "translate-y-full") : (visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-95"),
@@ -95,11 +95,16 @@ export default function ActionSheet({ open, onClose, title, children, className,
         {/* Handle for bottom sheet only */}
         {mode === "bottom" && (
           <div className="w-full pt-3 flex justify-center">
-            <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+            <div className="h-0.5 w-12 rounded-full bg-gray-200" />
           </div>
         )}
-        {title && <div className="px-4 pb-2 text-sm font-medium text-gray-900">{title}</div>}
-        <div className="px-4 pb-4 overflow-y-auto flex-1">{children}</div>
+
+        {/* Content wrapper with ample padding for breathing room */}
+        <div className="p-6 overflow-y-auto flex-1">
+          {title && <div className="text-base font-semibold text-gray-900 mb-2">{title}</div>}
+          <div className="text-sm text-gray-600 mb-4" />
+          <div className="space-y-4">{children}</div>
+        </div>
       </div>
     </div>
   )

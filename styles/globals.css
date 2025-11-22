@@ -123,3 +123,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .bg-accent-green { @apply bg-emerald-600; }
+  .border-accent-green { @apply border-emerald-600; }
+  .text-accent-green { @apply text-emerald-600; }
+}
+

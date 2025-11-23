@@ -64,8 +64,8 @@ export default function DeliverySelection({ selected, onSelect, onNext, onPrev, 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold mb-2">Método de Entrega</h2>
-        <p className="text-gray-600">Selecciona cómo quieres recibir tu pedido</p>
+        <h2 className="text-2xl font-semibold mb-2">Método de Entrega</h2>
+        <p className="text-gray-600 text-sm">Selecciona cómo quieres recibir tu pedido</p>
       </div>
 
       <div className="space-y-4 mb-8">
@@ -79,16 +79,12 @@ export default function DeliverySelection({ selected, onSelect, onNext, onPrev, 
             <div
               key={option.id}
               className={`relative border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                isSelected ? "border-accent-orange bg-orange-50" : "border-gray-200 hover:border-gray-300"
+                isSelected ? "border-[var(--brand-green)]" : "border-gray-200 hover:border-gray-300"
               }`}
               onClick={() => onSelect(option.id)}
             >
               <div className="flex items-start gap-4">
-                <div
-                  className={`p-3 rounded-full ${
-                    isSelected ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-600"
-                  }`}
-                >
+                <div className={`p-3 rounded-full bg-gray-100 ${isSelected ? "text-[var(--brand-green)]" : "text-gray-600"}`}>
                   <Icon className="h-6 w-6" />
                 </div>
 
@@ -125,10 +121,10 @@ export default function DeliverySelection({ selected, onSelect, onNext, onPrev, 
                 {/* Radio button indicator */}
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    isSelected ? "border-accent-orange" : "border-gray-300"
+                    isSelected ? "border-[var(--brand-green)]" : "border-gray-300"
                   }`}
                 >
-                  {isSelected && <div className="w-3 h-3 rounded-full bg-accent-orange" />}
+                  {isSelected && <div className="w-3 h-3 rounded-full bg-[var(--brand-green)]" />}
                 </div>
               </div>
             </div>
@@ -136,11 +132,11 @@ export default function DeliverySelection({ selected, onSelect, onNext, onPrev, 
         })}
       </div>
 
-      <div className="flex gap-4">
-        <Button onClick={onPrev} variant="outline" className="flex-1">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button onClick={onPrev} variant="outline" className="rounded-full w-full md:w-44" size="md">
           Volver
         </Button>
-        <Button onClick={onNext} disabled={!selected} className="flex-1">
+        <Button onClick={onNext} disabled={!selected} className="rounded-full w-full md:w-44" size="md">
           Continuar con el pago
         </Button>
       </div>

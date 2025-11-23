@@ -23,10 +23,10 @@ export default function ProductPrice({
   if (hasSale) {
     return (
       <div className={className}>
-        <p className={compact ? "text-sm font-bold text-red-600" : "text-base md:text-lg font-bold text-red-600"}>
+        <p className={compact ? "m-0 text-sm font-semibold text-red-600" : "m-0 text-base md:text-lg font-semibold text-red-600"}>
           {formatPrice(s as number)}
         </p>
-        <p className={compact ? "text-xs line-through text-[var(--brand-green)]" : "text-sm line-through text-[var(--brand-green)]"}>
+        <p className={compact ? "m-0 text-xs line-through text-gray-400" : "m-0 text-sm line-through text-gray-400"}>
           {formatPrice(p)}
         </p>
       </div>
@@ -34,7 +34,7 @@ export default function ProductPrice({
   }
 
   return (
-    <p className={`${className} ${compact ? "text-sm font-bold text-accent-orange" : "text-base md:text-lg font-bold text-accent-orange"}`}>
+    <p className={`m-0 ${className} ${compact ? "text-sm font-semibold text-gray-900" : "text-base md:text-lg font-semibold text-gray-900"}`}>
       {formatPrice(p)}
     </p>
   )

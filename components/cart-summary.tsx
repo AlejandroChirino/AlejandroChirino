@@ -25,20 +25,18 @@ export default function CartSummary({ onCheckout }: CartSummaryProps) {
 
   return (
     <div className="bg-gray-50 rounded-lg p-6">
-      <h2 className="text-lg font-bold mb-4">Resumen de compra</h2>
+      <h2 className="text-lg font-semibold mb-4">Resumen de compra</h2>
 
       <div className="space-y-3 mb-6">
-        <div className="flex justify-between">
-          <span className="text-gray-600">
-            Subtotal ({itemCount} {itemCount === 1 ? "producto" : "productos"})
-          </span>
-          <span>{formatPrice(subtotal)}</span>
+        <div className="flex justify-between items-baseline">
+          <span className="text-sm text-gray-600">Subtotal ({itemCount} {itemCount === 1 ? "producto" : "productos"})</span>
+          <span className="text-gray-900 font-semibold">{formatPrice(subtotal)}</span>
         </div>
 
         <div className="border-t pt-3 mt-3">
-          <div className="flex justify-between font-bold">
-            <span>Subtotal</span>
-            <span>{formatPrice(subtotal)}</span>
+          <div className="flex justify-between">
+            <span className="text-gray-900 font-semibold">Subtotal</span>
+            <span className="text-gray-900 font-semibold">{formatPrice(subtotal)}</span>
           </div>
           <p className="text-xs text-gray-500 mt-1">Los costos de envío se calcularán en el checkout</p>
         </div>
@@ -46,7 +44,7 @@ export default function CartSummary({ onCheckout }: CartSummaryProps) {
 
       <div className="space-y-3">
         <Link href="/checkout" className="block">
-          <Button disabled={itemCount === 0 || isLoading} className="w-full" size="lg">
+          <Button disabled={itemCount === 0 || isLoading} className="w-full bg-[#00E676] rounded-full text-white" size="lg">
             Proceder al checkout
           </Button>
         </Link>

@@ -25,6 +25,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [productsLoading, setProductsLoading] = useState(true)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     async function fetchData() {
@@ -44,6 +45,21 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
         if (productsResponse.ok) {
           const productsData = await productsResponse.json()
           setProducts(productsData)
+        }
+        // fetch client-side prefs map
+        try {
+          const prefRes = await fetch(`/api/size-preferences`)
+          if (prefRes.ok) {
+            const prefs = await prefRes.json()
+            const map: Record<string, string[]> = {}
+            ;(prefs || []).forEach((p: any) => {
+              const key = `${p.category}||${p.subcategory}`
+              map[key] = p.sizes || []
+            })
+            setPreferredMap(map)
+          }
+        } catch (e) {
+          // ignore
         }
       } catch (error) {
         console.error("Error fetching colaboracion data:", error)
@@ -91,9 +107,9 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
       {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-0">
           {/* Breadcrumbs */}
-          <Breadcrumbs items={breadcrumbItems} className="mb-8" />
+          <Breadcrumbs items={breadcrumbItems} className="mb-2 px-4 md:px-6 -mt-4 md:-mt-6" />
 
           {/* Back button */}
           <Link
@@ -113,7 +129,7 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
 
             {/* Info */}
             <div className="space-y-6">
-              <div>
+              <div className="pl-4 md:pl-6">
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{colaboracion.nombre}</h1>
                 <p className="text-lg text-gray-600 leading-relaxed">{colaboracion.descripcion}</p>
               </div>
@@ -193,11 +209,15 @@ export default function ColaboracionPage({ params }: ColaboracionPageProps) {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} compact />
-                ))}
-              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
+                  {products.map((product) => {
+                    const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
+                    const prefSizes = preferredMap[key] || []
+                    const prodSizes: string[] = (product as any)?.sizes || []
+                    const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+                    return <ProductCard key={product.id} product={product} compact hasPreferredSize={hasPreferred} />
+                  })}
+                </div>
             )}
           </section>
 

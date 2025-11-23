@@ -232,10 +232,10 @@ export default function ProductFilterBar({
           <button onClick={() => setTempSort("price-desc")} className={`w-full text-left px-3 py-2 ${tempSort === "price-desc" ? "font-semibold" : ""}`}>Precio: mayor a menor</button>
           <button onClick={() => setTempSort("name-asc")} className={`w-full text-left px-3 py-2 ${tempSort === "name-asc" ? "font-semibold" : ""}`}>Nombre: A-Z</button>
 
-          <div className="pt-4 flex gap-2 items-center">
-            <button onClick={() => { setTempSort(null) }} className="text-sm text-red-600">Limpiar</button>
-            <button onClick={() => setSheetOpen(null)} className="text-sm text-gray-700">Cancelar</button>
-            <button onClick={() => { if (tempSort) onSortChange?.(tempSort); else onSortChange?.(""); setSheetOpen(null) }} className="ml-auto flex-1 h-10 rounded-md bg-accent-green text-white">Aplicar</button>
+          <div className="pt-4 flex gap-2">
+            <button onClick={() => { setTempSort(null) }} className="h-10 px-3 text-red-600">Limpiar</button>
+            <button onClick={() => setSheetOpen(null)} className="flex-1 h-10 text-gray-600">Cancelar</button>
+            <button onClick={() => { if (tempSort) onSortChange?.(tempSort); else onSortChange?.(""); setSheetOpen(null) }} className="flex-1 h-10 text-green-600 font-semibold">Aplicar</button>
           </div>
         </div>
       </ActionSheet>
@@ -251,17 +251,17 @@ export default function ProductFilterBar({
                 <button key={c} onClick={() => {
                   const next = tempColors.includes(c) ? tempColors.filter(x => x !== c) : [...tempColors, c]
                   setTempColors(next)
-                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "border-accent-green text-black" : "bg-white"}`}>
+                }} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${active ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
                   {c}
                 </button>
               )
             })}
           </div>
 
-          <div className="pt-4 flex gap-2 items-center">
-            <button onClick={() => { setTempColors([]) }} className="text-sm text-red-600">Limpiar</button>
-            <button onClick={() => setSheetOpen(null)} className="text-sm text-gray-700">Cancelar</button>
-            <button onClick={() => { onColorsChange?.(tempColors); setSheetOpen(null) }} className="ml-auto flex-1 h-10 rounded-md bg-accent-green text-white">Aplicar</button>
+          <div className="pt-4 flex gap-2">
+            <button onClick={() => { setTempColors([]) }} className="h-10 px-3 text-red-600">Limpiar</button>
+            <button onClick={() => setSheetOpen(null)} className="flex-1 h-10 text-gray-600">Cancelar</button>
+            <button onClick={() => { onColorsChange?.(tempColors); setSheetOpen(null) }} className="flex-1 h-10 text-green-600 font-semibold">Aplicar</button>
           </div>
         </div>
       </ActionSheet>
@@ -277,7 +277,7 @@ export default function ProductFilterBar({
                 <button key={s} onClick={() => {
                   const next = tempSizes.includes(s) ? tempSizes.filter(x => x !== s) : [...tempSizes, s]
                   setTempSizes(next)
-                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "border-accent-green text-black" : "bg-white"}`}>
+                }} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${active ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
                   {s}
                 </button>
               )
@@ -285,9 +285,9 @@ export default function ProductFilterBar({
           </div>
           <div className="pt-4">
             <div className="flex gap-2">
-              <button onClick={() => { setTempSizes([]) }} className="h-10 rounded-md border px-3">Limpiar</button>
-              <button onClick={() => setSheetOpen(null)} className="flex-1 h-10 rounded-md border">Cancelar</button>
-              <button onClick={() => { onSizeChange?.(tempSizes); setSheetOpen(null) }} className="flex-1 h-10 rounded-md bg-accent-green text-white">Aplicar</button>
+              <button onClick={() => { setTempSizes([]) }} className="h-10 px-3 text-red-600">Limpiar</button>
+              <button onClick={() => setSheetOpen(null)} className="flex-1 h-10 text-gray-600">Cancelar</button>
+              <button onClick={() => { onSizeChange?.(tempSizes); setSheetOpen(null) }} className="flex-1 h-10 text-green-600 font-semibold">Aplicar</button>
             </div>
           </div>
         </div>
@@ -306,11 +306,11 @@ export default function ProductFilterBar({
         <div className="mb-4">
           <h4 className="font-medium mb-2">Subcategorías</h4>
           <div className="flex flex-wrap gap-2">
-            <button key="ver-todo" onClick={() => setLocalSub(null)} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${localSub === null ? "border-accent-green text-black" : "bg-white"}`}>
+            <button key="ver-todo" onClick={() => setLocalSub(null)} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localSub === null ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
               Ver todo
             </button>
             {subcats.map((s) => (
-              <button key={s} onClick={() => setLocalSub(s)} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${localSub === s ? "border-accent-green text-black" : "bg-white"}`}>
+              <button key={s} onClick={() => setLocalSub(s)} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localSub === s ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
                 {s}
               </button>
             ))}
@@ -323,7 +323,7 @@ export default function ProductFilterBar({
           <div className="flex flex-wrap gap-2">
             {resolvedAvailableColors.length === 0 && <p className="text-sm text-gray-500">No hay colores disponibles</p>}
             {resolvedAvailableColors.map((c) => (
-              <button key={c} onClick={() => onColorsChange?.([...(selectedColors || []), c])} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${selectedColors?.includes(c) ? "border-accent-green text-black" : "bg-white"}`}>
+              <button key={c} onClick={() => onColorsChange?.([...(selectedColors || []), c])} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${selectedColors?.includes(c) ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
                 {c}
               </button>
             ))}
@@ -340,7 +340,7 @@ export default function ProductFilterBar({
                 <button key={s} onClick={() => {
                   const next = localSizes.includes(s) ? localSizes.filter(x => x !== s) : [...localSizes, s]
                   setLocalSizes(next)
-                }} className={`px-2 py-1 rounded-full border text-xs sm:text-sm ${active ? "border-accent-green text-black" : "bg-white"}`}>
+                }} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${active ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
                   {s}
                 </button>
               )
@@ -351,17 +351,17 @@ export default function ProductFilterBar({
         {/* Additional boolean filters */}
         <div className="mb-4">
           <h4 className="font-medium mb-2">Más filtros</h4>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => setLocalOnSale(!localOnSale)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localOnSale ? "border-accent-green text-black" : "bg-white"}`}>
+            <div className="flex flex-wrap gap-2">
+            <button onClick={() => setLocalOnSale(!localOnSale)} className={`px-3 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localOnSale ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
               {localOnSale ? "En oferta" : "Solo en oferta"}
             </button>
-            <button onClick={() => setLocalFeatured(!localFeatured)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localFeatured ? "border-accent-green text-black" : "bg-white"}`}>
+            <button onClick={() => setLocalFeatured(!localFeatured)} className={`px-3 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localFeatured ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
               {localFeatured ? "Destacados" : "Solo destacados"}
             </button>
-            <button onClick={() => setLocalIsVip(!localIsVip)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localIsVip ? "border-accent-green text-black" : "bg-white"}`}>
+            <button onClick={() => setLocalIsVip(!localIsVip)} className={`px-3 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localIsVip ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
               {localIsVip ? "VIP" : "Solo VIP"}
             </button>
-            <button onClick={() => setLocalIsNew(!localIsNew)} className={`px-3 py-1 rounded-full border text-xs sm:text-sm ${localIsNew ? "border-accent-green text-black" : "bg-white"}`}>
+            <button onClick={() => setLocalIsNew(!localIsNew)} className={`px-3 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localIsNew ? "bg-accent-orange text-white" : "text-gray-700 bg-white"}`}>
               {localIsNew ? "Novedades" : "Solo novedades"}
             </button>
           </div>
@@ -370,14 +370,12 @@ export default function ProductFilterBar({
         {/* Ordenamiento — opciones dentro del modal global */}
         <div className="mb-4">
           <h4 className="font-medium mb-2">Ordenar</h4>
-          <div className="flex flex-col gap-2">
-            <button onClick={() => setLocalSort("newest")} className={`w-full text-left px-3 py-2 ${localSort === "newest" ? "font-semibold" : ""}`}>Novedades</button>
-            <button onClick={() => setLocalSort("price-asc")} className={`w-full text-left px-3 py-2 ${localSort === "price-asc" ? "font-semibold" : ""}`}>Precio: menor a mayor</button>
-            <button onClick={() => setLocalSort("price-desc")} className={`w-full text-left px-3 py-2 ${localSort === "price-desc" ? "font-semibold" : ""}`}>Precio: mayor a menor</button>
-            <button onClick={() => setLocalSort("name-asc")} className={`w-full text-left px-3 py-2 ${localSort === "name-asc" ? "font-semibold" : ""}`}>Nombre: A-Z</button>
-            <div className="pt-2">
-              <button onClick={() => setLocalSort(null)} className="h-9 rounded-md border px-3">Limpiar orden</button>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setLocalSort("newest")} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localSort === "newest" ? "bg-accent-orange text-white font-semibold" : "text-gray-700 bg-white"}`}>Novedades</button>
+            <button onClick={() => setLocalSort("price-asc")} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localSort === "price-asc" ? "bg-accent-orange text-white font-semibold" : "text-gray-700 bg-white"}`}>Precio: menor a mayor</button>
+            <button onClick={() => setLocalSort("price-desc")} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localSort === "price-desc" ? "bg-accent-orange text-white font-semibold" : "text-gray-700 bg-white"}`}>Precio: mayor a menor</button>
+            <button onClick={() => setLocalSort("name-asc")} className={`px-2 py-1 rounded-full border border-gray-300 text-xs sm:text-sm ${localSort === "name-asc" ? "bg-accent-orange text-white font-semibold" : "text-gray-700 bg-white"}`}>Nombre: A-Z</button>
+            
           </div>
         </div>
 
@@ -395,11 +393,11 @@ export default function ProductFilterBar({
               setLocalIsNew(false)
               onClearFilters?.()
               setGlobalOpen(false)
-            }} className="text-sm text-red-600">Limpiar</button>
+            }} className="px-4 py-2 text-red-600">Limpiar</button>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setGlobalOpen(false)} className="text-sm text-gray-700">Cancelar</button>
-            <button onClick={applyGlobal} className="px-4 py-2 rounded-md bg-accent-green text-white">Aplicar</button>
+            <button onClick={() => setGlobalOpen(false)} className="px-4 py-2 text-gray-600">Cancelar</button>
+            <button onClick={applyGlobal} className="px-4 py-2 text-green-600 font-semibold">Aplicar</button>
           </div>
         </div>
       </ActionSheet>

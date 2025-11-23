@@ -6,6 +6,7 @@ import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import ProductFilterBar from "@/components/product-filter-bar"
+import Breadcrumbs from "@/components/breadcrumbs"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 
@@ -32,6 +33,7 @@ function ProductsList({
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     async function fetchProducts() {
@@ -69,15 +71,41 @@ function ProductsList({
     fetchProducts()
   }, [selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
+  // fetch user size preferences for this category (if authenticated)
+  useEffect(() => {
+    let mounted = true
+    async function fetchPrefs() {
+      try {
+        const res = await fetch(`/api/size-preferences?category=hombre`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const map: Record<string, string[]> = {}
+        ;(data || []).forEach((p: any) => {
+          map[p.subcategory] = p.sizes || []
+        })
+        setPreferredMap(map)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPrefs()
+    return () => { mounted = false }
+  }, [])
+
   if (loading) return <LoadingSkeleton count={8} compact />
   if (error) return <div className="text-center text-gray-500 py-16"><p>{error}</p></div>
   if (products.length === 0) return <div className="text-center text-gray-500 py-16"><p>No hay productos disponibles en esta {selectedSubcategory ? "subcategoría" : "categoría"}</p></div>
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} compact />
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
+      {products.map((product) => {
+        const sub = (product as any)?.subcategoria || ""
+        const prefSizes = preferredMap[sub] || []
+        const prodSizes: string[] = (product as any)?.sizes || []
+        const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+        return <ProductCard key={product.id} product={product} compact hasPreferredSize={hasPreferred} />
+      })}
     </div>
   )
 }
@@ -174,7 +202,8 @@ export default function HombreClient() {
 
   return (
     <div>
-      <div className="mb-8">
+      <Breadcrumbs items={[{ label: "hombre", href: "/hombre" }, ...(selectedSubcategory ? [{ label: selectedSubcategory }] : [])]} className="mb-2 px-4 md:px-6 -mt-4 md:-mt-6" />
+      <div className="mb-8 pl-4 md:pl-6">
         <h1 className="text-3xl font-bold mb-2 tracking-tighter leading-none">ROPA PARA HOMBRE</h1>
         <p className="text-gray-600">DESCUBRE NUESTRA COLECCIÓN EXCLUSIVA PARA HOMBRE</p>
       </div>

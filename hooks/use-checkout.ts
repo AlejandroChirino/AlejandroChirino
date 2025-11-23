@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useCallback, useMemo } from "react"
+import { formatPrice } from "@/lib/utils"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "@/components/ui/use-toast"
+import { safeSupabase } from "@/lib/supabaseClient"
 import type {
   CustomerData,
   DeliveryMethod,
@@ -160,13 +162,56 @@ export function useCheckout(): UseCheckoutReturn {
     }
 
     try {
-      // Generar mensaje para WhatsApp
+      // Primero: intentar crear la orden en el backend
+      // Obtener user id si hay sesión
+      const { data: authData } = await safeSupabase.auth.getUser()
+      const userId = (authData as any)?.user?.id
+
+      const payload: any = {
+        shipping_address: customerData.address,
+        items: items.map((it: any) => ({
+          product_id: it.product.id,
+          quantity: it.quantity || 1,
+          price: it.product.price,
+          size: it.size || null,
+          color: it.color || null,
+        })),
+        customer: {
+          fullName: customerData.fullName,
+          phone: customerData.phone,
+          email: customerData.email,
+          address: customerData.address,
+          city: customerData.city,
+          notes: customerData.notes,
+        },
+      }
+
+      if (userId) payload.user_id = userId
+
+      const resp = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}))
+        console.warn("Order creation failed:", err)
+        toast({ title: "Error", description: "No se pudo crear la orden. Inténtalo de nuevo.", variant: "destructive" })
+        return false
+      }
+
+      const body = await resp.json()
+      const orderId = body?.id
+
+      // Generar mensaje para WhatsApp incluyendo el id de la orden
       const orderSummary = generateWhatsAppMessage({
         customer: customerData,
         delivery: deliveryInfo!,
         payment: paymentInfo!,
         calculations,
         items,
+        orderId,
       })
 
       // Abrir WhatsApp
@@ -174,18 +219,14 @@ export function useCheckout(): UseCheckoutReturn {
       window.open(whatsappUrl, "_blank")
 
       toast({
-        title: "Pedido enviado",
-        description: "Tu pedido ha sido enviado por WhatsApp. Te contactaremos pronto.",
+        title: "Pedido creado",
+        description: "Tu orden fue creada y se abrió WhatsApp para completarla.",
       })
 
       return true
     } catch (error) {
       console.error("Error submitting order:", error)
-      toast({
-        title: "Error",
-        description: "No se pudo enviar el pedido. Inténtalo de nuevo.",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "No se pudo procesar el pedido. Inténtalo de nuevo.", variant: "destructive" })
       return false
     }
   }, [isValid, customerData, deliveryInfo, paymentInfo, calculations, items])
@@ -209,7 +250,7 @@ export function useCheckout(): UseCheckoutReturn {
 
 // Función para generar el mensaje de WhatsApp
 function generateWhatsAppMessage(data: any): string {
-  const { customer, delivery, payment, calculations, items } = data
+  const { customer, delivery, payment, calculations, items, orderId } = data
 
   let message = `🛍️ *NUEVO PEDIDO - LA L FASHION*\n\n`
 
@@ -232,7 +273,7 @@ function generateWhatsAppMessage(data: any): string {
     if (item.size) message += `   Talla: ${item.size}\n`
     if (item.color) message += `   Color: ${item.color}\n`
     message += `   Cantidad: ${item.quantity}\n`
-    message += `   Precio: $${item.product.price} ${calculations.currency}\n\n`
+    message += `   Precio: ${formatPrice(item.product.price)}\n\n`
   })
 
   // Entrega
@@ -245,17 +286,21 @@ function generateWhatsAppMessage(data: any): string {
 
   // Totales
   message += `💰 *RESUMEN DE COSTOS*\n`
-  message += `Subtotal: $${calculations.subtotal.toFixed(2)} ${calculations.currency}\n`
+  message += `Subtotal: ${formatPrice(calculations.subtotal)}\n`
   if (calculations.deliveryCost > 0) {
-    message += `Envío: $${calculations.deliveryCost.toFixed(2)} ${calculations.currency}\n`
+    message += `Envío: ${formatPrice(calculations.deliveryCost)}\n`
   }
   if (calculations.discount > 0) {
-    message += `Descuento: -$${calculations.discount.toFixed(2)} ${calculations.currency}\n`
+    message += `Descuento: -${formatPrice(calculations.discount)}\n`
   }
-  message += `*TOTAL: $${calculations.total.toFixed(2)} ${calculations.currency}*\n\n`
+  message += `*TOTAL: ${formatPrice(calculations.total)}*\n\n`
 
   message += `📅 Fecha: ${new Date().toLocaleDateString("es-ES")}\n`
   message += `⏰ Hora: ${new Date().toLocaleTimeString("es-ES")}`
+
+  if (orderId) {
+    message += `\n\n🔖 ID del pedido: ${orderId}`
+  }
 
   return message
 }

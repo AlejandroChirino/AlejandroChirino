@@ -10,7 +10,8 @@ import PaymentSelection from "@/components/checkout/payment-selection"
 import OrderSummary from "@/components/checkout/order-summary"
 import { useCart } from "@/contexts/cart-context"
 import { useCheckout } from "@/hooks/use-checkout"
-import { Check } from "lucide-react"
+import { Check, User, Truck, CreditCard } from "lucide-react"
+import { cn, formatPrice } from "@/lib/utils"
 
 const steps = [
   { number: 1, title: "Datos", description: "Información de contacto" },
@@ -70,55 +71,52 @@ export default function CheckoutPage() {
       <main className="py-8">
         <div className="max-w-6xl mx-auto px-4">
           {/* Progress indicator */}
-          <div className="mb-10">
-            <div className="flex flex-wrap items-center justify-center gap-y-4 gap-x-6 max-w-full">
-              {steps.map((step, index) => (
-                <div key={step.number} className="flex items-center max-w-full">
-                  <button
-                    type="button"
-                    className={`shrink-0 flex items-center justify-center w-9 h-9 rounded-full border-2 transition-colors ${
-                      currentStep >= step.number
-                        ? "bg-accent-orange border-accent-orange text-white"
-                        : "border-gray-300 text-gray-500 bg-white"
-                    }`}
-                    onClick={() => goToStep(step.number)}
-                    aria-label={`Ir al paso ${step.number}: ${step.title}`}
-                  >
-                    {currentStep > step.number ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <span className="text-sm font-medium">{step.number}</span>
+          <div className="mb-4">
+            <div className="flex items-center justify-center gap-x-8">
+              {steps.map((step, index) => {
+                const Icon = step.number === 1 ? User : step.number === 2 ? Truck : step.number === 3 ? CreditCard : Check
+                const isActive = currentStep === step.number
+                const isCompleted = currentStep > step.number
+
+                return (
+                  <div key={step.number} className="flex items-center">
+                    <div className="flex flex-col items-center">
+                      <button
+                        type="button"
+                        onClick={() => goToStep(step.number)}
+                        aria-label={`Ir al paso ${step.number}: ${step.title}`}
+                        className={cn(
+                          "shrink-0 flex items-center justify-center w-10 h-10 rounded-full transition-all",
+                          isActive
+                            ? "bg-[var(--brand-green)] text-white border-transparent"
+                            : isCompleted
+                            ? "bg-white border border-[var(--brand-green)] text-[var(--brand-green)]"
+                            : "bg-white border border-gray-200 text-gray-500"
+                        )}
+                      >
+                        {isCompleted ? (
+                          <Check className="h-5 w-5" />
+                        ) : (
+                          <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-600")} />
+                        )}
+                      </button>
+
+                      <div className="mt-2 text-sm font-semibold text-gray-900 text-center max-w-[80px]">
+                        {step.title}
+                      </div>
+                    </div>
+
+                    {index < steps.length - 1 && (
+                      <div className={`hidden sm:block w-24 h-px mx-4 ${isCompleted ? "bg-[var(--brand-green)]" : "bg-gray-300"}`} />
                     )}
-                  </button>
-
-                  <div className="ml-3 text-left leading-tight">
-                    <div
-                      className={`text-xs sm:text-sm font-medium truncate max-w-[70px] sm:max-w-none ${
-                        currentStep >= step.number ? "text-accent-orange" : "text-gray-600"
-                      }`}
-                      title={step.title}
-                    >
-                      {step.title}
-                    </div>
-                    <div className="hidden sm:block text-[11px] text-gray-500 truncate max-w-[140px]" title={step.description}>
-                      {step.description}
-                    </div>
                   </div>
-
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`hidden sm:block w-8 h-px mx-4 ${
-                        currentStep > step.number ? "bg-accent-orange" : "bg-gray-300"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
           {/* Step content */}
-          <div className="bg-white rounded-lg shadow-sm p-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
             {currentStep === 1 && <CustomerForm data={customerData} onUpdate={updateCustomerData} onNext={nextStep} />}
 
             {currentStep === 2 && (
@@ -166,7 +164,7 @@ export default function CheckoutPage() {
                     <span className="truncate mr-2">
                       {item.product.name} x{item.quantity}
                     </span>
-                    <span className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-medium">{formatPrice(item.product.price * item.quantity)}</span>
                   </div>
                 ))}
                 {items.length > 3 && <div className="text-sm text-gray-500">+{items.length - 3} productos más</div>}
@@ -175,27 +173,27 @@ export default function CheckoutPage() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal:</span>
-                  <span>${calculations.subtotal.toFixed(2)}</span>
+                  <span>{formatPrice(calculations.subtotal)}</span>
                 </div>
 
                 {calculations.deliveryCost > 0 && (
                   <div className="flex justify-between text-sm">
                     <span>Envío:</span>
-                    <span>${calculations.deliveryCost.toFixed(2)}</span>
+                    <span>{formatPrice(calculations.deliveryCost)}</span>
                   </div>
                 )}
 
                 {calculations.discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
+                    <div className="flex justify-between text-sm text-green-600">
                     <span>Descuento:</span>
-                    <span>-${calculations.discount.toFixed(2)}</span>
+                    <span>-{formatPrice(calculations.discount)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
                   <span>Total:</span>
                   <span>
-                    ${calculations.total.toFixed(2)} {calculations.currency}
+                    {formatPrice(calculations.total)}
                   </span>
                 </div>
               </div>

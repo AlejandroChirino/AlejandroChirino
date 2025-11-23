@@ -69,7 +69,7 @@ export default function ActionSheet({ open, onClose, title, children, className,
       {/* Backdrop */}
       <div
         className={cn(
-          "absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-250",
+          "absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-250",
           visible ? "opacity-100" : "opacity-0",
         )}
         onClick={onClose}
@@ -81,9 +81,10 @@ export default function ActionSheet({ open, onClose, title, children, className,
         className={cn(
           // bottom sheet styles
           mode === "bottom"
-            ? "mt-auto w-full rounded-t-3xl bg-white shadow-lg"
-            : // center mode: modal centered on lg+, full width on mobile if requested
-              `w-full lg:max-w-3xl bg-white shadow-lg rounded-lg ${fullScreenOnMobile ? "h-full lg:h-auto rounded-none lg:rounded-lg" : "rounded-lg"}`,
+            ? "mt-auto w-full rounded-t-3xl bg-white shadow-lg border-t border-gray-100"
+              : // center mode: modal centered on lg+, full width on mobile if requested
+              // Use rounded top on mobile when fullScreenOnMobile is true (rounded-t-3xl), keep rounded-lg on lg
+              `w-full lg:max-w-3xl bg-white shadow-lg border border-gray-100 ${fullScreenOnMobile ? "h-full lg:h-auto rounded-t-3xl lg:rounded-lg" : "rounded-lg"}`,
           "transition-transform duration-300 ease-out",
           // animation: translate for bottom, scale/fade for center
           mode === "bottom" ? (visible ? "translate-y-0" : "translate-y-full") : (visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-95"),

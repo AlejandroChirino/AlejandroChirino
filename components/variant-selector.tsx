@@ -28,11 +28,11 @@ export default function VariantSelector({
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-2", className)}>
       {/* Size Selector */}
       {sizes.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-900 mb-3">
+          <h3 className="text-xs font-medium text-gray-900 mb-2">
             Talla
             {selectedSize && <span className="ml-2 text-gray-500">({selectedSize})</span>}
           </h3>
@@ -46,15 +46,17 @@ export default function VariantSelector({
                   key={size}
                   onClick={() => isAvailable && onSizeChange(size)}
                   disabled={!isAvailable}
-                  className={cn(
-                    "min-w-[44px] h-11 px-3 border rounded-lg text-sm font-medium transition-colors",
-                    "focus:outline-none focus:ring-2 focus:ring-accent-orange focus:ring-offset-2",
-                    {
-                      "border-accent-orange bg-accent-orange text-white": isSelected && isAvailable,
-                      "border-gray-300 bg-white text-gray-900 hover:border-gray-400": !isSelected && isAvailable,
-                      "border-gray-200 bg-gray-50 text-gray-400 line-through cursor-not-allowed": !isAvailable,
-                    },
-                  )}
+                      className={cn(
+                    "min-w-[32px] h-6 px-1 rounded-full text-xs font-medium transition-colors border",
+                        "focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)] focus:ring-offset-2",
+                        {
+                          // Selected: subtle outline in brand green over white (no solid bg)
+                          "border-[var(--brand-green)] bg-white text-[var(--brand-green)] font-semibold": isSelected && isAvailable,
+                          // Inactive: very light border so it doesn't compete with actions
+                          "border-gray-200 bg-white text-gray-700 hover:border-gray-300": !isSelected && isAvailable,
+                          "border-gray-200 bg-gray-50 text-gray-400 line-through cursor-not-allowed": !isAvailable,
+                        },
+                      )}
                   aria-label={`Talla ${size}${!isAvailable ? " - No disponible" : ""}`}
                   aria-pressed={isSelected}
                 >
@@ -69,11 +71,11 @@ export default function VariantSelector({
       {/* Color Selector */}
       {colors.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-900 mb-3">
+          <h3 className="text-xs font-medium text-gray-900 mb-1">
             Color
             {selectedColor && <span className="ml-2 text-gray-500">({selectedColor})</span>}
           </h3>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             {colors.map((color) => {
               const isSelected = selectedColor === color
 
@@ -82,11 +84,12 @@ export default function VariantSelector({
                   key={color}
                   onClick={() => onColorChange(color)}
                   className={cn(
-                    "w-8 h-8 rounded-full border-2 transition-all",
-                    "focus:outline-none focus:ring-2 focus:ring-accent-orange focus:ring-offset-2",
+                    "w-5 h-5 rounded-full border-2 transition-all",
+                    "focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)] focus:ring-offset-2",
                     {
-                      "border-accent-orange ring-2 ring-accent-orange ring-offset-2": isSelected,
-                      "border-gray-300 hover:border-gray-400": !isSelected,
+                      // Selected color: outer 2px in brand green for clear but subtle emphasis
+                      "ring-2 ring-[var(--brand-green)] border-[var(--brand-green)]": isSelected,
+                      "border-gray-200 hover:border-gray-300": !isSelected,
                     },
                   )}
                   style={{

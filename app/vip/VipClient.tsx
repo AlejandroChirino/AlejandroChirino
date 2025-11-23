@@ -19,6 +19,7 @@ export default function VipClient() {
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
   const [filters, setFilters] = useState<VipFiltersType>({
     category: "all",
     sortBy: "newest",
@@ -113,11 +114,34 @@ export default function VipClient() {
     fetchVipProducts()
   }, [isAuthenticated, filters])
 
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let mounted = true
+    async function fetchPrefs() {
+      try {
+        const res = await fetch(`/api/size-preferences`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const map: Record<string, string[]> = {}
+        ;(data || []).forEach((p: any) => {
+          const key = `${p.category}||${p.subcategory}`
+          map[key] = p.sizes || []
+        })
+        setPreferredMap(map)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPrefs()
+    return () => { mounted = false }
+  }, [isAuthenticated])
+
   if (checkingAuth) {
     return (
       <div>
         <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4">
+          <div className="max-w-7xl mx-auto px-0">
             <div className="text-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-orange mx-auto mb-4" />
               <p className="text-gray-600">Verificando acceso VIP...</p>
@@ -132,13 +156,13 @@ export default function VipClient() {
     return (
       <div>
         <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4">
+          <div className="max-w-7xl mx-auto px-0">
             <div className="text-center py-16">
               <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h1 className="text-3xl font-bold mb-4">Acceso Restringido</h1>
               <p className="text-gray-600 mb-6">Esta sección está disponible solo para miembros VIP autenticados.</p>
               <a
-                href="/cuenta"
+                href="/cuenta/iniciar"
                 className="inline-block bg-accent-orange text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
               >
                 Iniciar Sesión
@@ -153,8 +177,8 @@ export default function VipClient() {
   return (
     <div className="bg-white">
       <main className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
+        <div className="max-w-7xl mx-auto px-0">
+          <div className="text-center mb-12 pl-4 md:pl-6">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-accent-orange to-orange-600 rounded-full mb-6">
               <Crown className="h-10 w-10 text-white" />
             </div>
@@ -202,15 +226,21 @@ export default function VipClient() {
                         {products.length} producto{products.length !== 1 ? "s" : ""} exclusivo{products.length !== 1 ? "s" : ""}
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {products.map((product) => (
-                        <div key={product.id} className="relative">
-                          <ProductCard product={product} compact />
-                          <div className="absolute top-2 left-2 bg-gradient-to-r from-accent-orange to-orange-600 text-white px-2 py-1 rounded text-xs font-medium">
-                            VIP
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
+                      {products.map((product) => {
+                        const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
+                        const prefSizes = preferredMap[key] || []
+                        const prodSizes: string[] = (product as any)?.sizes || []
+                        const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+                        return (
+                          <div key={product.id} className="relative">
+                            <ProductCard product={product} compact hasPreferredSize={hasPreferred} />
+                            <div className="absolute top-2 left-2 bg-gradient-to-r from-accent-orange to-orange-600 text-white px-2 py-1 rounded text-xs font-medium">
+                              VIP
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </>
                 )}

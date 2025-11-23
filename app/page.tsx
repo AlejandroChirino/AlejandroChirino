@@ -158,9 +158,9 @@ async function FeaturedTrends() {
     }
 
     return (
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-2xl font-extrabold text-black uppercase mb-4 tracking-tighter">TENDENCIAS DESTACADAS</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="max-w-7xl mx-auto pl-4 md:pl-6">
+      <h2 className="text-2xl font-extrabold text-black uppercase mb-4 tracking-tighter">TENDENCIAS DESTACADAS</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
           {trends.map((t: any) => (
             <a key={t.id} href={`/producto/${t.product_id}`} className="block bg-white overflow-hidden rounded-none">
               <div className="w-full h-56 md:h-64 bg-gray-100 overflow-hidden">

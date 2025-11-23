@@ -8,12 +8,13 @@ export function cn(...inputs: ClassValue[]) {
 
 // Formateo de precios optimizado
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
+  // Formatear número con separadores locales y luego anteponer el símbolo '$'
+  const formatted = new Intl.NumberFormat("es-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(price)
+
+  return `$${formatted}`
 }
 
 // Formateo de fechas optimizado

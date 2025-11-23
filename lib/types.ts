@@ -172,6 +172,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: "primary" | "secondary" | "outline"
   size?: "sm" | "md" | "lg"
   loading?: boolean
+  as?: "a" | "button"
+  href?: string
 }
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {

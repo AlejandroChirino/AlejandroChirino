@@ -17,6 +17,7 @@ export default function BuscarClient() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(!!initialQuery)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
   const [category, setCategory] = useState<ProductCategory | "all">("all")
   // Debug/telemetry state for last request/error (used by debounced search)
   const [lastRequest, setLastRequest] = useState<any>(null)
@@ -64,6 +65,28 @@ export default function BuscarClient() {
       debouncedSearch(initialQuery, category)
     }
   }, [initialQuery, category, debouncedSearch])
+
+  useEffect(() => {
+    let mounted = true
+    async function fetchPrefs() {
+      try {
+        const res = await fetch(`/api/size-preferences`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const map: Record<string, string[]> = {}
+        ;(data || []).forEach((p: any) => {
+          const key = `${p.category}||${p.subcategory}`
+          map[key] = p.sizes || []
+        })
+        setPreferredMap(map)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPrefs()
+    return () => { mounted = false }
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -170,9 +193,13 @@ export default function BuscarClient() {
             {category !== "all" && ` en la categoría ${category}`}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} compact />
-            ))}
+            {products.map((product) => {
+              const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
+              const prefSizes = preferredMap[key] || []
+              const prodSizes: string[] = (product as any)?.sizes || []
+              const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+              return <ProductCard key={product.id} product={product} compact hasPreferredSize={hasPreferred} />
+            })}
           </div>
         </div>
       )}

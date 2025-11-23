@@ -4,37 +4,12 @@ import { useEffect, useState } from "react"
 import { Box, ShoppingCart, Users, Tag, Percent, BarChart4, LogOut } from "lucide-react"
 
 export default function AdminPage() {
-  const [isAuthorized, setIsAuthorized] = useState(false)
-
-  useEffect(() => {
-    // Verificar si hay una sesión de admin activa
-    const adminSession = localStorage.getItem("admin_session")
-    if (adminSession === "lalfashion0@gmail.com") {
-      setIsAuthorized(true)
-    } else {
-      // Redirigir a la página de cuenta si no es admin
-      if (typeof window !== "undefined") {
-        window.location.href = "/cuenta"
-      }
-    }
-  }, [])
-
   const handleLogout = () => {
-    localStorage.removeItem("admin_session")
+    // cerrar sesión admin: limpiar posible marca cliente y volver al home
+    try { localStorage.removeItem("admin_session") } catch (e) {}
     if (typeof window !== "undefined") {
       window.location.href = "/"
     }
-  }
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Verificando acceso...</h1>
-          <p className="text-gray-600">Redirigiendo...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -126,8 +101,27 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 px-6 py-3">
-                <div className="text-sm text-gray-600">No disponible aún</div>
+              <div
+                className="bg-gray-50 px-6 py-3"
+                onClick={() => {
+                  if (typeof window !== "undefined") window.location.href = "/admin/pedidos"
+                }}
+              >
+                <a href="/admin/pedidos" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                  Gestionar órdenes
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 ml-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </a>
               </div>
             </div>
 
@@ -146,8 +140,27 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 px-6 py-3">
-                <div className="text-sm text-gray-600">No disponible aún</div>
+              <div
+                className="bg-gray-50 px-6 py-3"
+                onClick={() => {
+                  if (typeof window !== "undefined") window.location.href = "/admin/clientes"
+                }}
+              >
+                <a href="/admin/clientes" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                  Gestionar clientes
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 ml-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </a>
               </div>
             </div>
 

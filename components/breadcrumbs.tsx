@@ -10,25 +10,25 @@ interface BreadcrumbsProps {
 
 export default function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
   return (
-    <nav aria-label="Breadcrumb" className={`flex items-center space-x-1 text-sm ${className}`}>
+    <nav aria-label="Breadcrumb" className={`flex items-center space-x-0.5 text-xs w-full py-0 ${className}`}>
       <Link
         href="/"
         className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
         aria-label="Ir al inicio"
       >
-        <Home className="h-4 w-4" />
+        <Home className="h-3 w-3" />
         <span className="sr-only">Inicio</span>
       </Link>
 
       {items.map((item, index) => (
-        <div key={index} className="flex items-center space-x-1">
-          <ChevronRight className="h-4 w-4 text-gray-400" />
+        <div key={index} className="flex items-center space-x-1 min-w-0">
+          <ChevronRight className="h-3 w-3 text-gray-400" />
           {item.href ? (
             <Link href={item.href} className="text-gray-500 hover:text-gray-700 transition-colors">
-              {capitalize(item.label)}
+              <span className="truncate block">{capitalize(item.label)}</span>
             </Link>
           ) : (
-            <span className="text-gray-900 font-medium">{capitalize(item.label)}</span>
+            <span className="text-gray-900 font-medium truncate block">{capitalize(item.label)}</span>
           )}
         </div>
       ))}

@@ -85,99 +85,34 @@ export default function CuentaPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header ya incluido en el layout raíz */}
+    <div className="min-h-screen bg-white">
+      {/* Minimal header area inside the page to keep focus on auth */}
+      <main className="min-h-[calc(100vh-96px)] flex items-center">
+        <div className="max-w-md mx-auto w-full px-6 text-center">
+          <div className="mb-8 md:mb-10">
+            <a href="/" className="flex items-end gap-1 justify-center whitespace-nowrap">
+              <span className="text-2xl md:text-3xl font-bold tracked-strong uppercase leading-none">LA</span>
+              <span className="inline-block -mb-0.5 text-2xl md:text-3xl leading-none -ml-0.5 -mr-0.5">⚡</span>
+              <span className="text-2xl md:text-3xl font-bold tracked-strong uppercase leading-none">FASHION</span>
+            </a>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-black mb-3">Bienvenido a LA FASHION</h1>
+          <p className="text-gray-600 mb-10">Tu estilo te espera</p>
 
-      <main className="py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-8">Mi Cuenta</h1>
+          <div className="flex flex-col md:flex-row gap-2 md:gap-6 justify-center items-center">
+            <Button as="a" href="/cuenta/crear" variant="primary" size="md" className="w-auto px-6 rounded-full">
+              Crear Cuenta
+            </Button>
 
-          {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">{error}</div>}
-          {registerSuccess && <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">¡Cuenta creada! Revisa tu email para confirmar tu registro.</div>}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg border">
-              <h2 className="text-xl font-semibold mb-4">Iniciar Sesión</h2>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label htmlFor="login-email" className="block text-sm font-medium mb-2">Email</label>
-                  <input
-                    id="login-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
-                    autoComplete="email"
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="login-password" className="block text-sm font-medium mb-2">Contraseña</label>
-                  <input
-                    id="login-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-                <Button type="submit" disabled={loading} className="w-full py-3 text-base">
-                  {loading ? "Iniciando..." : "Iniciar Sesión"}
-                </Button>
-              </form>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg border">
-              <h2 className="text-xl font-semibold mb-4">Crear Cuenta</h2>
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div>
-                  <label htmlFor="register-name" className="block text-sm font-medium mb-2">Nombre</label>
-                  <input
-                    id="register-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
-                    autoComplete="name"
-                    placeholder="Tu nombre"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="register-email" className="block text-sm font-medium mb-2">Email</label>
-                  <input
-                    id="register-email"
-                    type="email"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
-                    autoComplete="email"
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="register-password" className="block text-sm font-medium mb-2">Contraseña</label>
-                  <input
-                    id="register-password"
-                    type="password"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--brand-green)]"
-                    autoComplete="new-password"
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-                <Button type="submit" disabled={loading} className="w-full py-3 text-base">
-                  {loading ? "Creando..." : "Crear Cuenta"}
-                </Button>
-              </form>
-            </div>
+            <Button
+              as="a"
+              href="/cuenta/iniciar"
+              variant="outline"
+              size="md"
+              className="w-auto px-6 rounded-full border border-gray-300 text-black hover:bg-gray-50"
+            >
+              Iniciar Sesión
+            </Button>
           </div>
         </div>
       </main>

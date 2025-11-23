@@ -6,6 +6,7 @@ import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import ProductFilterBar from "@/components/product-filter-bar"
+import Breadcrumbs from "@/components/breadcrumbs"
 import type { Product } from "@/lib/types"
 
 export default function TodoPage() {
@@ -14,6 +15,7 @@ export default function TodoPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
 
   // filter state
   const [selectedColors, setSelectedColors] = useState<string[]>([])
@@ -62,6 +64,29 @@ export default function TodoPage() {
     fetchProducts()
   }, [selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
+  // fetch all user size preferences (no category filter) so we can match across categories
+  useEffect(() => {
+    let mounted = true
+    async function fetchPrefs() {
+      try {
+        const res = await fetch(`/api/size-preferences`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const map: Record<string, string[]> = {}
+        ;(data || []).forEach((p: any) => {
+          const key = `${p.category}||${p.subcategory}`
+          map[key] = p.sizes || []
+        })
+        setPreferredMap(map)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPrefs()
+    return () => { mounted = false }
+  }, [])
+
   const [availableColors, setAvailableColors] = useState<string[]>([])
   const [availableSizes, setAvailableSizes] = useState<string[]>([])
 
@@ -93,8 +118,9 @@ export default function TodoPage() {
   return (
     <div className="min-h-screen">
       <main className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="mb-8">
+        <div className="max-w-7xl mx-auto px-0">
+          <Breadcrumbs items={[{ label: "todo", href: "/todo" }]} className="mb-2 px-4 md:px-6 -mt-4 md:-mt-6" />
+          <div className="mb-8 pl-4 md:pl-6">
             <h1 className="text-3xl font-bold mb-2 tracking-tighter leading-none">TIENDA COMPLETA</h1>
             <p className="text-gray-600">Encuentra tu estilo perfecto, la colección completa, lista para ti.</p>
           </div>
@@ -146,10 +172,14 @@ export default function TodoPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} compact />
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
+              {products.map((product) => {
+                const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
+                const prefSizes = preferredMap[key] || []
+                const prodSizes: string[] = (product as any)?.sizes || []
+                const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+                return <ProductCard key={product.id} product={product} compact hasPreferredSize={hasPreferred} />
+              })}
             </div>
           )}
         </div>

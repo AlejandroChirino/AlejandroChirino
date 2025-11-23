@@ -178,6 +178,33 @@ html {
   }
 }
 
+/* Placeholder color global: aseguramos texto de ejemplo gris claro para inputs */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #9CA3AF; /* tailwind text-gray-400 */
+  opacity: 1; /* evitar que el placeholder herede opacidad reducida */
+}
+
+/* WebKit-specific placeholders for broader compatibility */
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  color: #9CA3AF;
+  opacity: 1;
+}
+
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+  color: #9CA3AF;
+  opacity: 1;
+}
+
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+  color: #9CA3AF;
+  opacity: 1;
+}
+
 /* Mapeo de clases legacy naranja -> verde marca (para compatibilidad sin tocar páginas) */
 .bg-accent-orange { background-color: var(--brand-green) !important; }
 .hover\:bg-orange-600:hover { background-color: #00b84d !important; }

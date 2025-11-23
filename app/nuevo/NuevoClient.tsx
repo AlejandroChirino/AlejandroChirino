@@ -6,6 +6,7 @@ import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import ProductFilterBar from "@/components/product-filter-bar"
+import Breadcrumbs from "@/components/breadcrumbs"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 import CarouselProductCard from "@/components/carousel-product-card"
@@ -15,6 +16,7 @@ function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selec
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     async function fetchProducts() {
@@ -62,6 +64,28 @@ function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selec
     fetchProducts()
   }, [selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
+  useEffect(() => {
+    let mounted = true
+    async function fetchPrefs() {
+      try {
+        const res = await fetch(`/api/size-preferences`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const map: Record<string, string[]> = {}
+        ;(data || []).forEach((p: any) => {
+          const key = `${p.category}||${p.subcategory}`
+          map[key] = p.sizes || []
+        })
+        setPreferredMap(map)
+      } catch (e) {
+        // ignore errors
+      }
+    }
+    fetchPrefs()
+    return () => { mounted = false }
+  }, [])
+
   if (loading) return <LoadingSkeleton count={8} compact />
   if (error) return <div className="text-center text-gray-500 py-16"><p>{error}</p></div>
   if (products.length === 0) return (
@@ -83,10 +107,14 @@ function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selec
   )
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-      {products.map((product) => (
-        <CarouselProductCard key={product.id} product={product} badgeType="nuevo" />
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
+      {products.map((product) => {
+        const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
+        const prefSizes = preferredMap[key] || []
+        const prodSizes: string[] = (product as any)?.sizes || []
+        const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+        return <CarouselProductCard key={product.id} product={product} badgeType="nuevo" hasPreferredSize={hasPreferred} />
+      })}
     </div>
   )
 }
@@ -185,7 +213,8 @@ export default function NuevoClient() {
   return (
     <div>
       {/* Hero section */}
-      <div className="mb-8 text-center">
+      <Breadcrumbs items={[{ label: "nuevo", href: "/nuevo" }, ...(selectedSubcategory ? [{ label: selectedSubcategory }] : [])]} className="mb-2 px-4 md:px-6 -mt-4 md:-mt-6" />
+      <div className="mb-8 text-center pl-4 md:pl-6">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">NUEVO</h1>
         <p className="text-gray-600 text-lg max-w-2xl mx-auto">
           Descubre nuestras últimas novedades. Productos añadidos en los últimos 7 días.

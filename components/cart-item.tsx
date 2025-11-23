@@ -59,7 +59,7 @@ export default function CartItem({ item }: CartItemProps) {
         <div className="flex items-center justify-between gap-2 flex-nowrap">
           <Link
             href={`/producto/${product.id}`}
-            className="min-w-0 flex-1 block font-semibold text-gray-900 hover:text-accent-orange transition-colors truncate"
+            className="min-w-0 flex-1 block text-sm sm:text-base font-medium text-gray-900 hover:text-accent-orange transition-colors truncate"
             title={product.name}
             style={{ overflowWrap: "anywhere" }}
           >
@@ -79,60 +79,34 @@ export default function CartItem({ item }: CartItemProps) {
         {/* Detalles y controles: nombre arriba, debajo selector + controles a la derecha */}
         <div className="mt-1">
           <div className="min-w-0">
-            {/* Nombre (arriba) */}
-            <div className="mb-2">
-              <Link
-                href={`/producto/${product.id}`}
-                className="block font-semibold text-gray-900 hover:text-accent-orange transition-colors truncate"
-                title={product.name}
-                style={{ overflowWrap: "anywhere" }}
-              >
-                {product.name}
-              </Link>
+            {/* Variante (texto compacto debajo del título) */}
+            <div className="mt-1">
+              <div className="text-sm text-gray-500">{color || size ? `${color || ""}${color && size ? " / " : ""}${size || ""}` : "-"}</div>
             </div>
 
-            {/* Selector y controles en la misma fila: variantes | cantidad | eliminar */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex-1 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTempColor(color)
-                    setTempSize(size)
-                    setSheetOpen(true)
-                  }}
-                  className="h-7 px-3 text-xs rounded-full bg-gray-100 border border-gray-200 flex items-center gap-2 hover:bg-gray-200 transition-colors max-w-full"
-                >
-                  {color && (
-                    <span
-                      className="h-3 w-3 rounded-full border border-gray-300 flex-shrink-0"
-                      style={{ backgroundColor: color.toLowerCase() }}
-                      aria-hidden="true"
-                    />
-                  )}
-                  <span className="truncate max-w-[140px] sm:max-w-[220px]">{color || size ? `${color || ""}${color && size ? " / " : ""}${size || ""}` : "Selecciona"}</span>
-                </button>
-              </div>
+            {/* Controles: cantidad | eliminar */}
+            <div className="flex items-center gap-3 flex-wrap mt-2">
+              <div className="flex-1 min-w-0" />
 
               {/* Modificador de cantidad centrado entre selector y eliminar */}
               <div className="shrink-0 flex items-center justify-center">
-                <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 overflow-hidden">
+                <div className="flex items-center rounded-md border border-gray-200 bg-white overflow-hidden">
                   <button
                     onClick={() => handleQuantityChange(quantity - 1)}
                     disabled={quantity <= 1 || isLoading}
-                    className="w-6 h-6 sm:w-7 sm:h-7 grid place-items-center hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    className="w-7 h-7 grid place-items-center text-gray-700 border-r border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
                     aria-label="Disminuir cantidad"
                   >
-                    <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Minus className="h-3 w-3" />
                   </button>
-                  <span className="px-2 text-xs sm:text-sm min-w-[24px] text-center">{quantity}</span>
+                  <span className="px-3 text-sm min-w-[28px] text-center text-gray-900">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(quantity + 1)}
                     disabled={quantity >= product.stock || isLoading}
-                    className="w-6 h-6 sm:w-7 sm:h-7 grid place-items-center hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    className="w-7 h-7 grid place-items-center text-gray-700 border-l border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
                     aria-label="Aumentar cantidad"
                   >
-                    <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Plus className="h-3 w-3" />
                   </button>
                 </div>
               </div>
@@ -142,10 +116,10 @@ export default function CartItem({ item }: CartItemProps) {
                 <button
                   onClick={handleRemove}
                   disabled={isLoading}
-                  className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 text-gray-400 hover:text-red-500 transition-colors rounded"
+                  className="flex items-center justify-center w-7 h-7 text-gray-500 hover:text-gray-700 transition-colors rounded"
                   aria-label="Eliminar producto"
                 >
-                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -153,7 +127,7 @@ export default function CartItem({ item }: CartItemProps) {
             {/* Línea inferior exclusiva para el precio */}
             <div className="mt-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-accent-orange font-bold">{formatPrice(currentPrice)}</span>
+                <span className="text-gray-900 font-bold">{formatPrice(currentPrice)}</span>
                 {hasDiscount && <span className="text-sm text-gray-500 line-through">{formatPrice(product.price)}</span>}
               </div>
             </div>
@@ -197,7 +171,7 @@ export default function CartItem({ item }: CartItemProps) {
           <div className="pt-2 grid grid-cols-2 gap-2">
             <button
               onClick={() => setSheetOpen(false)}
-              className="text-sm text-gray-700"
+              className="h-10 rounded-full border border-gray-300 text-sm font-medium hover:bg-gray-50"
             >
               Cancelar
             </button>
@@ -206,7 +180,7 @@ export default function CartItem({ item }: CartItemProps) {
                 updateItemOptions(item.id, { color: tempColor || null, size: tempSize || null })
                 setSheetOpen(false)
               }}
-              className="h-10 rounded-full bg-accent-green text-white text-sm font-medium hover:brightness-105 transition-colors"
+              className="h-10 rounded-full bg-[var(--brand-green)] text-[var(--brand-on-green)] text-sm font-medium hover:brightness-105 transition-colors"
             >
               Aplicar cambios
             </button>

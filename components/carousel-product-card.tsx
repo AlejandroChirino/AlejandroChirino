@@ -8,6 +8,7 @@ interface CarouselProductCardProps extends ProductCardProps {
   isPartiallyVisible?: boolean
   isMobile?: boolean
   badgeType?: "nuevo" | "top-ventas"
+  hasPreferredSize?: boolean
 }
 
 const CarouselProductCard = memo(function CarouselProductCard({
@@ -15,6 +16,7 @@ const CarouselProductCard = memo(function CarouselProductCard({
   isPartiallyVisible = false,
   isMobile = false,
   badgeType = "top-ventas",
+  hasPreferredSize = false,
 }: CarouselProductCardProps) {
   const { id, name, price, image_url } = product
 
@@ -43,6 +45,10 @@ const CarouselProductCard = memo(function CarouselProductCard({
           <span className="absolute top-2 left-2 bg-accent-orange text-white text-xs md:text-sm font-bold px-2 py-1">
             {badgeType === "nuevo" ? "Nuevo" : "TOP VENTAS"}
           </span>
+          {/* Preferred size badge */}
+          {hasPreferredSize && (
+            <span className="absolute top-2 right-2 bg-emerald-600 text-white text-xs md:text-sm font-bold px-2 py-1">Tu talla</span>
+          )}
         </div>
         <div className="space-y-1">
           <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-accent-orange transition-colors text-xs md:text-sm">

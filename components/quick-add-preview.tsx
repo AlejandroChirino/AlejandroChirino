@@ -57,12 +57,8 @@ export default function QuickAddPreview({
         />
 
         <div className="pt-2 grid grid-cols-2 gap-2">
-          <button onClick={onCancel} className="h-10 rounded-full border border-gray-300 text-sm font-medium hover:bg-gray-50">
-            Cancelar
-          </button>
-          <button onClick={onAdd} className="h-10 rounded-full bg-accent-green text-white text-sm font-medium hover:brightness-105 transition-colors">
-            Añadir a la bolsa
-          </button>
+          <button onClick={onCancel} className="h-10 text-gray-600 text-sm font-medium">Cancelar</button>
+          <button onClick={onAdd} className="h-10 text-green-600 font-semibold text-sm">Añadir a la bolsa</button>
         </div>
       </div>
     </div>

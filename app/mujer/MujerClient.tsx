@@ -6,6 +6,7 @@ import { labelFromSlug, slugFromLabel } from "@/lib/subcategoryUtils"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import ProductFilterBar from "@/components/product-filter-bar"
+import Breadcrumbs from "@/components/breadcrumbs"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 
@@ -60,6 +61,7 @@ export default function MujerClient() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
   // filter state
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
@@ -110,6 +112,28 @@ export default function MujerClient() {
     fetchProducts()
   }, [selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedOnSale, selectedFeatured, selectedIsVip, selectedIsNew])
 
+  useEffect(() => {
+    let mounted = true
+    async function fetchPrefs() {
+      try {
+        const res = await fetch(`/api/size-preferences`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const map: Record<string, string[]> = {}
+        ;(data || []).forEach((p: any) => {
+          const key = `${p.category}||${p.subcategory}`
+          map[key] = p.sizes || []
+        })
+        setPreferredMap(map)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPrefs()
+    return () => { mounted = false }
+  }, [])
+
   const [availableColors, setAvailableColors] = useState<string[]>([])
   const [availableSizes, setAvailableSizes] = useState<string[]>([])
 
@@ -142,6 +166,7 @@ export default function MujerClient() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "mujer", href: "/mujer" }, ...(selectedSubcategory ? [{ label: selectedSubcategory }] : [])]} className="mb-2 px-4 md:px-6 -mt-4 md:-mt-6" />
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 tracking-tighter leading-none">ROPA PARA MUJER</h1>
         <p className="text-gray-600">DESCUBRE NUESTRA COLECCIÓN EXCLUSIVA PARA MUJER</p>
@@ -197,9 +222,13 @@ export default function MujerClient() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} compact />
-          ))}
+          {products.map((product) => {
+            const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
+            const prefSizes = preferredMap[key] || []
+            const prodSizes: string[] = (product as any)?.sizes || []
+            const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+            return <ProductCard key={product.id} product={product} compact hasPreferredSize={hasPreferred} />
+          })}
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -23,6 +23,22 @@ export default function ProductGallery({
   const [isZoomed, setIsZoomed] = useState(false)
   const currentImage = images[activeIndex] || "/placeholder.svg?height=600&width=600&query=product"
 
+  const mobileTrackRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    try {
+      console.debug("[ProductGallery] images:", images)
+    } catch (e) {}
+  }, [images])
+
+  const scrollToIndex = (i: number) => {
+    const track = mobileTrackRef.current
+    if (!track) return
+    const child = track.children[i] as HTMLElement | undefined
+    if (child) child.scrollIntoView({ behavior: "smooth", inline: "center" })
+    onImageChange(i)
+  }
+
   const nextImage = () => {
     onImageChange((activeIndex + 1) % images.length)
   }
@@ -32,88 +48,108 @@ export default function ProductGallery({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
-      {/* Main Image */}
-      <div className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden group">
-        <Image
-          src={currentImage || "/placeholder.svg"}
-          alt={`${productName} - Imagen ${activeIndex + 1}`}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 60vw"
-          priority
-        />
-
-        {/* Navigation arrows - Desktop */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={prevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block"
-              aria-label="Imagen anterior"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              onClick={nextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block"
-              aria-label="Siguiente imagen"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </>
-        )}
-
-        {/* Zoom button */}
-        <button
-          onClick={() => setIsZoomed(true)}
-          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Ampliar imagen"
+    <div className={cn("space-y-2 w-full px-0", className)}>
+      {/* Mobile: edge-to-edge horizontal carousel with peek */}
+      <div className="md:hidden relative left-1/2 -translate-x-1/2 w-screen">
+        <div
+          ref={mobileTrackRef}
+          className="flex items-start overflow-x-auto snap-x snap-mandatory px-0 gap-0 touch-pan-x scrollbar-hidden"
         >
-          <ZoomIn className="h-4 w-4" />
-        </button>
+          {images.map((img, index) => (
+            <div
+              key={index}
+              className={`relative w-screen aspect-[3/4] flex-shrink-0 snap-center overflow-hidden ${
+                index !== images.length - 1 ? "border-r border-gray-200" : ""
+              }`}
+              aria-hidden={index !== activeIndex}
+            >
+              <img
+                src={img || "/placeholder.svg"}
+                alt={`${productName} - Imagen ${index + 1}`}
+                className="w-full h-full object-cover block"
+                onClick={() => setIsZoomed(true)}
+              />
+            </div>
+          ))}
+        </div>
 
-        {/* Mobile swipe indicators */}
+        {/* Pagination dots (bottom-left) */}
+        <div className="absolute left-4 bottom-2">
+          <div className="flex items-center space-x-1">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => scrollToIndex(i)}
+                className={cn(
+                  "rounded-full transition-colors",
+                  i === activeIndex ? "w-2 h-2 bg-gray-300" : "w-1.5 h-1.5 bg-gray-200"
+                )}
+                aria-label={`Ver imagen ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop: single image with arrows and thumbnails */}
+      <div className="hidden md:block">
+      <div className="relative aspect-[3/4] bg-gray-100 rounded-none overflow-hidden group">
+          <img
+            src={currentImage || "/placeholder.svg"}
+            alt={`${productName} - Imagen ${activeIndex + 1}`}
+            className="w-full h-full object-cover"
+          />
+
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Imagen anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Siguiente imagen"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={() => setIsZoomed(true)}
+            className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Ampliar imagen"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Thumbnails - Desktop */}
         {images.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1 md:hidden">
-            {images.map((_, index) => (
+          <div className="mt-2 grid grid-cols-4 gap-1">
+            {images.map((image, index) => (
               <button
                 key={index}
                 onClick={() => onImageChange(index)}
                 className={cn(
-                  "w-2 h-2 rounded-full transition-colors",
-                  index === activeIndex ? "bg-white" : "bg-white/50",
-                )}
-                aria-label={`Ver imagen ${index + 1}`}
-              />
+                    "relative aspect-square bg-gray-100 rounded-none overflow-hidden border-2 transition-colors",
+                    index === activeIndex ? "border-accent-orange" : "border-transparent hover:border-gray-300",
+                  )}
+              >
+                <img
+                  src={image || "/placeholder.svg"}
+                  alt={`${productName} - Miniatura ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
             ))}
           </div>
         )}
       </div>
-
-      {/* Thumbnails - Desktop */}
-      {images.length > 1 && (
-        <div className="hidden md:grid grid-cols-4 gap-2">
-          {images.map((image, index) => (
-            <button
-              key={index}
-              onClick={() => onImageChange(index)}
-              className={cn(
-                "relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors",
-                index === activeIndex ? "border-accent-orange" : "border-transparent hover:border-gray-300",
-              )}
-            >
-              <Image
-                src={image || "/placeholder.svg"}
-                alt={`${productName} - Miniatura ${index + 1}`}
-                fill
-                className="object-cover"
-                sizes="150px"
-              />
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Zoom Modal */}
       {isZoomed && (
@@ -122,12 +158,11 @@ export default function ProductGallery({
           onClick={() => setIsZoomed(false)}
         >
           <div className="relative max-w-4xl max-h-full">
-            <Image
+            <img
               src={currentImage || "/placeholder.svg"}
               alt={`${productName} - Ampliada`}
-              width={800}
-              height={1000}
               className="object-contain max-h-[90vh]"
+              style={{ maxWidth: "800px", maxHeight: "1000px" }}
             />
             <button
               onClick={() => setIsZoomed(false)}

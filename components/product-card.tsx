@@ -13,7 +13,7 @@ import ActionSheet from "@/components/ui/action-sheet"
 import ProductDiscountBadge from "@/components/product-discount-badge"
 import QuickAddPreview from "@/components/quick-add-preview"
 
-const ProductCard = memo(function ProductCard({ product, compact = false, square = true }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, compact = false, square = true, hasPreferredSize = false }: ProductCardProps & { hasPreferredSize?: boolean }) {
   const { id, name, price, sale_price, on_sale, image_url, category } = product
 
   // Normalizar y calcular descuento similar a la página de detalle
@@ -23,14 +23,14 @@ const ProductCard = memo(function ProductCard({ product, compact = false, square
   const discountPercentage = hasSale ? Math.round(((p - (s as number)) / p) * 100) : 0
 
   return (
-    <div className={cn("group block focus-within:outline-none focus-within:ring-2 focus-within:ring-accent-orange relative", square ? "rounded-none" : "rounded-lg")}>
+    <div className={cn("group block focus-within:outline-none focus-within:ring-2 focus-within:ring-accent-orange relative mx-0 mb-0", square ? "rounded-none" : "rounded-lg")}>
       <Link
         href={`/producto/${id}`}
         className="block"
         aria-label={`Ver detalles de ${name}`}
       >
         <article className="h-full">
-          <div className={cn("aspect-[3/4] bg-gray-100 overflow-hidden mb-2 md:mb-4 relative", square ? "rounded-none" : "rounded-lg")}>
+          <div className={cn("aspect-[3/4] bg-gray-100 overflow-hidden mb-0.5 md:mb-1 relative", square ? "rounded-none" : "rounded-lg")}>
             <Image
               src={image_url || "/placeholder.svg?height=400&width=300&query=product"}
               alt={name}
@@ -48,7 +48,7 @@ const ProductCard = memo(function ProductCard({ product, compact = false, square
             <ProductDiscountBadge price={p} sale_price={s} on_sale={on_sale} className="absolute top-2 left-2 text-xs" />
           </div>
 
-          <div className="space-y-1 md:space-y-2">
+          <div className="space-y-0.5 md:space-y-1 pl-4 pr-4 md:pl-6 md:pr-6">
             <h3
               className={cn(
                 "font-medium text-gray-900 line-clamp-2 group-hover:text-accent-orange transition-colors",
@@ -71,6 +71,9 @@ const ProductCard = memo(function ProductCard({ product, compact = false, square
       <QuickAddButton
         product={{ id, name, price, sale_price, on_sale, image_url, category, sizes: (product as any)?.sizes, colors: (product as any)?.colors }}
       />
+      {hasPreferredSize && (
+        <div className="absolute top-2 right-2 bg-emerald-600 text-white px-2 py-1 rounded text-xs font-medium">Tu talla</div>
+      )}
     </div>
   )
 })
@@ -156,10 +159,9 @@ function QuickAddButton({ product }: { product: any }) {
           e.preventDefault()
           e.stopPropagation()
         }}
-        onTouchStartCapture={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        }}
+        // Nota: evitamos llamar a preventDefault en touchstart porque
+        // navegadores modernos tratan touch listeners como `passive`.
+        // Eliminamos el handler para prevenir el error mostrado en consola.
         onMouseDownCapture={(e) => {
           e.preventDefault()
           e.stopPropagation()

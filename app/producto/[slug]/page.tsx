@@ -21,6 +21,7 @@ import ProductCarousel from "@/components/product-carousel"
 import ProductDiscountBadge from "@/components/product-discount-badge"
 import { supabase } from "@/lib/supabaseClient"
 import LoadingSkeleton from "@/components/loading-skeleton"
+import { slugFromLabel } from "@/lib/subcategoryUtils"
 
 interface ProductPageProps {
   // En Next.js 15+, params es una Promesa en componentes cliente
@@ -107,6 +108,41 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [toastMessage, setToastMessage] = useState("")
   const [toastType, setToastType] = useState<"success" | "error">("success")
 
+  // Wrapper to call toggleFavorite and show a visual toast for feedback
+  const handleToggleFavorite = async () => {
+    try {
+      console.log("handleToggleFavorite: starting", { productId: product.id })
+      const currently = isFavorite(product.id)
+      // Call the hook and wait
+      await toggleFavorite(product.id)
+      console.log("handleToggleFavorite: toggleFavorite completed", { productId: product.id })
+
+      // Re-sync favorites from server to ensure client reflects DB state
+      try {
+        const userRes = await supabase.auth.getUser()
+        const userId = userRes?.data?.user?.id
+        if (userId) {
+          const res = await fetch(`/api/favorites?userId=${encodeURIComponent(userId)}`)
+          const data = await res.json()
+          console.log("handleToggleFavorite: re-fetched favorites", { data })
+        } else {
+          console.log("handleToggleFavorite: no user session available to re-fetch favorites")
+        }
+      } catch (e) {
+        console.warn("handleToggleFavorite: failed to re-fetch favorites", e)
+      }
+
+      setToastMessage(!currently ? "Añadido a favoritos" : "Eliminado de favoritos")
+      setToastType("success")
+      setShowToast(true)
+    } catch (e) {
+      console.error("Error toggling favorite from UI:", e)
+      setToastMessage("Error actualizando favoritos")
+      setToastType("error")
+      setShowToast(true)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -116,7 +152,7 @@ export default function ProductPage({ params }: ProductPageProps) {
             {/* Loading skeleton */}
             <div className="animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-1/3 mb-6" />
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-x-8 gap-y-2">
                 <div className="lg:col-span-3">
                   <div className="aspect-[3/4] bg-gray-200 rounded-lg" />
                 </div>
@@ -145,7 +181,24 @@ export default function ProductPage({ params }: ProductPageProps) {
     "/placeholder.svg?height=600&width=600&query=product-3",
   ]
 
-  const breadcrumbItems = [{ label: product.category, href: `/${product.category}` }, { label: product.name }]
+  const breadcrumbItems = (() => {
+    const items: { label: string; href?: string }[] = []
+    // Category
+    items.push({ label: product.category, href: `/${product.category}` })
+    // Subcategory (when available) -> link to category/subcategory
+    if (product.subcategoria) {
+      try {
+        const slug = slugFromLabel(product.category as any, product.subcategoria)
+        items.push({ label: product.subcategoria, href: `/${product.category}/${slug}` })
+      } catch (e) {
+        // Fallback: push label without href
+        items.push({ label: product.subcategoria })
+      }
+    }
+    // Current product (no href)
+    items.push({ label: product.name })
+    return items
+  })()
 
   // Reemplazar la función handleAddToCart con la nueva implementación
   const handleAddToCart = async () => {
@@ -232,8 +285,8 @@ export default function ProductPage({ params }: ProductPageProps) {
       content: (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Truck className="h-4 w-4 text-green-600" />
-            <span>Envío gratis en pedidos superiores a 50€</span>
+            <Truck className="h-4 w-4 text-[var(--brand-green)]" />
+            <span>Envío gratis en pedidos superiores a $50</span>
           </div>
           <div className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4 text-blue-600" />
@@ -261,12 +314,12 @@ export default function ProductPage({ params }: ProductPageProps) {
     <div className="min-h-screen overflow-x-hidden">
       {/* Header ya incluido en el layout raíz */}
 
-      <main className="py-4 md:py-8">
+      <main className="py-2 md:py-4">
         <div className="max-w-7xl mx-auto px-4">
           {/* Breadcrumbs: prevenir desbordes horizontales */}
-          <Breadcrumbs items={breadcrumbItems} className="mb-6 max-w-full overflow-hidden" />
+          <Breadcrumbs items={breadcrumbItems} className="mb-2 max-w-full overflow-hidden" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-x-8 gap-y-2">
             {/* Gallery - Mobile: full width, Desktop: 3/5 */}
             <div className="lg:col-span-3 relative">
               <ProductGallery
@@ -276,10 +329,30 @@ export default function ProductPage({ params }: ProductPageProps) {
                 onImageChange={setActiveImageIndex}
               />
 
+              {/* Título y rating: título a la izquierda (truncado), estrellas a la derecha */}
+              <div className="mt-0 mb-0 flex items-start justify-between gap-3">
+                <h1
+                  className="flex-1 text-sm md:text-base font-semibold text-gray-900 truncate mb-0"
+                  style={{ overflowWrap: "anywhere" }}
+                  title={product.name}
+                >
+                  {product.name}
+                </h1>
+
+                <div className="flex-shrink-0 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`h-3 w-3 ${i < (product.rating ?? 4) ? "text-yellow-400 fill-current" : "text-gray-300"}`} />
+                    ))}
+                  </div>
+                  <div className="text-[10px] leading-none text-gray-600 mt-1">{(product.rating ?? 4).toFixed(1)} · {product.reviews_count ?? 24} reseñas</div>
+                </div>
+              </div>
+
               {/* Floating buttons - Mobile only */}
               <div className="absolute top-4 right-4 flex flex-col gap-2 lg:hidden">
                 <button
-                  onClick={() => toggleFavorite(product.id)}
+                  onClick={() => handleToggleFavorite()}
                   className={`p-2 rounded-full shadow-lg transition-colors ${
                     isFavorite(product.id) ? "bg-red-500 text-white" : "bg-white text-gray-600 hover:text-red-500"
                   }`}
@@ -306,40 +379,21 @@ export default function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Product Info - Mobile: full width, Desktop: 2/5 */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Title and Rating */}
-              <div>
-                {/* Título: manejar cadenas largas sin espacios para no estirar el layout */}
-                <h1
-                  className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 w-full max-w-full break-all"
-                  style={{ overflowWrap: "anywhere" }}
-                >
-                  {product.name}
-                </h1>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-4 w-4 ${i < 4 ? "text-yellow-400 fill-current" : "text-gray-300"}`} />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-600">(4.0) · 24 reseñas</span>
-                </div>
-              </div>
+            <div className="lg:col-span-2 space-y-2">
 
               {/* Price */}
-              <div className="space-y-1">
+              <div className="space-y-0 -mt-4">
                 <div className="flex items-center gap-3">
-                  <ProductPrice price={product.price} sale_price={product.sale_price} on_sale={product.on_sale} compact={false} />
+                  <ProductPrice price={product.price} sale_price={product.sale_price} on_sale={product.on_sale} compact={false} className="mt-0" />
                 </div>
-                <p className="text-sm text-gray-600">IVA incluido</p>
               </div>
 
               {/* Stock Status */}
-              <div className="text-sm">
+              <div className="text-xs mb-2">
                 {availableStock > 0 ? (
-                  <span className="text-green-600 font-medium">✓ En stock ({availableStock} disponibles)</span>
+                  <span className="text-[var(--brand-green)] text-xs font-medium">✓ En stock ({availableStock} disponibles)</span>
                 ) : (
-                  <span className="text-red-600 font-medium">Sin stock</span>
+                  <span className="text-red-600 text-xs font-medium">Sin stock</span>
                 )}
               </div>
 
@@ -355,13 +409,13 @@ export default function ProductPage({ params }: ProductPageProps) {
               />
 
               {/* Action Buttons */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Add to Cart - Full width on mobile */}
                 <Button
                   onClick={handleAddToCart}
                   disabled={!isValidSelection || availableStock === 0}
                   loading={addingToCart}
-                  className="w-full h-12 text-base font-medium"
+                  className="w-full h-12 text-base font-medium mt-2 mb-2 bg-[#00E676] rounded-full hover:shadow-md hover:brightness-105"
                   size="lg"
                 >
                   {availableStock === 0 ? "Sin stock" : "Añadir a la bolsa"}
@@ -369,7 +423,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                 {/* Desktop: Horizontal buttons */}
                 <div className="hidden lg:flex gap-3">
-                  <Button onClick={() => toggleFavorite(product.id)} variant="outline" className="flex-1">
+                  <Button onClick={() => handleToggleFavorite()} variant="outline" className="flex-1">
                     <Heart className={`h-4 w-4 mr-2 ${isFavorite(product.id) ? "fill-current text-red-500" : ""}`} />
                     {isFavorite(product.id) ? "En favoritos" : "Favoritos"}
                   </Button>

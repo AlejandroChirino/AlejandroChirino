@@ -25,20 +25,20 @@ export default function ProductAccordion({ items, className = "" }: ProductAccor
   }
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1", className)}>
       {items.map((item) => {
         const isOpen = openItems.includes(item.id)
 
         return (
-          <div key={item.id} className="border border-gray-200 rounded-lg">
+          <div key={item.id} className="border border-gray-100 rounded-lg">
             <button
               onClick={() => toggleItem(item.id)}
-              className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 transition-colors"
               aria-expanded={isOpen}
               aria-controls={`accordion-content-${item.id}`}
             >
               <span className="font-medium text-gray-900">{item.title}</span>
-              <ChevronDown className={cn("h-5 w-5 text-gray-500 transition-transform", isOpen && "rotate-180")} />
+              <ChevronDown className={cn("h-5 w-5 text-gray-400 transition-transform", isOpen && "rotate-180")} />
             </button>
 
             <div
@@ -48,7 +48,7 @@ export default function ProductAccordion({ items, className = "" }: ProductAccor
                 isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
               )}
             >
-              <div className="p-4 pt-0 text-gray-600 text-sm">{item.content}</div>
+              <div className="p-3 pt-0 text-gray-600 text-sm">{item.content}</div>
             </div>
           </div>
         )

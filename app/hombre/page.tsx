@@ -6,7 +6,7 @@ export default function HombrePage() {
   return (
     <div className="min-h-screen">
       <main className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-0">
           <Suspense fallback={<div className="text-center py-8">Cargando...</div>}>
             <HombreClient />
           </Suspense>

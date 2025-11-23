@@ -6,6 +6,7 @@ import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import ProductFilterBar from "@/components/product-filter-bar"
+import Breadcrumbs from "@/components/breadcrumbs"
 import { supabase } from "@/lib/supabaseClient"
 import type { Product } from "@/lib/types"
 
@@ -15,6 +16,7 @@ function SaleProducts({ selectedSubcategory, selectedColors, selectedSizes, sele
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     async function fetchProducts() {
@@ -61,6 +63,28 @@ function SaleProducts({ selectedSubcategory, selectedColors, selectedSizes, sele
     fetchProducts()
   }, [selectedSubcategory, selectedColors, selectedSizes, selectedSort, selectedFeatured, selectedIsVip, selectedIsNew])
 
+  useEffect(() => {
+    let mounted = true
+    async function fetchPrefs() {
+      try {
+        const res = await fetch(`/api/size-preferences`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        const map: Record<string, string[]> = {}
+        ;(data || []).forEach((p: any) => {
+          const key = `${p.category}||${p.subcategory}`
+          map[key] = p.sizes || []
+        })
+        setPreferredMap(map)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPrefs()
+    return () => { mounted = false }
+  }, [])
+
   if (loading) {
     return <LoadingSkeleton count={8} compact />
   }
@@ -94,10 +118,17 @@ function SaleProducts({ selectedSubcategory, selectedColors, selectedSizes, sele
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} compact />
-      ))}
+    <div>
+      <Breadcrumbs items={[{ label: "rebajas", href: "/rebajas" }, ...(selectedSubcategory ? [{ label: selectedSubcategory }] : [])]} className="mb-2 px-4 md:px-6 -mt-4 md:-mt-6" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
+        {products.map((product) => {
+          const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
+          const prefSizes = preferredMap[key] || []
+          const prodSizes: string[] = (product as any)?.sizes || []
+          const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
+          return <ProductCard key={product.id} product={product} compact hasPreferredSize={hasPreferred} />
+        })}
+      </div>
     </div>
   )
 }
@@ -155,9 +186,9 @@ export default function RebajasPage() {
       {/* Header ya incluido en el layout raíz */}
 
       <main className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-0">
           {/* Hero section */}
-          <div className="mb-8 text-center">
+          <div className="mb-8 text-center pl-4 md:pl-6">
             <h1 className="text-3xl md:text-4xl font-bold mb-4 text-red-600 tracking-tighter leading-tight">REBAJAS EXCLUSIVAS</h1>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">Aprovecha los mejores descuentos de La ⚡ Fashion</p>
           </div>

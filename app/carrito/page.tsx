@@ -18,9 +18,9 @@ export default function CarritoPage() {
   <div className="min-h-screen overflow-x-hidden">
       {/* Header ya incluido en el layout raíz */}
 
-      <main className={cn("py-8", itemCount > 0 ? "pb-28 lg:pb-8" : "")}>
+      <main className={cn("pt-4", itemCount > 0 ? "pb-28 lg:pb-8" : "")}>
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-8">Tu Bolsa</h1>
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 tracked-strong uppercase">MI BOLSA</h2>
 
           {itemCount === 0 ? (
             <div className="text-center py-16">
@@ -39,10 +39,10 @@ export default function CarritoPage() {
               {/* Lista de productos */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-bold">Productos ({itemCount})</h2>
-                  <Link href="/" className="text-accent-orange flex items-center hover:underline">
+                  <h2 className="text-lg font-medium text-gray-700">Productos ({itemCount})</h2>
+                  <Link href="/" className="flex items-center text-[var(--brand-green)] hover:underline">
                     <ArrowLeft className="h-4 w-4 mr-1" />
-                    Seguir comprando
+                    <span className="align-middle">Seguir comprando</span>
                   </Link>
                 </div>
 

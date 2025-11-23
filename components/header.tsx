@@ -20,6 +20,7 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
   const router = useRouter()
   const pathname = usePathname() // Obtener la ruta actual
   const isHomePage = pathname === "/" // Verificar si estamos en la página principal
+  const isAccountPage = pathname?.startsWith("/cuenta")
 
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen((prev) => !prev)
@@ -170,6 +171,9 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isHomePage]);
 
+  // Si estamos en la sección de cuenta, no renderizamos el header principal
+  if (isAccountPage) return null
+
   // Ajustar el borde del header para que sea transparente cuando el fondo también lo sea
   return (
     <>
@@ -189,9 +193,9 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
             aria-label="Inicio LA FASHION"
           >
             <div className="flex items-end gap-0 whitespace-nowrap">
-              <span className="uppercase font-extrabold text-[1.15rem] leading-none">LA</span>
-              <span className="inline-block text-emerald-500 -mb-0.5 text-[1.30rem] leading-none -ml-0.01 -mr-0.01">⚡</span>
-              <span className="uppercase font-extrabold text-[1.15rem] leading-none text-gray-900">FASHION</span>
+              <span className="text-2xl md:text-3xl font-bold tracked-strong uppercase leading-none">LA</span>
+              <span className="inline-block -mb-0.5 text-2xl md:text-3xl leading-none -ml-0.5 -mr-0.5">⚡</span>
+              <span className="text-2xl md:text-3xl font-bold tracked-strong uppercase leading-none">FASHION</span>
             </div>
           </Link>
 
@@ -219,15 +223,15 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                 aria-label="Perfil de usuario"
               >
-                <User className="h-4 w-4" />
+                <User className="h-5 w-5" />
               </Link>
             ) : (
               <Link
-                href="/cuenta"
+                href="/cuenta/iniciar"
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
                 aria-label="Mi cuenta"
               >
-                <User className="h-4 w-4" />
+                <User className="h-5 w-5" />
               </Link>
             )}
 
@@ -236,7 +240,7 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Mis favoritos"
             >
-              <Heart className="h-4 w-4" />
+              <Heart className="h-5 w-5" />
             </Link>
 
             <CartBadge className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0" />
@@ -249,7 +253,7 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
               aria-label="Abrir menú de navegación"
               aria-expanded={isMobileMenuOpen}
             >
-              <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
           </nav>
         </div>
@@ -257,39 +261,39 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
         {/* Desktop navigation */}
         <nav className="hidden lg:block h-12 border-t border-gray-100" role="navigation" aria-label="Categorías">
           <div className="container mx-auto h-full flex items-center gap-8 px-4">
-            <Link href="/todo" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/todo" className="text-base font-medium hover:text-accent-orange transition-colors">
               TODO
             </Link>
-            <Link href="/" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/" className="text-base font-medium hover:text-accent-orange transition-colors">
               INICIO
             </Link>
-            <Link href="/hombre" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/hombre" className="text-base font-medium hover:text-accent-orange transition-colors">
               HOMBRE
             </Link>
-            <Link href="/mujer" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/mujer" className="text-base font-medium hover:text-accent-orange transition-colors">
               MUJER
             </Link>
-            <Link href="/accesorios" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/accesorios" className="text-base font-medium hover:text-accent-orange transition-colors">
               ACCESORIOS
             </Link>
-            <Link href="/nuevo" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/nuevo" className="text-base font-medium hover:text-accent-orange transition-colors">
               NUEVO
             </Link>
-            <Link href="/colaboraciones" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/colaboraciones" className="text-base font-medium hover:text-accent-orange transition-colors">
               COLABORACIONES
             </Link>
-            <Link href="/mundo-la-fashion" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/mundo-la-fashion" className="text-base font-medium hover:text-accent-orange transition-colors">
               MUNDO LA L
             </Link>
-            <Link href="/rebajas" className="text-sm font-medium hover:text-accent-orange transition-colors">
+            <Link href="/rebajas" className="text-base font-medium hover:text-accent-orange transition-colors">
               REBAJAS
             </Link>
             {/* Agregar enlace VIP en el menú principal */}
             <Link
               href="/vip"
-              className="text-sm font-medium hover:text-accent-orange transition-colors flex items-center gap-1"
+              className="text-base font-medium hover:text-accent-orange transition-colors flex items-center gap-1"
             >
-              <Crown className="h-4 w-4" />
+              <Crown className="h-5 w-5" />
               VIP
             </Link>
           </div>
@@ -300,7 +304,9 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
 
       {/* Restaurar el espaciador solo en las páginas que no son la principal */}
       {!isHomePage && (
-        <div className={`${isHeaderHidden ? "h-0" : "h-6 lg:h-28"} bg-transparent`} />
+        // Espaciador para evitar que el contenido (p.ej. breadcrumbs)
+        // quede detrás del header fijo. Ajustado para nueva altura del header.
+        <div className={`${isHeaderHidden ? "h-0" : "h-10 lg:h-28"} bg-transparent`} />
       )}
 
       {/* Ajustar el z-index del header para que no se sobreponga al menú lateral */}
@@ -369,10 +375,10 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
     }, 300)
   }, [])
 
-  const MenuItem = ({ href, label, onClick, colorClass }: { href: string; label: string; onClick?: () => void; colorClass?: string }) => (
+  const MenuItem = ({ href, label, onClick, colorClass, showChevron }: { href: string; label: string; onClick?: () => void; colorClass?: string; showChevron?: boolean }) => (
     <button
       type="button"
-      className={`block w-full text-left py-4 text-lg font-semibold tracking-wide ${colorClass ?? "text-gray-900"} hover:text-accent-orange transition-colors`}
+      className={`block w-full text-left py-[14px] text-base font-medium tracking-wide ${colorClass ?? "text-gray-900"} hover:text-accent-orange transition-colors`}
       onClick={async () => {
         try {
           console.debug("[MobileMenu] navigating to:", href, "label:", label)
@@ -385,7 +391,10 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
         handleClose()
       }}
     >
-      {label}
+      <div className="flex items-center justify-between">
+        <span>{label}</span>
+        {showChevron && <ChevronRight className="h-4 w-4 text-gray-400" />}
+      </div>
     </button>
   )
 
@@ -477,8 +486,8 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
       aria-label="Menú móvil"
     >
       {/* Top bar con logo y botón cerrar */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100">
-        <Link href="/" className="font-extrabold text-xl tracking-wide text-gray-900 whitespace-nowrap overflow-hidden">
+      <div className="flex items-center justify-between h-[3.75rem] px-4 border-b border-gray-100">
+        <Link href="/" className="font-extrabold text-2xl tracking-wide text-gray-900 whitespace-nowrap overflow-hidden">
           LA <span className="text-accent-orange">L</span> FASHION
         </Link>
         <button
@@ -487,12 +496,12 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
           aria-label="Cerrar menú"
           className="p-2 rounded-lg hover:bg-gray-100 active:scale-95 transition"
         >
-          <X className="h-6 w-6" />
+          <X className="h-7 w-7" />
         </button>
       </div>
 
       {/* Contenido del menú con panels para flyout */}
-      <div className="h-[calc(100vh-64px-72px)] relative px-0">
+      <div className="h-[calc(100vh-60px-80px)] relative px-0">
         {/* Contenedor relativo que mantiene ambos paneles (main y sub) */}
         <div className="absolute inset-0 flex">
           {/* Panel principal */}
@@ -501,53 +510,53 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
             aria-hidden={!!activeCategory}
           >
             <nav className="divide-y divide-gray-100" role="navigation" aria-label="Navegación móvil">
-              <MenuItem href="/todo" label="Todo" />
-              <MenuItem href="/" label="Inicio" />
+              <MenuItem href="/todo" label="Todo" showChevron />
+              <MenuItem href="/" label="Inicio" showChevron />
 
               <div className="border-b border-gray-100">
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
+                  className="w-full flex items-center justify-between py-[14px] text-base font-semibold text-gray-900"
                   onClick={() => openSubPanel("Hombre", subHombre)}
                   aria-expanded={activeCategory?.label === "Hombre"}
                   aria-controls="sub-hombre"
                 >
                   <span>Hombre</span>
-                  <ChevronRight className="h-5 w-5 text-[#4CAF50]" />
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
 
               <div className="border-b border-gray-100">
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
+                  className="w-full flex items-center justify-between py-[14px] text-base font-semibold text-gray-900"
                   onClick={() => openSubPanel("Mujer", subMujer)}
                   aria-expanded={activeCategory?.label === "Mujer"}
                   aria-controls="sub-mujer"
                 >
                   <span>Mujer</span>
-                  <ChevronRight className="h-5 w-5 text-[#4CAF50]" />
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
 
               <div className="border-b border-gray-100">
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between py-4 text-lg font-bold text-gray-900"
+                  className="w-full flex items-center justify-between py-[14px] text-base font-semibold text-gray-900"
                   onClick={() => openSubPanel("Accesorios", subAccesorios)}
                   aria-expanded={activeCategory?.label === "Accesorios"}
                   aria-controls="sub-accesorios"
                 >
                   <span>Accesorios</span>
-                  <ChevronRight className="h-5 w-5 text-[#4CAF50]" />
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
 
               <MenuItem href="/nuevo" label="Nuevo" colorClass="text-[#4CAF50]" />
-              <MenuItem href="/colaboraciones" label="Colaboraciones" />
-              <MenuItem href="/mundo-la-fashion" label="Mundo La L" />
-              <MenuItem href="/rebajas" label="Rebajas" colorClass="text-[#F44336]" />
-              <MenuItem href="/favoritos" label="Favoritos" />
+              <MenuItem href="/colaboraciones" label="Colaboraciones" showChevron />
+              <MenuItem href="/mundo-la-fashion" label="Mundo La L" showChevron />
+              <MenuItem href="/rebajas" label="Rebajas" colorClass="text-[#F44336]" showChevron />
+              <MenuItem href="/favoritos" label="Favoritos" showChevron />
             </nav>
           </div>
 
@@ -566,7 +575,7 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
                 aria-label="Volver"
                 className="p-2 rounded hover:bg-gray-100"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-6 w-6" />
               </button>
               <h3 id="submenu-title" className="text-lg font-bold">{activeCategory?.label}</h3>
             </div>
@@ -581,21 +590,21 @@ function MobileMenuOverlay({ onClose, openerRef }: { onClose: () => void; opener
       </div>
 
       {/* Footer fijo con iconos VIP y Carrito */}
-      <div className="h-[72px] px-4 border-t border-gray-100 flex items-center justify-between">
+      <div className="h-[80px] px-4 border-t border-gray-100 flex items-center justify-between">
         <Link
           href="/vip"
-          className="flex-1 mr-2 flex items-center justify-center gap-2 h-11 rounded-lg border border-gray-200 hover:bg-gray-50 font-semibold"
+          className="flex-1 mr-2 flex items-center justify-center gap-2 h-11 rounded-lg border border-accent-orange bg-white text-accent-orange hover:bg-accent-orange/10 font-medium"
           onClick={handleClose}
         >
-          <Crown className="h-5 w-5 text-accent-orange" />
+          <Crown className="h-6 w-6 text-accent-orange" />
           Acceso VIP
         </Link>
         <Link
           href="/carrito"
-          className="flex-1 ml-2 flex items-center justify-center gap-2 h-11 rounded-lg border border-gray-200 hover:bg-gray-50 font-semibold"
+          className="flex-1 ml-2 flex items-center justify-center gap-2 h-11 rounded-lg border border-accent-orange bg-white text-accent-orange hover:bg-accent-orange/10 font-medium"
           onClick={handleClose}
         >
-          <ShoppingBag className="h-5 w-5" />
+          <ShoppingBag className="h-6 w-6 text-accent-orange" />
           Carrito
         </Link>
       </div>

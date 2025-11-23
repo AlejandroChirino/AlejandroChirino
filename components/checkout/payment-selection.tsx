@@ -83,16 +83,12 @@ export default function PaymentSelection({ selected, onSelect, onNext, onPrev, s
             <div
               key={option.id}
               className={`relative border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                isSelected ? "border-accent-orange bg-orange-50" : "border-gray-200 hover:border-gray-300"
+                isSelected ? "border-[var(--brand-green)]" : "border-gray-200 hover:border-gray-300"
               }`}
               onClick={() => onSelect(option.id)}
             >
               <div className="flex items-start gap-4">
-                <div
-                  className={`p-3 rounded-full ${
-                    isSelected ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-600"
-                  }`}
-                >
+                <div className={`p-3 rounded-full bg-gray-100 ${isSelected ? "text-[var(--brand-green)]" : "text-gray-600"}`}>
                   <Icon className="h-6 w-6" />
                 </div>
 
@@ -131,11 +127,11 @@ export default function PaymentSelection({ selected, onSelect, onNext, onPrev, s
         })}
       </div>
 
-      <div className="flex gap-4">
-        <Button onClick={onPrev} variant="outline" className="flex-1">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button onClick={onPrev} variant="outline" className="rounded-full w-full md:w-44" size="md">
           Volver
         </Button>
-        <Button onClick={onNext} disabled={!selected} className="flex-1">
+        <Button onClick={onNext} disabled={!selected} className="rounded-full w-full md:w-44" size="md">
           Revisar pedido
         </Button>
       </div>

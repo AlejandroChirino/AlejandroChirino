@@ -7,7 +7,6 @@ import { Crown, Lock } from "lucide-react"
 import ProductCard from "@/components/product-card"
 import VipBenefits from "@/components/vip-benefits"
 import VipFilters from "@/components/vip-filters"
-import ArticulosEnCamino from "@/components/articulos-en-camino"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import type { Product, VipFilters as VipFiltersType } from "@/lib/types"
 
@@ -17,8 +16,6 @@ export default function VipClient() {
 
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [checkingAuth, setCheckingAuth] = useState(true)
   const [preferredMap, setPreferredMap] = useState<Record<string, string[]>>({})
   const [filters, setFilters] = useState<VipFiltersType>({
     category: "all",
@@ -63,116 +60,7 @@ export default function VipClient() {
     }
   }, [filters, router])
 
-  // Simulación de autenticación (reemplazar con lógica real)
-  useEffect(() => {
-    const checkAuthentication = () => {
-      setTimeout(() => {
-        setIsAuthenticated(true)
-        setCheckingAuth(false)
-      }, 1000)
-    }
-
-    checkAuthentication()
-  }, [])
-
-  useEffect(() => {
-    if (!isAuthenticated) return
-
-    async function fetchVipProducts() {
-      try {
-        setLoading(true)
-        const params = new URLSearchParams()
-
-        if (filters.category && filters.category !== "all") {
-          params.append("category", filters.category)
-        }
-        if (filters.minPrice !== undefined) {
-          params.append("minPrice", filters.minPrice.toString())
-        }
-        if (filters.maxPrice !== undefined) {
-          params.append("maxPrice", filters.maxPrice.toString())
-        }
-        if (filters.sortBy) {
-          params.append("sortBy", filters.sortBy)
-        }
-        if (filters.sortOrder) {
-          params.append("sortOrder", filters.sortOrder)
-        }
-
-        const response = await fetch(`/api/vip/products?${params}`)
-        if (response.ok) {
-          const data = await response.json()
-          setProducts(Array.isArray(data) ? data : data?.products || [])
-        }
-      } catch (error) {
-        console.error("Error fetching VIP products:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchVipProducts()
-  }, [isAuthenticated, filters])
-
-  useEffect(() => {
-    if (!isAuthenticated) return
-    let mounted = true
-    async function fetchPrefs() {
-      try {
-        const res = await fetch(`/api/size-preferences`)
-        if (!res.ok) return
-        const data = await res.json()
-        if (!mounted) return
-        const map: Record<string, string[]> = {}
-        ;(data || []).forEach((p: any) => {
-          const key = `${p.category}||${p.subcategory}`
-          map[key] = p.sizes || []
-        })
-        setPreferredMap(map)
-      } catch (e) {
-        // ignore
-      }
-    }
-    fetchPrefs()
-    return () => { mounted = false }
-  }, [isAuthenticated])
-
-  if (checkingAuth) {
-    return (
-      <div>
-        <main className="py-8">
-          <div className="max-w-7xl mx-auto px-0">
-            <div className="text-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-orange mx-auto mb-4" />
-              <p className="text-gray-600">Verificando acceso VIP...</p>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div>
-        <main className="py-8">
-          <div className="max-w-7xl mx-auto px-0">
-            <div className="text-center py-16">
-              <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h1 className="text-3xl font-bold mb-4">Acceso Restringido</h1>
-              <p className="text-gray-600 mb-6">Esta sección está disponible solo para miembros VIP autenticados.</p>
-              <a
-                href="/cuenta/iniciar"
-                className="inline-block bg-accent-orange text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                Iniciar Sesión
-              </a>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
+  
 
   return (
     <div className="bg-white">
@@ -192,61 +80,6 @@ export default function VipClient() {
           </div>
 
           <VipBenefits />
-
-          <section className="mb-16">
-            <ArticulosEnCamino />
-          </section>
-
-          <section>
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">Productos Exclusivos</h2>
-                <p className="text-gray-600">Colección limitada solo para miembros VIP</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-1">
-                <VipFilters filters={filters} onFiltersChange={setFilters} />
-              </div>
-
-              <div className="lg:col-span-3">
-                {loading ? (
-                  <LoadingSkeleton count={8} compact />
-                ) : products.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Crown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No hay productos disponibles</h3>
-                    <p className="text-gray-600">Ajusta los filtros o vuelve más tarde para ver nuevos productos VIP</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between mb-6">
-                      <p className="text-gray-600">
-                        {products.length} producto{products.length !== 1 ? "s" : ""} exclusivo{products.length !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-[1px] gap-y-8 md:gap-x-[1px] md:gap-y-8">
-                      {products.map((product) => {
-                        const key = `${(product as any)?.category || ""}||${(product as any)?.subcategoria || "all"}`
-                        const prefSizes = preferredMap[key] || []
-                        const prodSizes: string[] = (product as any)?.sizes || []
-                        const hasPreferred = prodSizes.length > 0 && prodSizes.some((s) => prefSizes.includes(s))
-                        return (
-                          <div key={product.id} className="relative">
-                            <ProductCard product={product} compact hasPreferredSize={hasPreferred} />
-                            <div className="absolute top-2 left-2 bg-gradient-to-r from-accent-orange to-orange-600 text-white px-2 py-1 rounded text-xs font-medium">
-                              VIP
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </section>
         </div>
       </main>
     </div>

@@ -16,7 +16,7 @@ export default function ColaboracionCard({ colaboracion, featured = false }: Col
   return (
     <article
       className={cn(
-        "bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300",
+        "bg-white rounded-lg overflow-hidden shadow-sm transition-shadow duration-300",
         featured && "md:col-span-2 lg:col-span-2",
       )}
     >

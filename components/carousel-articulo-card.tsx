@@ -32,7 +32,7 @@ export default function CarouselArticuloCard({ articulo, isMobile = false }: Car
       tabIndex={0}
       onClick={handleNavigate}
       onKeyDown={handleKey}
-      className={`group block focus:outline-none transition-all duration-300 rounded-none ${!isMobile ? "hover:scale-105 hover:shadow-lg" : ""}`}
+      className={`group block focus:outline-none transition-all duration-300 rounded-none ${!isMobile ? "hover:scale-105" : ""}`}
       aria-label={`Ver detalles de ${articulo.name}`}
     >
       <article className="h-full relative">

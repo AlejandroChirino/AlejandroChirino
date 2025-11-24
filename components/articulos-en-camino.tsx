@@ -22,7 +22,7 @@ function ArticuloEnCaminoCard({ articulo }: ArticuloEnCaminoCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg border overflow-hidden transition-shadow">
       <div className="relative aspect-[3/4] bg-gray-100">
         <Image
           src={articulo.image_url || "/placeholder.svg?height=400&width=300&query=preorder product"}

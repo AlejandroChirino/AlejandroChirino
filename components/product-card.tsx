@@ -23,7 +23,7 @@ const ProductCard = memo(function ProductCard({ product, compact = false, square
   const discountPercentage = hasSale ? Math.round(((p - (s as number)) / p) * 100) : 0
 
   return (
-    <div className={cn("group block focus-within:outline-none focus-within:ring-2 focus-within:ring-accent-orange relative mx-0 mb-0", square ? "rounded-none" : "rounded-lg")}>
+    <div className={cn("group block focus-within:outline-none relative mx-0 mb-0", square ? "rounded-none" : "rounded-lg")}>
       <Link
         href={`/producto/${id}`}
         className="block"

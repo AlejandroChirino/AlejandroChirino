@@ -23,7 +23,7 @@ export default function ArticuloCard({ articulo }: ArticuloCardProps) {
   }
 
   return (
-    <div className="group block focus-within:outline-none focus-within:ring-2 focus-within:ring-accent-orange relative mx-0 mb-0 rounded-none bg-white">
+    <div className="group block focus-within:outline-none relative mx-0 mb-0 rounded-none bg-white">
       <Link href={`/vip/articulo/${articulo.id}`} className="block" aria-label={`Ver detalles de ${articulo.name}`}>
         <article className="h-full">
           <div className={cn("aspect-[3/4] bg-gray-100 overflow-hidden mb-0.5 md:mb-1 relative rounded-none")}>

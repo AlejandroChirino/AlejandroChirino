@@ -25,9 +25,9 @@ const CarouselProductCard = memo(function CarouselProductCard({
     <Link
       href={`/producto/${id}`}
       className={cn(
-        "group block focus:outline-none focus:ring-2 focus:ring-accent-orange transition-all duration-300 rounded-none", // Added rounded-none
+        "group block focus:outline-none transition-all duration-300 rounded-none",
         isPartiallyVisible && "opacity-80 scale-95",
-        !isMobile && "hover:scale-105 hover:shadow-lg",
+        !isMobile && "hover:scale-105",
       )}
       aria-label={`Ver detalles de ${name}`}
     >

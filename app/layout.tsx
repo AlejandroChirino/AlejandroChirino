@@ -5,6 +5,7 @@ import "./globals.css"
 // Importar los providers
 import { CartProvider } from "@/contexts/cart-context"
 import { ToastProvider } from "@/components/ui/use-toast"
+import CheckoutProviderClient from "@/components/checkout/CheckoutProviderClient"
 import Header from "@/components/header"
 import { createServerClient } from '@/lib/supabase/server'
 
@@ -38,13 +39,15 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen bg-white">
-        <CartProvider>
-          <ToastProvider>
-            {/* @ts-ignore - pass resolved server user (can be null) */}
-            <Header initialUser={serverUser} />
-            {children}
-          </ToastProvider>
-        </CartProvider>
+          <CartProvider>
+            <ToastProvider>
+              <CheckoutProviderClient>
+                {/* @ts-ignore - pass resolved server user (can be null) */}
+                <Header initialUser={serverUser} />
+                {children}
+              </CheckoutProviderClient>
+            </ToastProvider>
+          </CartProvider>
       </body>
     </html>
   )

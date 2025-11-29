@@ -9,6 +9,7 @@ export interface Product {
   sale_price?: number | null
   on_sale?: boolean
   image_url: string | null
+  image_urls?: string[]
   category: ProductCategory
   subcategoria: string | null
   sizes: string[]
@@ -28,6 +29,7 @@ export interface ArticuloEnCamino {
   description: string | null
   price: number
   image_url: string | null
+  image_urls?: string[]
   category: ProductCategory
   sizes: string[]
   colors: string[]
@@ -330,8 +332,28 @@ export interface CheckoutCalculations {
   subtotal: number
   deliveryCost: number
   discount: number
+  // Desglose de descuentos
+  paymentDiscount?: number
+  couponDiscount?: number
   total: number
   currency: "CUP" | "USD"
+}
+
+// Tipo mínimo para cupones (prototipo cliente)
+export interface Coupon {
+  id?: string
+  code: string
+  type: "percent" | "amount" | "free_shipping"
+  amount?: number
+  products?: string[]
+  categories?: string[]
+  subcategories?: string[]
+  brands?: string[]
+  tags?: string[]
+  min_purchase?: number
+  max_uses?: number
+  usage_count?: number
+  expires_at?: string | null
 }
 
 export interface CheckoutData {
@@ -348,6 +370,7 @@ export interface UseCheckoutReturn {
   deliveryMethod: DeliveryMethod | null
   paymentMethod: PaymentMethod | null
   calculations: CheckoutCalculations
+  appliedCoupon?: Coupon | null
   isValid: boolean
   goToStep: (step: number) => void
   nextStep: () => void
@@ -356,4 +379,6 @@ export interface UseCheckoutReturn {
   setDeliveryMethod: (method: DeliveryMethod) => void
   setPaymentMethod: (method: PaymentMethod) => void
   submitOrder: () => Promise<boolean>
+  applyCoupon?: (code: string) => Promise<{ success: boolean; message?: string }>
+  removeCoupon?: () => void
 }

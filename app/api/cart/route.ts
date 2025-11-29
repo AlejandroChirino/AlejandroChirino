@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,7 +54,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el item ya existe en el carrito
-    const { data: existingItem } = await supabase
+    const admin = getSupabaseAdmin()
+    const { data: existingItem } = await admin
       .from("cart_items")
       .select("*")
       .eq("user_id", userId)
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (existingItem) {
       // Actualizar cantidad si ya existe
-      const { data: updatedItem, error } = await supabase
+      const { data: updatedItem, error } = await admin
         .from("cart_items")
         .update({
           quantity: existingItem.quantity + quantity,
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(updatedItem)
     } else {
       // Crear nuevo item
-      const { data: cartItem, error } = await supabase
+      const { data: cartItem, error } = await admin
         .from("cart_items")
         .insert([{ user_id: userId, product_id: productId, quantity, size, color }])
         .select()

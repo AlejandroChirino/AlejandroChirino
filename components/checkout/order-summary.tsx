@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Button from "@/components/ui/button"
+import { toast } from "@/components/ui/use-toast"
 import { Check } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 import type { CartItem, CustomerData, CheckoutCalculations, DeliveryMethod, PaymentMethod } from "@/lib/types"
@@ -15,48 +16,49 @@ interface OrderSummaryProps {
   onSubmit: () => void
   onPrev: () => void
   isSubmitting?: boolean
+  applyCoupon?: (code: string) => Promise<{ success: boolean; message?: string }>
+  removeCoupon?: () => void
+  appliedCoupon?: any | null
 }
 
-export default function OrderSummary({
-  items,
-  customer,
-  deliveryMethod,
-  paymentMethod,
-  calculations,
-  onSubmit,
-  onPrev,
-  isSubmitting = false,
-}: OrderSummaryProps) {
-  const deliveryLabels = {
-    tienda: "Recogida en tienda",
-    local: "Entrega local",
-    municipal: "Entrega municipal",
-  }
+export default function OrderSummary(props: OrderSummaryProps) {
+  const {
+    items,
+    customer,
+    deliveryMethod,
+    paymentMethod,
+    calculations,
+    onSubmit,
+    onPrev,
+    isSubmitting,
+    applyCoupon,
+    removeCoupon,
+    appliedCoupon,
+  } = props
 
-  const paymentLabels = {
-    transferencia: "Transferencia bancaria",
-    efectivo_cup: "Efectivo CUP",
-    efectivo_usd: "Efectivo USD",
-    zelle: "Zelle",
+  const handleApply = async (code: string) => {
+    if (!applyCoupon) return toast({ title: "Cupón", description: "Función de cupón no disponible" })
+    // applyCoupon called from OrderSummary
+    const res = await applyCoupon(code)
+    if (!res.success) {
+      // applyCoupon failed
+      toast({ title: "Cupón", description: res.message || "Código inválido" })
+    } else {
+      // applyCoupon success
+      toast({ title: "Cupón aplicado", description: "Se aplicó el descuento" })
+    }
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold mb-2">Confirmar Pedido</h2>
-        <p className="text-gray-600">Revisa todos los detalles antes de confirmar</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Información del pedido */}
-        <div className="space-y-6">
-          {/* Datos del cliente */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="font-bold text-lg mb-4">Datos de contacto</h3>
-            <div className="space-y-3 text-sm">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-4">
+          <section className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="font-bold text-lg mb-4">Datos del cliente</h3>
+            <div className="space-y-2 text-sm">
               <p>
                 <span className="text-gray-600">Nombre:</span>
-                <span className="text-gray-900 font-medium ml-2">{customer.fullName}</span>
+                <span className="text-gray-900 font-medium ml-2">{(customer as any).fullName || (customer as any).name || ""}</span>
               </p>
               <p>
                 <span className="text-gray-600">Teléfono:</span>
@@ -72,40 +74,74 @@ export default function OrderSummary({
                 <span className="text-gray-600">Dirección:</span>
                 <span className="text-gray-900 font-medium ml-2">{customer.address}</span>
               </p>
-              <p>
-                <span className="text-gray-600">Ciudad:</span>
-                <span className="text-gray-900 font-medium ml-2">{customer.city}</span>
-              </p>
-              {customer.notes && (
-                <p>
-                  <span className="text-gray-600">Notas:</span>
-                  <span className="text-gray-900 ml-2">{customer.notes}</span>
-                </p>
-              )}
             </div>
-          </div>
+          </section>
 
-          {/* Entrega y pago */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <section className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="font-bold text-lg mb-4">Entrega y pago</h3>
             <div className="space-y-2 text-sm">
               <p>
-                <span className="text-gray-600">Entrega:</span>
-                <span className="text-gray-900 font-medium ml-2">{deliveryLabels[deliveryMethod]}</span>
+                <span className="text-gray-600">Método de entrega:</span>
+                <span className="text-gray-900 font-medium ml-2">{String(deliveryMethod)}</span>
               </p>
               <p>
-                <span className="text-gray-600">Pago:</span>
-                <span className="text-gray-900 font-medium ml-2">{paymentLabels[paymentMethod]}</span>
+                <span className="text-gray-600">Método de pago:</span>
+                <span className="text-gray-900 font-medium ml-2">{String(paymentMethod)}</span>
               </p>
             </div>
-          </div>
+          </section>
         </div>
 
-        {/* Resumen del pedido */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <aside className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-bold text-lg mb-4">Tu pedido</h3>
 
-          {/* Productos */}
+          <div className="mb-4">
+            {!appliedCoupon ? (
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="Código de cupón"
+                  aria-label="Código de cupón"
+                  id="coupon_code_input"
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      const input = e.currentTarget as HTMLInputElement
+                      const code = input.value.trim()
+                      if (!code) return
+                      await handleApply(code)
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="bg-[var(--brand-green)] text-white rounded-lg px-4 py-2 text-sm"
+                  onClick={async (e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    const input = document.getElementById("coupon_code_input") as HTMLInputElement | null
+                    const code = input?.value.trim() || ""
+                    if (!code) return alert("Ingresa un código")
+                    await handleApply(code)
+                  }}
+                >
+                  Aplicar
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-lg p-3">
+                <div>
+                  <div className="text-sm font-medium">Cupón aplicado: <span className="uppercase">{String(appliedCoupon.code)}</span></div>
+                </div>
+                <button type="button" className="text-sm text-[var(--brand-green)] font-semibold" onClick={() => removeCoupon && removeCoupon()}>
+                  Quitar
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-4 mb-6">
             {items.map((item) => (
               <div key={item.id} className="flex gap-3">
@@ -134,7 +170,6 @@ export default function OrderSummary({
             ))}
           </div>
 
-          {/* Totales */}
           <div className="border-t pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-900">Subtotal:</span>
@@ -148,25 +183,29 @@ export default function OrderSummary({
               </div>
             )}
 
-            {calculations.discount > 0 && (
+            {calculations.paymentDiscount && calculations.paymentDiscount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>Descuento:</span>
-                <span>-{formatPrice(calculations.discount)}</span>
+                <span>Descuento (Pago):</span>
+                <span>-{formatPrice(calculations.paymentDiscount)}</span>
+              </div>
+            )}
+
+            {calculations.couponDiscount && calculations.couponDiscount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Descuento (Cupón):</span>
+                <span>-{formatPrice(calculations.couponDiscount)}</span>
               </div>
             )}
 
             <div className="flex justify-between items-baseline pt-2 border-t">
               <span className="text-gray-900">Total:</span>
-              <span className="text-gray-900 font-extrabold text-2xl">
-                {formatPrice(calculations.total)}
-              </span>
+              <span className="text-gray-900 font-extrabold text-2xl">{formatPrice(calculations.total)}</span>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
 
-      {/* Botones de acción */}
-      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+      <div className="flex flex-col sm:flex-row gap-4 mt-2">
         <Button onClick={onPrev} variant="outline" className="rounded-full w-full md:w-44" size="md">
           Volver
         </Button>
@@ -176,13 +215,9 @@ export default function OrderSummary({
         </Button>
       </div>
 
-      {/* Información adicional */}
       <div className="mt-6 p-4 bg-gray-50 border border-gray-100 rounded-lg text-sm text-gray-700">
         <p className="font-medium mb-1">📄 ¿Qué pasa después?</p>
-        <p>
-          Al confirmar, se abrirá WhatsApp con un resumen completo de tu pedido. Nuestro equipo te contactará para
-          coordinar la entrega y el pago.
-        </p>
+        <p>Al confirmar, se abrirá WhatsApp con un resumen completo de tu pedido. Nuestro equipo te contactará para coordinar la entrega y el pago.</p>
       </div>
     </div>
   )

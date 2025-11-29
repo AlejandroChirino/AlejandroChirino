@@ -11,6 +11,7 @@ export interface Database {
           sale_price: number | null
           on_sale: boolean | null
           image_url: string | null
+          image_urls: string[]
           category: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria: string | null
           sizes: string[]
@@ -34,6 +35,7 @@ export interface Database {
           sale_price?: number | null
           on_sale?: boolean | null
           image_url?: string | null
+          image_urls?: string[]
           category: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria?: string | null
           sizes?: string[]
@@ -57,6 +59,7 @@ export interface Database {
           sale_price?: number | null
           on_sale?: boolean | null
           image_url?: string | null
+          image_urls?: string[]
           category?: "hombre" | "mujer" | "unisex" | "accesorios"
           subcategoria?: string | null
           sizes?: string[]

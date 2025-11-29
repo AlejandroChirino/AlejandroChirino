@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import Button from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
@@ -22,6 +22,8 @@ type OrderRow = {
   total: number
   status: string
   created_at: string
+  coupon_code?: string | null
+  total_discount?: number
 }
 
 export default function AdminOrdersPage() {
@@ -37,8 +39,14 @@ export default function AdminOrdersPage() {
   // Filters
   const [status, setStatus] = useState("all")
   const [dateRange, setDateRange] = useState("all")
+  const [coupon, setCoupon] = useState("")
+  const [couponsList, setCouponsList] = useState<Array<any>>([])
+  const [loadingCoupons, setLoadingCoupons] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const couponMenuRef = useRef<HTMLDivElement | null>(null)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 300)
+  const debouncedCoupon = useDebounce(coupon, 300)
   const [minTotal, setMinTotal] = useState("")
   const [maxTotal, setMaxTotal] = useState("")
   const [sortBy, setSortBy] = useState("created_at")
@@ -46,7 +54,38 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders()
-  }, [page, limit, status, dateRange, debouncedSearch, minTotal, maxTotal, sortBy, sortDir])
+  }, [page, limit, status, dateRange, debouncedSearch, debouncedCoupon, minTotal, maxTotal, sortBy, sortDir])
+
+  // Fetch available coupons for quick filter chips
+  useEffect(() => {
+    let mounted = true
+    async function loadCoupons() {
+      setLoadingCoupons(true)
+      try {
+        const res = await fetch('/api/admin/coupons')
+        if (!res.ok) return
+        const json = await res.json()
+        if (!mounted) return
+        setCouponsList((json && json.data) || [])
+      } catch (err) {
+        console.warn('Failed to load coupons for admin filter', err)
+      } finally {
+        if (mounted) setLoadingCoupons(false)
+      }
+    }
+    loadCoupons()
+    return () => { mounted = false }
+  }, [])
+
+  // close menu when clicking outside
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!couponMenuRef.current) return
+      if (!couponMenuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    if (menuOpen) document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [menuOpen])
 
   async function fetchOrders() {
     setLoading(true)
@@ -57,6 +96,7 @@ export default function AdminOrdersPage() {
       if (status) params.set("status", status)
       if (dateRange) params.set("dateRange", dateRange)
       if (debouncedSearch) params.set("search", debouncedSearch)
+      if (debouncedCoupon) params.set("coupon", debouncedCoupon)
       if (minTotal) params.set("minTotal", minTotal)
       if (maxTotal) params.set("maxTotal", maxTotal)
       params.set("sortBy", sortBy)
@@ -132,7 +172,7 @@ export default function AdminOrdersPage() {
 
         {/* Controls */}
         <div className="bg-white p-4 rounded-lg mb-6 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
               <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }} className="block w-full border border-gray-200 rounded-md p-2">
@@ -161,6 +201,47 @@ export default function AdminOrdersPage() {
               </div>
             </div>
 
+            <div ref={couponMenuRef} className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cupón</label>
+              <div>
+                <button
+                  onClick={() => setMenuOpen((s) => !s)}
+                  className="flex items-center gap-2 px-3 py-1 border rounded-md bg-white text-sm"
+                >
+                  <span>Filtrar por cupón</span>
+                  {coupon ? <span className="text-xs text-gray-500">{coupon}</span> : null}
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute z-50 mt-2 w-72 bg-white border rounded shadow p-2 max-h-60 overflow-auto">
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => { setCoupon(""); setPage(1); setMenuOpen(false) }}
+                        className={`text-left text-sm px-2 py-1 rounded ${coupon === '' ? 'bg-gray-800 text-white' : 'hover:bg-gray-100'}`}
+                      >Todos</button>
+                      {loadingCoupons ? (
+                        <div className="text-sm text-gray-500 px-2 py-1">Cargando...</div>
+                      ) : (
+                        couponsList.slice(0, 100).map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => { setCoupon(c.code); setPage(1); setMenuOpen(false) }}
+                            title={c.description || ''}
+                            className={`text-left text-sm px-2 py-1 rounded ${coupon === c.code ? 'bg-gray-800 text-white' : 'hover:bg-gray-100'}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{c.code}</span>
+                            </div>
+                            {c.description ? <div className="text-xs text-gray-500">{c.description}</div> : null}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
               <div className="flex gap-2">
@@ -180,7 +261,7 @@ export default function AdminOrdersPage() {
               <button className="ml-2 p-1 border border-gray-200 rounded-md" onClick={() => setSortDir(sortDir === 'asc' ? 'desc' : 'asc')}>{sortDir === 'asc' ? '↑' : '↓'}</button>
             </div>
             <div>
-              <Button variant="outline" onClick={() => { setStatus('all'); setDateRange('all'); setSearch(''); setMinTotal(''); setMaxTotal(''); setPage(1) }}>Limpiar filtros</Button>
+              <Button variant="outline" onClick={() => { setStatus('all'); setDateRange('all'); setSearch(''); setCoupon(''); setMinTotal(''); setMaxTotal(''); setPage(1) }}>Limpiar filtros</Button>
             </div>
           </div>
         </div>
@@ -193,6 +274,7 @@ export default function AdminOrdersPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cupón usado</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Monto</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
@@ -200,9 +282,9 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={6} className="p-6 text-center">Cargando...</td></tr>
+                <tr><td colSpan={7} className="p-6 text-center">Cargando...</td></tr>
               ) : orders.length === 0 ? (
-                <tr><td colSpan={6} className="p-6 text-center">No se encontraron órdenes</td></tr>
+                <tr><td colSpan={7} className="p-6 text-center">No se encontraron órdenes</td></tr>
               ) : (
                 orders.map((o) => (
                   <tr key={o.id} className="hover:bg-gray-50">
@@ -254,7 +336,16 @@ export default function AdminOrdersPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-right">${o.total.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{o.coupon_code ? <span className="text-sm font-medium">{o.coupon_code}</span> : <span className="text-sm text-gray-400">—</span>}</td>
+                    <td className="px-6 py-4 text-sm text-right">
+                      {(() => {
+                        const before = Number(o.total || 0) + Number(o.total_discount || 0)
+                        return <div className="text-sm">
+                          <div className="text-xs text-gray-500">Antes: ${before.toFixed(2)}</div>
+                          <div className="font-medium">Final: ${Number(o.total || 0).toFixed(2)}</div>
+                        </div>
+                      })()}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{new Date(o.created_at).toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">

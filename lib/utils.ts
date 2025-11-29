@@ -8,11 +8,15 @@ export function cn(...inputs: ClassValue[]) {
 
 // Formateo de precios optimizado
 export function formatPrice(price: number): string {
-  // Formatear número con separadores locales y luego anteponer el símbolo '$'
+  // Mostrar precio sin decimales en la UI (redondeo hacia arriba)
+  // Conservamos los valores con decimales en la base de datos / lógica,
+  // pero en la presentación mostramos enteros usando Math.ceil.
+  const rounded = Math.ceil(Number(price) || 0)
   const formatted = new Intl.NumberFormat("es-ES", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(price)
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    useGrouping: false,
+  }).format(rounded)
 
   return `$${formatted}`
 }

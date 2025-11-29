@@ -9,6 +9,7 @@ export async function GET(request: Request) {
     const limit = Number(params.get("limit") || "20")
     const status = params.get("status")
     const search = params.get("search")
+    const coupon = params.get("coupon")
     const minTotal = params.get("minTotal")
     const maxTotal = params.get("maxTotal")
     const dateRange = params.get("dateRange") // today,7,30,custom
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     // Query the pre-joined view for orders with profile info
     let query = getSupabaseAdmin()
       .from("orders_with_profiles")
-      .select(`id,user_id,total,status,created_at,full_name,email`, { count: "exact" })
+      .select(`id,user_id,total,status,created_at,full_name,email,coupon_code,total_discount`, { count: "exact" })
       .order(sortBy as any, { ascending: sortDir === "asc" })
 
     // Filters
@@ -30,6 +31,12 @@ export async function GET(request: Request) {
     if (search) {
       // Search directly on the view (full_name or email)
       query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`)
+    }
+
+    // Coupon filter
+    if (coupon) {
+      // Allow partial match
+      query = query.ilike("coupon_code", `%${coupon}%`)
     }
 
     // Date presets
@@ -70,6 +77,8 @@ export async function GET(request: Request) {
       total: row.total,
       status: row.status,
       created_at: row.created_at,
+      coupon_code: row.coupon_code ?? null,
+      total_discount: row.total_discount ?? 0,
     }))
 
     return NextResponse.json({ orders, pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) } })

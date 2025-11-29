@@ -185,7 +185,12 @@ export default function AdminPage() {
             </div>
 
             {/* Cupones */}
-            <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer">
+            <div
+              className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => {
+                if (typeof window !== "undefined") window.location.href = "/admin/cupones"
+              }}
+            >
               <div className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -199,8 +204,27 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 px-6 py-3">
-                <div className="text-sm text-gray-600">No disponible aún</div>
+              <div
+                className="bg-gray-50 px-6 py-3"
+                onClick={() => {
+                  if (typeof window !== "undefined") window.location.href = "/admin/cupones"
+                }}
+              >
+                <a href="/admin/cupones" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                  Gestionar cupones
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 ml-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </a>
               </div>
             </div>
 

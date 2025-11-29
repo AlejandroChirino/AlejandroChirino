@@ -37,7 +37,7 @@ export default async function OrderDetailPage({ params }: Params) {
 
     const { data: orderData, error: orderError } = await supabase
       .from("orders")
-      .select("id,user_id,total,status,shipping_address,created_at")
+      .select("id,user_id,total,status,shipping_address,created_at,coupon_code,coupon_description,total_discount")
       .eq("id", id)
       .single()
 
@@ -62,7 +62,7 @@ export default async function OrderDetailPage({ params }: Params) {
 
     const { data: itemsData } = await supabase
       .from("order_items")
-      .select("id,order_id,product_id,quantity,price,size,color")
+      .select("id,order_id,product_id,quantity,price,size,color,discount_amount")
       .eq("order_id", id)
 
     // Fetch product metadata for items
@@ -114,8 +114,19 @@ export default async function OrderDetailPage({ params }: Params) {
 
               <div>
                 <h3 className="text-sm font-medium text-gray-700">Resumen</h3>
-                <div className="mt-1 text-sm text-gray-800">Total: ${orderData.total.toFixed(2)}</div>
-                <div className="text-xs text-gray-500">Estado: {orderData.status}</div>
+                  <div className="mt-1 text-sm text-gray-800">Final: ${orderData.total.toFixed(2)}</div>
+                  <div className="text-xs text-gray-500">Estado: {orderData.status}</div>
+                  <div className="text-sm mt-2">
+                    {orderData.coupon_code ? (
+                      <div className="text-sm">
+                        <div className="font-medium">Cupón: {orderData.coupon_code}</div>
+                        {orderData.coupon_description && <div className="text-xs text-gray-500">{orderData.coupon_description}</div>}
+                        <div className="text-xs text-gray-500">Total descontado: ${Number(orderData.total_discount || 0).toFixed(2)}</div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400">No se aplicó cupón</div>
+                    )}
+                  </div>
               </div>
             </div>
 
@@ -125,7 +136,7 @@ export default async function OrderDetailPage({ params }: Params) {
                 {itemsData && itemsData.length > 0 ? (
                   itemsData.map((it: any) => {
                     const prod = productsMap[it.product_id]
-                    return (
+                        return (
                       <div key={it.id} className="flex items-center gap-4 p-3 border rounded">
                         {prod?.image_url ? (
                           <img src={prod.image_url} alt={prod.name} className="w-16 h-16 object-cover rounded" />
@@ -138,6 +149,12 @@ export default async function OrderDetailPage({ params }: Params) {
                         </div>
                         <div className="text-right">
                           <div className="font-medium">${it.price.toFixed(2)}</div>
+                          {typeof it.discount_amount === 'number' && it.discount_amount > 0 ? (
+                            <div className="text-xs text-gray-500">Descuento: -${Number(it.discount_amount).toFixed(2)}</div>
+                          ) : null}
+                          {typeof it.discount_amount === 'number' ? (
+                            <div className="text-sm font-medium">Total: ${ (Number(it.price) - Number(it.discount_amount)).toFixed(2) }</div>
+                          ) : null}
                         </div>
                       </div>
                     )

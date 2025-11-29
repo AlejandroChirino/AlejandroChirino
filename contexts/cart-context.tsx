@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { toast } from "@/components/ui/use-toast"
 import type { CartItem, Product } from "@/lib/types"
+import { safeSupabase } from "@/lib/supabaseClient"
 
 export interface CartContextType {
   items: CartItem[]
@@ -23,6 +24,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
 
   // Calcular el número total de items
   const itemCount = items.reduce((count, item) => count + item.quantity, 0)
@@ -48,10 +50,96 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     loadCart()
   }, [])
 
+  // Detectar sesión y sincronizar carrito con servidor si hay usuario
+  useEffect(() => {
+    let mounted = true
+
+    const initSync = async () => {
+      try {
+        const { data: authData } = await safeSupabase.auth.getUser()
+        const uid = authData?.user?.id
+        if (!uid) return
+        if (!mounted) return
+        setUserId(uid)
+
+        // Merge: enviar items locales al servidor (POST /api/cart) — el endpoint manejará update/insert
+        const local = JSON.parse(localStorage.getItem("la-fashion-cart") || "[]") as CartItem[]
+        for (const it of local) {
+          try {
+            await fetch(`/api/cart`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: uid,
+                productId: it.product.id,
+                quantity: it.quantity,
+                size: it.size,
+                color: it.color,
+              }),
+            })
+          } catch (err) {
+            // no bloquear el merge por errores en un item
+            console.warn("Error merging cart item to server:", err)
+          }
+        }
+
+        // Obtener carrito definitivo desde servidor y reemplazar local
+        const res = await fetch(`/api/cart?userId=${encodeURIComponent(uid)}`)
+        if (!res.ok) {
+          console.warn("Failed to fetch server cart for sync")
+          return
+        }
+        const serverItems = await res.json()
+        const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
+          id: ci.id,
+          product: ci.products,
+          quantity: ci.quantity,
+          size: ci.size || null,
+          color: ci.color || null,
+        }))
+        setItems(mapped)
+      } catch (err) {
+        console.error("Error initializing cart sync:", err)
+      }
+    }
+
+    initSync()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   // Guardar carrito en localStorage cuando cambia
   useEffect(() => {
     try {
       localStorage.setItem("la-fashion-cart", JSON.stringify(items))
+      // Si hay usuario autenticado, mantener servidor en sync (re-fetch simple)
+      ;(async () => {
+        try {
+          if (!userId) return
+          // Obtener carrito desde servidor y actualizar local si difiere
+          const res = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
+          if (!res.ok) return
+          const serverItems = await res.json()
+          const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
+            id: ci.id,
+            product: ci.products,
+            quantity: ci.quantity,
+            size: ci.size || null,
+            color: ci.color || null,
+          }))
+          // Si el servidor tiene un estado distinto, prefierelo y sincroniza localStorage
+          const serverJson = JSON.stringify(mapped)
+          const localJson = JSON.stringify(items)
+          if (serverJson !== localJson) {
+            setItems(mapped)
+            localStorage.setItem("la-fashion-cart", serverJson)
+          }
+        } catch (err) {
+          // no bloquear en caso de fallo de red
+        }
+      })()
     } catch (error) {
       console.error("Error saving cart to localStorage:", error)
     }
@@ -107,16 +195,51 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           updatedItems[existingItemIndex].quantity = newQuantity
           setItems(updatedItems)
         } else {
-          // Añadir nuevo item
-          const newItem: CartItem = {
-            id: `${product.id}-${size || "default"}-${color || "default"}-${Date.now()}`,
-            product,
-            quantity,
-            size: size || null,
-            color: color || null,
+          // Si hay usuario autenticado, crear item en servidor y refrescar
+          if (userId) {
+            const res = await fetch(`/api/cart`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ userId, productId: product.id, quantity, size, color }),
+            })
+            if (res.ok) {
+              const created = await res.json()
+              // refrescar carrito desde servidor
+              const fetchRes = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
+              if (fetchRes.ok) {
+                const serverItems = await fetchRes.json()
+                const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
+                  id: ci.id,
+                  product: ci.products,
+                  quantity: ci.quantity,
+                  size: ci.size || null,
+                  color: ci.color || null,
+                }))
+                setItems(mapped)
+              }
+            } else {
+              // Fallback local behaviour si el servidor falla
+              const newItem: CartItem = {
+                id: `${product.id}-${size || "default"}-${color || "default"}-${Date.now()}`,
+                product,
+                quantity,
+                size: size || null,
+                color: color || null,
+              }
+              setItems((prev) => [newItem, ...prev])
+            }
+          } else {
+            // Añadir nuevo item localmente
+            const newItem: CartItem = {
+              id: `${product.id}-${size || "default"}-${color || "default"}-${Date.now()}`,
+              product,
+              quantity,
+              size: size || null,
+              color: color || null,
+            }
+            // Prepend new items so the most recently added appear first (stack behavior)
+            setItems((prev) => [newItem, ...prev])
           }
-          // Prepend new items so the most recently added appear first (stack behavior)
-          setItems((prev) => [newItem, ...prev])
         }
 
         toast({
@@ -134,7 +257,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [items, toast],
+    [items, toast, userId],
   )
 
   // Actualizar cantidad de un producto
@@ -142,33 +265,58 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     async (itemId: string, quantity: number) => {
       setIsLoading(true)
       try {
-        const itemIndex = items.findIndex((item) => item.id === itemId)
-        if (itemIndex === -1) {
-          throw new Error("Item not found")
-        }
-
-        const item = items[itemIndex]
-
-        // Verificar stock
-        if (quantity > item.product.stock) {
-          toast({
-            title: "Stock insuficiente",
-            description: `Solo hay ${item.product.stock} unidades disponibles`,
-            variant: "destructive",
+        // Si está autenticado, delegar en el servidor y refrescar
+        if (userId) {
+          const res = await fetch(`/api/cart/${encodeURIComponent(itemId)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity }),
           })
-          setIsLoading(false)
-          return
+          if (!res.ok) {
+            throw new Error("Error updating cart item on server")
+          }
+          // refrescar carrito
+          const fetchRes = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
+          if (fetchRes.ok) {
+            const serverItems = await fetchRes.json()
+            const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
+              id: ci.id,
+              product: ci.products,
+              quantity: ci.quantity,
+              size: ci.size || null,
+              color: ci.color || null,
+            }))
+            setItems(mapped)
+          }
+        } else {
+          const itemIndex = items.findIndex((item) => item.id === itemId)
+          if (itemIndex === -1) {
+            throw new Error("Item not found")
+          }
+
+          const item = items[itemIndex]
+
+          // Verificar stock
+          if (quantity > item.product.stock) {
+            toast({
+              title: "Stock insuficiente",
+              description: `Solo hay ${item.product.stock} unidades disponibles`,
+              variant: "destructive",
+            })
+            setIsLoading(false)
+            return
+          }
+
+          // Actualizar cantidad
+          const updatedItems = [...items]
+          updatedItems[itemIndex].quantity = quantity
+          setItems(updatedItems)
+
+          toast({
+            title: "Cantidad actualizada",
+            description: `La cantidad de ${item.product.name} ha sido actualizada`,
+          })
         }
-
-        // Actualizar cantidad
-        const updatedItems = [...items]
-        updatedItems[itemIndex].quantity = quantity
-        setItems(updatedItems)
-
-        toast({
-          title: "Cantidad actualizada",
-          description: `La cantidad de ${item.product.name} ha sido actualizada`,
-        })
       } catch (error) {
         console.error("Error updating item quantity:", error)
         toast({
@@ -180,7 +328,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [items, toast],
+    [items, toast, userId],
   )
 
   // Actualizar talla/color de un producto
@@ -188,64 +336,86 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     async (itemId: string, options: { size?: string | null; color?: string | null }) => {
       setIsLoading(true)
       try {
-        const itemIndex = items.findIndex((item) => item.id === itemId)
-        if (itemIndex === -1) {
-          throw new Error("Item not found")
-        }
-
-        const current = items[itemIndex]
-
-        const newSize = options.size === undefined ? current.size : options.size
-        const newColor = options.color === undefined ? current.color : options.color
-
-        // Validaciones básicas contra el producto
-        if (newSize && current.product.sizes.length > 0 && !current.product.sizes.includes(newSize)) {
-          toast({ title: "Talla inválida", description: "Selecciona una talla disponible", variant: "destructive" })
-          setIsLoading(false)
-          return
-        }
-        if (newColor && current.product.colors.length > 0 && !current.product.colors.includes(newColor)) {
-          toast({ title: "Color inválido", description: "Selecciona un color disponible", variant: "destructive" })
-          setIsLoading(false)
-          return
-        }
-
-        // Si ya existe un item con las nuevas opciones, fusionar cantidades
-        const existingIndex = items.findIndex(
-          (it) =>
-            it.id !== itemId &&
-            it.product.id === current.product.id &&
-            it.size === (newSize || null) &&
-            it.color === (newColor || null),
-        )
-
-        const updatedItems = [...items]
-
-        if (existingIndex >= 0) {
-          const target = { ...updatedItems[existingIndex] }
-          const mergedQty = Math.min(target.quantity + current.quantity, current.product.stock)
-          const capped = mergedQty < target.quantity + current.quantity
-          target.quantity = mergedQty
-          updatedItems[existingIndex] = target
-          // eliminar el item original
-          updatedItems.splice(itemIndex, 1)
-
-          setItems(updatedItems)
-
-          toast({
-            title: "Opciones actualizadas",
-            description: capped
-              ? "Se fusionaron items similares. Cantidad ajustada por stock disponible."
-              : "Se fusionaron items similares correctamente",
+        // Si está autenticado, delegar en servidor (PUT) y refrescar
+        if (userId) {
+          const res = await fetch(`/api/cart/${encodeURIComponent(itemId)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ size: options.size, color: options.color }),
           })
+          if (!res.ok) throw new Error("Error updating cart item on server")
+          const fetchRes = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
+          if (fetchRes.ok) {
+            const serverItems = await fetchRes.json()
+            const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
+              id: ci.id,
+              product: ci.products,
+              quantity: ci.quantity,
+              size: ci.size || null,
+              color: ci.color || null,
+            }))
+            setItems(mapped)
+          }
         } else {
-          // Actualizar el propio item con nuevo id estable
-          const newId = `${current.product.id}-${newSize || "default"}-${newColor || "default"}-${Date.now()}`
-          const updated = { ...current, id: newId, size: newSize || null, color: newColor || null }
-          updatedItems[itemIndex] = updated
-          setItems(updatedItems)
+          const itemIndex = items.findIndex((item) => item.id === itemId)
+          if (itemIndex === -1) {
+            throw new Error("Item not found")
+          }
 
-          toast({ title: "Opciones actualizadas", description: "La talla/color han sido actualizados" })
+          const current = items[itemIndex]
+
+          const newSize = options.size === undefined ? current.size : options.size
+          const newColor = options.color === undefined ? current.color : options.color
+
+          // Validaciones básicas contra el producto
+          if (newSize && current.product.sizes.length > 0 && !current.product.sizes.includes(newSize)) {
+            toast({ title: "Talla inválida", description: "Selecciona una talla disponible", variant: "destructive" })
+            setIsLoading(false)
+            return
+          }
+          if (newColor && current.product.colors.length > 0 && !current.product.colors.includes(newColor)) {
+            toast({ title: "Color inválido", description: "Selecciona un color disponible", variant: "destructive" })
+            setIsLoading(false)
+            return
+          }
+
+          // Si ya existe un item con las nuevas opciones, fusionar cantidades
+          const existingIndex = items.findIndex(
+            (it) =>
+              it.id !== itemId &&
+              it.product.id === current.product.id &&
+              it.size === (newSize || null) &&
+              it.color === (newColor || null),
+          )
+
+          const updatedItems = [...items]
+
+          if (existingIndex >= 0) {
+            const target = { ...updatedItems[existingIndex] }
+            const mergedQty = Math.min(target.quantity + current.quantity, current.product.stock)
+            const capped = mergedQty < target.quantity + current.quantity
+            target.quantity = mergedQty
+            updatedItems[existingIndex] = target
+            // eliminar el item original
+            updatedItems.splice(itemIndex, 1)
+
+            setItems(updatedItems)
+
+            toast({
+              title: "Opciones actualizadas",
+              description: capped
+                ? "Se fusionaron items similares. Cantidad ajustada por stock disponible."
+                : "Se fusionaron items similares correctamente",
+            })
+          } else {
+            // Actualizar el propio item con nuevo id estable
+            const newId = `${current.product.id}-${newSize || "default"}-${newColor || "default"}-${Date.now()}`
+            const updated = { ...current, id: newId, size: newSize || null, color: newColor || null }
+            updatedItems[itemIndex] = updated
+            setItems(updatedItems)
+
+            toast({ title: "Opciones actualizadas", description: "La talla/color han sido actualizados" })
+          }
         }
       } catch (error) {
         console.error("Error updating item options:", error)
@@ -254,7 +424,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [items, toast],
+    [items, toast, userId],
   )
 
   // Eliminar un producto del carrito
@@ -262,17 +432,35 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     async (itemId: string) => {
       setIsLoading(true)
       try {
-        const itemToRemove = items.find((item) => item.id === itemId)
-        if (!itemToRemove) {
-          throw new Error("Item not found")
+        if (userId) {
+          const res = await fetch(`/api/cart/${encodeURIComponent(itemId)}`, { method: "DELETE" })
+          if (!res.ok) throw new Error("Error deleting cart item on server")
+          // refrescar
+          const fetchRes = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
+          if (fetchRes.ok) {
+            const serverItems = await fetchRes.json()
+            const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
+              id: ci.id,
+              product: ci.products,
+              quantity: ci.quantity,
+              size: ci.size || null,
+              color: ci.color || null,
+            }))
+            setItems(mapped)
+          }
+        } else {
+          const itemToRemove = items.find((item) => item.id === itemId)
+          if (!itemToRemove) {
+            throw new Error("Item not found")
+          }
+
+          setItems((prev) => prev.filter((item) => item.id !== itemId))
+
+          toast({
+            title: "Producto eliminado",
+            description: `${itemToRemove.product.name} ha sido eliminado de tu bolsa`,
+          })
         }
-
-        setItems((prev) => prev.filter((item) => item.id !== itemId))
-
-        toast({
-          title: "Producto eliminado",
-          description: `${itemToRemove.product.name} ha sido eliminado de tu bolsa`,
-        })
       } catch (error) {
         console.error("Error removing item from cart:", error)
         toast({
@@ -284,13 +472,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [items, toast],
+    [items, toast, userId],
   )
 
   // Vaciar el carrito
   const clearCart = useCallback(async () => {
     setIsLoading(true)
     try {
+      if (userId) {
+        // eliminar cada item del servidor
+        try {
+          const res = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
+          if (res.ok) {
+            const serverItems = await res.json()
+            for (const ci of serverItems) {
+              await fetch(`/api/cart/${encodeURIComponent(ci.id)}`, { method: "DELETE" })
+            }
+          }
+        } catch (err) {
+          console.warn("Error clearing server cart:", err)
+        }
+      }
       setItems([])
       toast({
         title: "Bolsa vacía",

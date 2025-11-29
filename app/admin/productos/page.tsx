@@ -28,6 +28,7 @@ export default function AdminProductosPage() {
     selectAllProducts,
     clearSelection,
     deleteSelectedProducts,
+    updateSelectedProducts,
     refreshProducts,
   } = useAdminProducts()
 
@@ -42,6 +43,20 @@ export default function AdminProductosPage() {
         title: "Productos eliminados",
         description: `${ids.length} producto(s) eliminados correctamente`,
       })
+    }
+  }
+
+  const handleBulkUpdate = async (changes: { featured?: boolean | null; is_vip?: boolean | null; is_new?: boolean | null }) => {
+    try {
+      const success = await updateSelectedProducts(changes)
+      if (success) {
+        toast({
+          title: "Actualización masiva",
+          description: `Se aplicaron los cambios a ${selectedProducts.length} producto(s)`,
+        })
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "No se pudo aplicar la actualización masiva" })
     }
   }
 
@@ -101,6 +116,7 @@ export default function AdminProductosPage() {
               onClearSelection={clearSelection}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onBulkUpdate={handleBulkUpdate}
             />
 
             {/* Paginación */}

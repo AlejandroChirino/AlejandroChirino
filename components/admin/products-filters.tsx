@@ -59,86 +59,164 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
           </div>
         </div>
 
-        {/* Categoría */}
+        {/* Categoría: grupo de botones */}
         <div>
-          <select
-            value={filters.category || ""}
-            onChange={(e) => handleFilterChange("category", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-orange focus:border-accent-orange"
-          >
-            <option value="">Todas las categorías</option>
-            <option value="hombre">Hombre</option>
-            <option value="mujer">Mujer</option>
-            <option value="accesorios">Accesorios</option>
-            <option value="unisex">Unisex</option>
-          </select>
+          <div className="mb-1 text-sm font-medium text-gray-700">Categoría</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => handleFilterChange("category", "")}
+              className={`px-3 py-1 rounded text-sm ${!filters.category ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+            >
+              Todas
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("category", "hombre")}
+              className={`px-3 py-1 rounded text-sm ${filters.category === "hombre" ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+            >
+              Hombre
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("category", "mujer")}
+              className={`px-3 py-1 rounded text-sm ${filters.category === "mujer" ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+            >
+              Mujer
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("category", "accesorios")}
+              className={`px-3 py-1 rounded text-sm ${filters.category === "accesorios" ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+            >
+              Accesorios
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("category", "unisex")}
+              className={`px-3 py-1 rounded text-sm ${filters.category === "unisex" ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+            >
+              Unisex
+            </button>
+          </div>
         </div>
       </div>
 
-      {showAdvanced && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
-          {/* Subcategoría */}
+      <div
+        aria-hidden={!showAdvanced}
+        className="mt-4 overflow-hidden transition-[max-height] duration-300 ease-in-out"
+        style={{ maxHeight: showAdvanced ? 520 : 0 }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+          {/* Subcategoría: mostramos opciones como lista de botones para mejor visibilidad */}
           <div>
-            <select
-              value={filters.subcategoria || ""}
-              onChange={(e) => handleFilterChange("subcategoria", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-orange focus:border-accent-orange"
-              disabled={!filters.category}
-            >
-              <option value="">Todas las subcategorías</option>
+            <div className="mb-2 text-sm font-medium text-gray-700">Subcategoría</div>
+            <div className="flex flex-col gap-2 max-h-40 overflow-auto pr-2">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("subcategoria", "")}
+                className={`text-left px-3 py-1 rounded ${!filters.subcategoria ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+                disabled={!filters.category}
+              >
+                Todas las subcategorías
+              </button>
               {filters.category &&
                 SUBCATEGORIAS[filters.category as keyof typeof SUBCATEGORIAS]?.map((sub) => (
-                  <option key={sub} value={sub}>
+                  <button
+                    key={sub}
+                    type="button"
+                    onClick={() => handleFilterChange("subcategoria", sub)}
+                    className={`text-left px-3 py-1 rounded ${filters.subcategoria === sub ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+                  >
                     {sub}
-                  </option>
+                  </button>
                 ))}
-            </select>
+            </div>
           </div>
 
-          {/* Filtros booleanos */}
+          {/* Filtros booleanos: mostramos como botones (Todos / Sí / No) */}
           <div>
-            <select
-              value={filters.is_vip?.toString() || ""}
-              onChange={(e) =>
-                handleFilterChange("is_vip", e.target.value === "" ? undefined : e.target.value === "true")
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-orange focus:border-accent-orange"
-            >
-              <option value="">Todos (VIP)</option>
-              <option value="true">Solo VIP</option>
-              <option value="false">No VIP</option>
-            </select>
+            <div className="mb-2 text-sm font-medium text-gray-700">VIP</div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("is_vip", undefined)}
+                className={`text-left px-3 py-1 rounded ${filters.is_vip === undefined ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Todos (VIP)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("is_vip", true)}
+                className={`text-left px-3 py-1 rounded ${filters.is_vip === true ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Solo VIP
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("is_vip", false)}
+                className={`text-left px-3 py-1 rounded ${filters.is_vip === false ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                No VIP
+              </button>
+            </div>
           </div>
 
           <div>
-            <select
-              value={filters.is_new?.toString() || ""}
-              onChange={(e) =>
-                handleFilterChange("is_new", e.target.value === "" ? undefined : e.target.value === "true")
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-orange focus:border-accent-orange"
-            >
-              <option value="">Todos (Nuevo)</option>
-              <option value="true">Solo nuevos</option>
-              <option value="false">No nuevos</option>
-            </select>
+            <div className="mb-2 text-sm font-medium text-gray-700">Nuevo</div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("is_new", undefined)}
+                className={`text-left px-3 py-1 rounded ${filters.is_new === undefined ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Todos (Nuevo)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("is_new", true)}
+                className={`text-left px-3 py-1 rounded ${filters.is_new === true ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Solo nuevos
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("is_new", false)}
+                className={`text-left px-3 py-1 rounded ${filters.is_new === false ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                No nuevos
+              </button>
+            </div>
           </div>
 
           <div>
-            <select
-              value={filters.featured?.toString() || ""}
-              onChange={(e) =>
-                handleFilterChange("featured", e.target.value === "" ? undefined : e.target.value === "true")
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-orange focus:border-accent-orange"
-            >
-              <option value="">Todos (Destacado)</option>
-              <option value="true">Solo destacados</option>
-              <option value="false">No destacados</option>
-            </select>
+            <div className="mb-2 text-sm font-medium text-gray-700">Destacado</div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("featured", undefined)}
+                className={`text-left px-3 py-1 rounded ${filters.featured === undefined ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Todos (Destacado)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("featured", true)}
+                className={`text-left px-3 py-1 rounded ${filters.featured === true ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Solo destacados
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("featured", false)}
+                className={`text-left px-3 py-1 rounded ${filters.featured === false ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                No destacados
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

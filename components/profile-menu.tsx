@@ -1,8 +1,10 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { User, Home, Tag, AtSign, Lock, LogOut, ChevronRight } from "lucide-react"
 import SignOutButton from "@/components/signout-button"
+import { createBrowserClient } from "@/lib/supabase/client"
 
 export default function ProfileMenu() {
   const MenuItem = ({ icon: Icon, label, onClick, href, badge, disabled }: { icon: any; label: string; onClick?: () => void; href?: string; badge?: string; disabled?: boolean }) => {
@@ -40,6 +42,35 @@ export default function ProfileMenu() {
     return content
   }
 
+  function AdminLinkPlaceholder() {
+    const [role, setRole] = useState<string | null>(null)
+
+    useEffect(() => {
+      let mounted = true
+      const supabase = createBrowserClient()
+
+      supabase.auth.getUser().then(({ data }) => {
+        const user = data?.user
+        if (!user) return
+        supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data: profile }) => {
+            if (!mounted) return
+            setRole((profile as any)?.role ?? null)
+          })
+      })
+
+      return () => { mounted = false }
+    }, [])
+
+    if (role !== "admin") return null
+
+    return <MenuItem icon={Tag} label="Acceder al panel" href="/admin" />
+  }
+
   return (
     <div className="bg-transparent">
       <div className="space-y-2">
@@ -48,6 +79,10 @@ export default function ProfileMenu() {
         <MenuItem icon={Tag} label="Preferencias de talla" href="/cuenta/perfil/tallas" />
         <MenuItem icon={AtSign} label="Preferencias y redes" badge="PRÓXIMAMENTE" disabled />
         <MenuItem icon={Lock} label="Resetear contraseña" href="/cuenta/perfil/reset-password" />
+        {/* Mostrar enlace al panel admin solo si el perfil del usuario tiene role === 'admin' */}
+        {typeof window !== 'undefined' ? (
+          <AdminLinkPlaceholder />
+        ) : null}
         <div className="px-4 py-3">
           <SignOutButton label="Cerrar sesión" className="w-full text-left text-sm text-red-600" />
         </div>
@@ -55,3 +90,4 @@ export default function ProfileMenu() {
     </div>
   )
 }
+

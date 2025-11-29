@@ -141,7 +141,9 @@ export async function POST(request: NextRequest) {
       price: body.price ?? null, 
       sale_price: body.sale_price ?? null,
       on_sale: body.on_sale ?? null,
-      image_url: body.image_url ?? null,
+      // Prefer image_urls array when provided; keep image_url for backward compatibility
+      image_urls: body.image_urls ?? (body.image_url ? [body.image_url] : []),
+      image_url: (body.image_urls && body.image_urls.length > 0) ? body.image_urls[0] : body.image_url ?? null,
       category: body.category,
       subcategoria: body.subcategoria ?? null,
       sizes: body.sizes ?? [],
@@ -199,6 +201,98 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: `${ids.length} productos eliminados correctamente` })
   } catch (error) {
     console.error("Error in DELETE /api/admin/productos:", error)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const ids: string[] = body.ids || []
+    const changes = body.changes || {}
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: "No se proporcionaron IDs" }, { status: 400 })
+    }
+
+    // Build update payload only with keys that are not null/undefined
+    const updatePayload: Record<string, any> = {}
+    if (changes.featured !== undefined && changes.featured !== null) updatePayload.featured = changes.featured
+    if (changes.is_vip !== undefined && changes.is_vip !== null) updatePayload.is_vip = changes.is_vip
+    if (changes.is_new !== undefined && changes.is_new !== null) updatePayload.is_new = changes.is_new
+
+    if (Object.keys(updatePayload).length === 0) {
+      // It's possible sale_action is present; defer to sale_action handling
+      if (!changes.sale_action) {
+        return NextResponse.json({ error: "No hay cambios válidos para aplicar" }, { status: 400 })
+      }
+    }
+
+    // Apply the simple field updates if present
+    if (Object.keys(updatePayload).length > 0) {
+      const { error } = await getSupabaseAdmin().from("products").update(updatePayload).in("id", ids)
+
+      if (error) {
+        console.error("Error updating products:", error)
+        return NextResponse.json({ error: "Error al actualizar productos" }, { status: 500 })
+      }
+    }
+
+    // Handle sale_action if present
+    if (changes.sale_action) {
+      const saleAction = changes.sale_action
+
+      if (saleAction.action === "remove") {
+        const { error } = await getSupabaseAdmin().from("products").update({ on_sale: false, sale_price: null }).in("id", ids)
+        if (error) {
+          console.error("Error removing sale:", error)
+          return NextResponse.json({ error: "Error al quitar ofertas" }, { status: 500 })
+        }
+        return NextResponse.json({ message: `Ofertas removidas para ${ids.length} productos` })
+      }
+
+      if (saleAction.action === "apply") {
+        // Fetch products to read price
+        const { data: products, error: fetchError } = await getSupabaseAdmin().from("products").select("id, price").in("id", ids)
+        if (fetchError) {
+          console.error("Error fetching products for sale:", fetchError)
+          return NextResponse.json({ error: "Error al preparar ofertas" }, { status: 500 })
+        }
+
+        const updates: Array<Promise<any>> = []
+        for (const p of products as any[]) {
+          const price = Number(p.price)
+          if (isNaN(price) || price <= 0) continue
+
+          let sale_price = price
+          if (saleAction.mode === "percent") {
+            const pct = Number(saleAction.value)
+            sale_price = +(price * (1 - pct / 100))
+          } else if (saleAction.mode === "amount") {
+            const amt = Number(saleAction.value)
+            sale_price = +(price - amt)
+          }
+
+          // Ensure non-negative and round to 2 decimals
+          sale_price = Math.max(0, Math.round(sale_price * 100) / 100)
+
+          updates.push(getSupabaseAdmin().from("products").update({ on_sale: true, sale_price }).eq("id", p.id))
+        }
+
+        const results = await Promise.all(updates)
+        const anyError = results.find((r) => r.error)
+        if (anyError) {
+          console.error("Error applying sale updates:", anyError.error)
+          return NextResponse.json({ error: "Error al aplicar ofertas" }, { status: 500 })
+        }
+
+        return NextResponse.json({ message: `Ofertas aplicadas a ${updates.length} productos` })
+      }
+    }
+
+    return NextResponse.json({ message: `Actualizados ${ids.length} productos` })
+  } catch (error) {
+    console.error("Error in PATCH /api/admin/productos:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }

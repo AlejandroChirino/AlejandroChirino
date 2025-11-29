@@ -21,6 +21,7 @@ interface UseAdminProductsReturn {
   selectAllProducts: () => void
   clearSelection: () => void
   deleteSelectedProducts: () => Promise<boolean>
+  updateSelectedProducts: (changes: Record<string, any>) => Promise<boolean>
   refreshProducts: () => void
 }
 
@@ -100,6 +101,33 @@ export function useAdminProducts(): UseAdminProductsReturn {
     }
   }
 
+  const updateSelectedProducts = async (changes: Record<string, any>): Promise<boolean> => {
+    try {
+      const payload = {
+        ids: selectedProducts,
+        changes,
+      }
+
+      const response = await fetch(`/api/admin/productos`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Error al actualizar productos")
+      }
+
+      clearSelection()
+      fetchProducts()
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar productos")
+      return false
+    }
+  }
+
   const refreshProducts = () => {
     fetchProducts()
   }
@@ -121,6 +149,7 @@ export function useAdminProducts(): UseAdminProductsReturn {
     selectAllProducts,
     clearSelection,
     deleteSelectedProducts,
+    updateSelectedProducts,
     refreshProducts,
   }
 }

@@ -12,12 +12,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const { slug } = await params
     const resp = await supabase
       .from("products")
-      .select("name, description, price, image_url, category")
+      .select("name, description, price, image_url, image_urls, category")
       .eq("id", slug)
       .single()
 
     const product = resp.data as
-      | { name?: string; description?: string | null; image_url?: string | null }
+      | { name?: string; description?: string | null; image_url?: string | null; image_urls?: string[] }
       | null
 
     if (!product) {
@@ -34,14 +34,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       openGraph: {
         title: product.name,
         description: product.description || `Compra ${product.name} en La L Fashion`,
-        images: product.image_url ? [product.image_url] : [],
+        images: product && product.image_urls && product.image_urls.length > 0 ? product.image_urls : product.image_url ? [product.image_url] : [],
         type: "website",
       },
       twitter: {
         card: "summary_large_image",
         title: product.name,
         description: product.description || `Compra ${product.name} en La L Fashion`,
-        images: product.image_url ? [product.image_url] : [],
+        images: product && product.image_urls && product.image_urls.length > 0 ? product.image_urls : product.image_url ? [product.image_url] : [],
       },
     }
   } catch (error) {

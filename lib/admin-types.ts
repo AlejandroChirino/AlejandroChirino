@@ -15,6 +15,7 @@ export interface ProductFormData {
   is_vip: boolean
   is_new: boolean
   image_url?: string
+  image_urls?: string[]
   colaboracion_id?: string
 }
 

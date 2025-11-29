@@ -2,11 +2,12 @@ import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import { randomUUID } from "crypto"
+import { computeCouponDiscount, redeemCoupon } from "@/lib/coupons"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { items, shipping_address, customer, user_id } = body || {}
+    const { items, shipping_address, customer, user_id, appliedCoupon } = body || {}
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "items required" }, { status: 400 })
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
       const { data: created, error: createErr } = await admin.from("user_profiles").insert(insertPayload).select("id").maybeSingle()
       if (createErr) {
         console.error("Error creating guest profile:", createErr)
-        return NextResponse.json({ error: "Error creando perfil de invitado" }, { status: 500 })
+        const details = process.env.NODE_ENV !== "production" ? (createErr?.message || (() => { try { return JSON.stringify(createErr) } catch (e) { return String(createErr) } })()) : undefined
+        return NextResponse.json({ error: "Error creando perfil de invitado", details }, { status: 500 })
       }
       resolvedUserId = (created && (created as any).id) || guestId
     }
@@ -69,9 +71,58 @@ export async function POST(request: Request) {
     const missing = productIds.filter((pid: string) => !existingIds.includes(pid))
     if (missing.length > 0) return NextResponse.json({ error: "Algunos product_id no existen", missing }, { status: 400 })
 
-    // Insert order using admin client
-    const total = items.reduce((s: number, it: any) => s + (Number(it.price) * Number(it.quantity || 1)), 0)
-    const { data: orderData, error: orderError } = await admin.from("orders").insert({ user_id: resolvedUserId, total, status: "pending", shipping_address }).select("id").single()
+    // Compute totals
+    const totalBefore = items.reduce((s: number, it: any) => s + (Number(it.price) * Number(it.quantity || 1)), 0)
+
+    // Server-side coupon validation: if client sent an appliedCoupon (id or code), re-check it here via shared logic
+    let totalDiscount = 0
+    let applicableProductIds: string[] = []
+
+    if (appliedCoupon && (appliedCoupon.id || appliedCoupon.code)) {
+      try {
+        // Fetch product metadata to pass into computeCouponDiscount
+        const { data: productRows } = await admin.from("products").select("id,price,category,subcategoria,brand,tags").in("id", productIds)
+        const prodMap: Record<string, any> = {}
+        ;(productRows || []).forEach((p: any) => { prodMap[p.id] = p })
+
+        const itemsForCompute = items.map((it: any) => ({ product: { id: it.product_id, price: it.price || prodMap[it.product_id]?.price, category: prodMap[it.product_id]?.category, subcategoria: prodMap[it.product_id]?.subcategoria, tags: prodMap[it.product_id]?.tags, brand: prodMap[it.product_id]?.brand }, quantity: it.quantity || 1 }))
+
+        const computeRes = await computeCouponDiscount({ admin, code: appliedCoupon.code, coupon_id: appliedCoupon.id, items: itemsForCompute, subtotal: totalBefore, deliveryCost: 0, user_id: resolvedUserId })
+        if (computeRes && computeRes.valid) {
+          totalDiscount = Number(computeRes.discount || 0)
+          applicableProductIds = computeRes.applicable_products || []
+          appliedCoupon.id = appliedCoupon.id || computeRes.coupon?.id
+          appliedCoupon.code = appliedCoupon.code || computeRes.coupon?.code
+          appliedCoupon.description = appliedCoupon.description || computeRes.coupon?.description
+        } else {
+          // invalid coupon -> ignore
+          totalDiscount = 0
+          applicableProductIds = []
+        }
+      } catch (e) {
+        console.error("Error validating coupon server-side:", e)
+        totalDiscount = 0
+        applicableProductIds = []
+      }
+    }
+
+    const finalTotal = Math.max(0, totalBefore - totalDiscount)
+
+    // Insert order using admin client (store final total and coupon metadata)
+    const orderInsertPayload: any = {
+      user_id: resolvedUserId,
+      total: finalTotal,
+      status: "pending",
+      shipping_address,
+      total_discount: totalDiscount,
+    }
+    if (appliedCoupon) {
+      if (appliedCoupon.id) orderInsertPayload.coupon_id = appliedCoupon.id
+      if (appliedCoupon.code) orderInsertPayload.coupon_code = appliedCoupon.code
+      if (appliedCoupon.description) orderInsertPayload.coupon_description = appliedCoupon.description
+    }
+
+    const { data: orderData, error: orderError } = await admin.from("orders").insert(orderInsertPayload).select("id").single()
     if (orderError || !orderData) {
       console.error("Error creating order:", orderError)
       return NextResponse.json({ error: "Error creando orden" }, { status: 500 })
@@ -79,14 +130,29 @@ export async function POST(request: Request) {
 
     const order_id = orderData.id
 
-    const itemsToInsert = items.map((it: any) => ({
-      order_id,
-      product_id: it.product_id,
-      quantity: it.quantity || 1,
-      price: it.price || 0,
-      size: it.size || null,
-      color: it.color || null,
-    }))
+    // Distribute discount among applicable items (proportional to item subtotal)
+    const applicable = Array.isArray(applicableProductIds) ? applicableProductIds : []
+    const subtotalApplicable = items.reduce((s: number, it: any) => {
+      return s + (applicable.includes(it.product_id) ? Number(it.price) * Number(it.quantity || 1) : 0)
+    }, 0)
+
+    const itemsToInsert = items.map((it: any) => {
+      const itemSubtotal = Number(it.price) * Number(it.quantity || 1)
+      let discount_amount = 0
+      if (totalDiscount > 0 && subtotalApplicable > 0 && applicable.includes(it.product_id)) {
+        // proportional share
+        discount_amount = Number(((itemSubtotal / subtotalApplicable) * totalDiscount).toFixed(2))
+      }
+      return {
+        order_id,
+        product_id: it.product_id,
+        quantity: it.quantity || 1,
+        price: it.price || 0,
+        size: it.size || null,
+        color: it.color || null,
+        discount_amount: discount_amount,
+      }
+    })
 
     const { error: itemsError } = await admin.from("order_items").insert(itemsToInsert)
     if (itemsError) {
@@ -97,6 +163,19 @@ export async function POST(request: Request) {
         console.warn("Failed to cleanup order after items insert error:", delErr)
       }
       return NextResponse.json({ error: "Error inserting items" }, { status: 500 })
+    }
+
+    // If coupon applied, register coupon use via centralized redeemCoupon (best-effort)
+    try {
+      if (appliedCoupon && (appliedCoupon.id || appliedCoupon.code)) {
+        const { data: productRows } = await admin.from("products").select("id,price,category,subcategoria,brand,tags").in("id", productIds)
+        const prodMap: Record<string, any> = {}
+        ;(productRows || []).forEach((p: any) => { prodMap[p.id] = p })
+        const itemsForRedeem = items.map((it: any) => ({ product: { id: it.product_id, price: it.price || prodMap[it.product_id]?.price, category: prodMap[it.product_id]?.category, subcategoria: prodMap[it.product_id]?.subcategoria, tags: prodMap[it.product_id]?.tags, brand: prodMap[it.product_id]?.brand }, quantity: it.quantity || 1 }))
+        await redeemCoupon({ admin, code: appliedCoupon.code, coupon_id: appliedCoupon.id, items: itemsForRedeem, subtotal: totalBefore, deliveryCost: 0, user_id: resolvedUserId, order_id, metadata: { source: 'checkout_order_insert' } })
+      }
+    } catch (e) {
+      console.error('failed to register coupon use via redeemCoupon:', e)
     }
 
     return NextResponse.json({ id: order_id }, { status: 201 })

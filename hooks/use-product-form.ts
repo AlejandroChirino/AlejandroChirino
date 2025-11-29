@@ -33,6 +33,7 @@ const initialFormData: ProductFormData = {
   is_vip: false,
   is_new: false,
   image_url: "",
+  image_urls: [],
   colaboracion_id: undefined,
 
 }

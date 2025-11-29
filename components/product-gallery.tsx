@@ -93,11 +93,14 @@ export default function ProductGallery({
 
       {/* Desktop: single image with arrows and thumbnails */}
       <div className="hidden md:block">
-      <div className="relative aspect-[3/4] bg-gray-100 rounded-none overflow-hidden group">
-          <img
-            src={currentImage || "/placeholder.svg"}
+          <div className="relative aspect-[3/4] bg-gray-100 rounded-none overflow-hidden group">
+          <Image
+            src={currentImage || "/placeholder.svg?height=600&width=600&query=product"}
             alt={`${productName} - Imagen ${activeIndex + 1}`}
-            className="w-full h-full object-cover"
+            fill
+            priority
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 50vw"
           />
 
           {images.length > 1 && (

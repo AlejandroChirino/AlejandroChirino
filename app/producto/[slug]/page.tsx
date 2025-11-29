@@ -174,12 +174,14 @@ export default function ProductPage({ params }: ProductPageProps) {
     notFound()
   }
 
-  // Mock images array (in real app, this would come from product data)
-  const images = [
-    product.image_url || "/placeholder.svg?height=600&width=600&query=product",
-    "/placeholder.svg?height=600&width=600&query=product-2",
-    "/placeholder.svg?height=600&width=600&query=product-3",
-  ]
+  // Use image_urls array when available, fallback to single image_url and placeholders
+  const images = product.image_urls && product.image_urls.length > 0
+    ? product.image_urls
+    : [
+        product.image_url || "/placeholder.svg?height=600&width=600&query=product",
+        "/placeholder.svg?height=600&width=600&query=product-2",
+        "/placeholder.svg?height=600&width=600&query=product-3",
+      ]
 
   const breadcrumbItems = (() => {
     const items: { label: string; href?: string }[] = []

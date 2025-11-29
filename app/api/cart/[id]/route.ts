@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import type { Tables, TablesInsert, TablesUpdate } from "@/lib/database.types"
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +15,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       updated_at: new Date().toISOString(),
     }
 
-    const { data: cartItem, error } = await supabase
+    const admin = getSupabaseAdmin()
+    const { data: cartItem, error } = await admin
       .from("cart_items")
       .update(updateData as never)
       .eq("id", id)
@@ -34,7 +36,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const { error } = await supabase.from("cart_items").delete().eq("id", id)
+    const admin = getSupabaseAdmin()
+    const { error } = await admin.from("cart_items").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: "Error deleting cart item" }, { status: 500 })

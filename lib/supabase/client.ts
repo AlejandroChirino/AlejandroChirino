@@ -1,17 +1,11 @@
 'use client'
 
-import { createBrowserClient as _createBrowserClient } from '@supabase/ssr'
-import type { Database } from '../database.types'
-
-let cached: ReturnType<typeof _createBrowserClient> | null = null
+// Re-use the single Supabase client created in `lib/supabaseClient.ts` to avoid
+// multiple GoTrueClient instances in the same browser context.
+import { safeSupabase } from '@/lib/supabaseClient'
 
 export const createBrowserClient = () => {
-  if (cached) return cached
-  cached = _createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  return cached
+  return safeSupabase
 }
 
 export default createBrowserClient

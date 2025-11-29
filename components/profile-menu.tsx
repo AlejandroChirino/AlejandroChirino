@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { User, Home, Tag, AtSign, Lock, LogOut, ChevronRight } from "lucide-react"
 import SignOutButton from "@/components/signout-button"
@@ -44,6 +45,8 @@ export default function ProfileMenu() {
 
   function AdminLinkPlaceholder() {
     const [role, setRole] = useState<string | null>(null)
+    const [checking, setChecking] = useState(false)
+    const router = useRouter()
 
     useEffect(() => {
       let mounted = true
@@ -68,7 +71,51 @@ export default function ProfileMenu() {
 
     if (role !== "admin") return null
 
-    return <MenuItem icon={Tag} label="Acceder al panel" href="/admin" />
+    const handleEnterAdmin = async () => {
+      if (checking) return
+      setChecking(true)
+      try {
+        const supabase = createBrowserClient()
+        const { data } = await supabase.auth.getUser()
+        const user = data?.user
+        if (!user) {
+          router.replace('/cuenta')
+          return
+        }
+
+        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle()
+        if ((profile as any)?.role !== 'admin') {
+          router.push('/')
+          return
+        }
+
+        // Try to find the localStorage key used by Supabase and send it to server to set cookie
+        const keys = Object.keys(localStorage)
+        const tokenKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
+        if (tokenKey) {
+          const tokenValue = localStorage.getItem(tokenKey)
+          try {
+            await fetch('/api/auth/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: tokenKey, value: tokenValue }),
+            })
+            // After server sets cookie, navigate to /admin — middleware should now see the cookie
+            router.push('/admin')
+            return
+          } catch (err) {
+            // fallback to direct navigation
+          }
+        }
+
+        // If we couldn't sync cookie, still attempt navigation — middleware may redirect to /cuenta
+        router.push('/admin')
+      } finally {
+        setChecking(false)
+      }
+    }
+
+    return <MenuItem icon={Tag} label={checking ? 'Accediendo...' : 'Acceder al panel'} onClick={handleEnterAdmin} />
   }
 
   return (

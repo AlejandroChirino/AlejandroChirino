@@ -11,7 +11,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
-    const { data: cartItems, error } = await supabase
+    // Use admin client for reads so Server-side routes can access cart_items regardless of RLS
+    const admin = getSupabaseAdmin()
+    const { data: cartItems, error } = await admin
       .from("cart_items")
       .select(
         `

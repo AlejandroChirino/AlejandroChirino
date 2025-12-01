@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -16,7 +16,12 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     if (Object.keys(payload).length === 0) return NextResponse.json({ error: "nothing to update" }, { status: 400 })
 
-    const admin = getSupabaseAdmin()
+    let admin: any
+    try {
+      admin = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ error: "Admin client not available" }, { status: 401 })
+    }
     const { data, error } = await admin.from("user_profiles").update(payload).eq("id", id).select("id,is_vip,tags").maybeSingle()
     if (error) {
       console.error("Error updating profile:", error)
@@ -35,7 +40,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const id = params.id
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-    const admin = getSupabaseAdmin()
+    let admin: any
+    try {
+      admin = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ error: "Admin client not available" }, { status: 401 })
+    }
 
     // Fetch profile (use select('*') to avoid errors if schema differs)
     const { data: profile, error: profileErr } = await admin

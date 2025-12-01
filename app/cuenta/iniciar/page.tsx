@@ -26,6 +26,28 @@ export default function LoginPage() {
         setError(error.message || "Credenciales incorrectas")
         return
       }
+      // After successful sign-in, try to sync the Supabase auth token into
+      // an HttpOnly cookie so server-side routes using `createServerClient`
+      // can see the session. We look for the localStorage key used by
+      // Supabase client and post it to `/api/auth/sync` which will set the
+      // cookie.
+      try {
+        const keys = Object.keys(localStorage)
+        const tokenKey = keys.find((k) => k.startsWith("sb-") && k.endsWith("-auth-token"))
+        if (tokenKey) {
+          const tokenValue = localStorage.getItem(tokenKey)
+          if (tokenValue) {
+            await fetch('/api/auth/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: tokenKey, value: tokenValue }),
+            })
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to sync auth cookie after sign-in', err)
+      }
+
       router.push("/")
     } catch (err) {
       setError("Ocurrió un error al iniciar sesión")

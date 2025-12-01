@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -13,7 +13,12 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ error: "invalid status" }, { status: 400 })
     }
 
-    const supabase = getSupabaseAdmin()
+    let supabase: any
+    try {
+      supabase = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ error: "Admin client not available" }, { status: 401 })
+    }
     const { data, error } = await supabase.from("orders").update({ status }).eq("id", id).select("id,status").maybeSingle()
     if (error) {
       console.error("Error updating order status:", error)

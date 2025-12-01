@@ -7,6 +7,7 @@ import { Check } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 import type { CartItem, CustomerData, CheckoutCalculations, DeliveryMethod, PaymentMethod } from "@/lib/types"
 
+
 interface OrderSummaryProps {
   items: CartItem[]
   customer: CustomerData
@@ -97,39 +98,32 @@ export default function OrderSummary(props: OrderSummaryProps) {
 
           <div className="mb-4">
             {!appliedCoupon ? (
-              <div className="flex gap-2 items-center">
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  const form = e.currentTarget as HTMLFormElement
+                  const input = form.querySelector('input[name="coupon_code"]') as HTMLInputElement | null
+                  const code = input?.value.trim() || ""
+                  if (!code) return toast({ title: "Cupón", description: "Ingresa un código" })
+                  await handleApply(code)
+                }}
+                className="flex flex-col sm:flex-row gap-2 items-center"
+              >
                 <input
+                  name="coupon_code"
                   type="text"
                   placeholder="Código de cupón"
                   aria-label="Código de cupón"
                   id="coupon_code_input"
-                  className="flex-1 border rounded-lg px-3 py-2 text-sm"
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      const input = e.currentTarget as HTMLInputElement
-                      const code = input.value.trim()
-                      if (!code) return
-                      await handleApply(code)
-                    }
-                  }}
+                  className="w-full sm:flex-1 border rounded-lg px-3 py-2 text-sm"
                 />
                 <button
-                  type="button"
-                  className="bg-[var(--brand-green)] text-white rounded-lg px-4 py-2 text-sm"
-                  onClick={async (e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    const input = document.getElementById("coupon_code_input") as HTMLInputElement | null
-                    const code = input?.value.trim() || ""
-                    if (!code) return alert("Ingresa un código")
-                    await handleApply(code)
-                  }}
+                  type="submit"
+                  className="bg-[var(--brand-green)] text-white rounded-lg px-4 py-2 text-sm w-full sm:w-auto"
                 >
                   Aplicar
                 </button>
-              </div>
+              </form>
             ) : (
               <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-lg p-3">
                 <div>

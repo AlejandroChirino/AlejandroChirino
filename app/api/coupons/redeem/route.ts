@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 import { redeemCoupon } from "@/lib/coupons"
 
 export async function POST(req: Request) {
@@ -9,8 +9,14 @@ export async function POST(req: Request) {
 
     if (!code && !coupon_id) return NextResponse.json({ success: false, reason: "code or coupon_id required" }, { status: 400 })
 
-    const supabase = getSupabaseAdmin()
-    const r = await redeemCoupon({ admin: supabase, code, coupon_id, items, subtotal, deliveryCost, user_id, order_id, metadata })
+    let admin: any
+    try {
+      admin = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ success: false, reason: 'No autorizado o admin client no disponible' }, { status: 401 })
+    }
+
+    const r = await redeemCoupon({ admin, code, coupon_id, items, subtotal, deliveryCost, user_id, order_id, metadata })
     if (!r) return NextResponse.json({ success: false, reason: 'Error interno' }, { status: 500 })
     return NextResponse.json(r)
   } catch (err) {

@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
 
       supabaseQuery = supabaseQuery.or(`name.ilike.%${q}%,description.ilike.%${q}%`)
 
+      // Excluir productos archivados del resultado público
+      supabaseQuery = supabaseQuery.eq("archived", false)
+
       if (category && category !== "all") {
         supabaseQuery = supabaseQuery.eq("category", category)
       }

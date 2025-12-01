@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,14 @@ export async function GET(request: NextRequest) {
     const is_new = searchParams.get("is_new")
     const createdAfter = searchParams.get("createdAfter")
 
-    let query = getSupabaseAdmin().from("products").select("colors,sizes")
+    let query: any
+    try {
+      const adminClient = await getAdminDb()
+      query = adminClient.from("products").select("colors,sizes")
+    } catch (e) {
+      console.warn("Supabase admin client not configured; returning 401 for admin options")
+      return NextResponse.json({ error: "Admin client not configured" }, { status: 401 })
+    }
 
     if (category && category !== "all") {
       query = query.eq("category", category)

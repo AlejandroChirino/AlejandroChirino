@@ -1,11 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
-import type { Tables, TablesInsert, TablesUpdate } from "@/lib/database.types"
+import { createServerClient } from "@/lib/supabase/server"
+import { getAdminDb } from "@/lib/adminClient"
+import type { TablesUpdate } from "@/lib/database.types"
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const { id } = params
+    if (!id) return NextResponse.json({ error: "Cart item id is required" }, { status: 400 })
+
     const { quantity, size, color } = await request.json()
 
     const updateData: TablesUpdate<"cart_items"> = {
@@ -15,8 +17,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       updated_at: new Date().toISOString(),
     }
 
-    const admin = getSupabaseAdmin()
-    const { data: cartItem, error } = await admin
+    // Prefer server session client; if none, allow admin fallback in dev.
+    const serverSupabase = await createServerClient()
+    const { data: authData } = await serverSupabase.auth.getUser()
+    const sessionUserId = authData?.user?.id ?? null
+
+    let dbClient: any
+    if (sessionUserId) {
+      dbClient = serverSupabase
+    } else {
+      try {
+        dbClient = await getAdminDb()
+      } catch (err) {
+        return NextResponse.json({ error: "Not authenticated (no session) or admin client not available" }, { status: 401 })
+      }
+    }
+
+    const { data: cartItem, error } = await dbClient
       .from("cart_items")
       .update(updateData as never)
       .eq("id", id)
@@ -33,17 +50,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
-    const admin = getSupabaseAdmin()
-    const { error } = await admin.from("cart_items").delete().eq("id", id)
+    const { id } = params
+    if (!id) return NextResponse.json({ error: "Cart item id is required" }, { status: 400 })
+
+    // Prefer server session client; if none, allow admin fallback in dev.
+    const serverSupabase = await createServerClient()
+    const { data: authData } = await serverSupabase.auth.getUser()
+    const sessionUserId = authData?.user?.id ?? null
+
+    let dbClient: any
+    if (sessionUserId) {
+      dbClient = serverSupabase
+    } else {
+      try {
+        dbClient = await getAdminDb()
+      } catch (err) {
+        return NextResponse.json({ error: "Not authenticated (no session) or admin client not available" }, { status: 401 })
+      }
+    }
+
+    const { error } = await dbClient.from("cart_items").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: "Error deleting cart item" }, { status: 500 })
     }
 
-    return NextResponse.json({ message: "Cart item deleted successfully" })
+    return NextResponse.json({ deleted: id })
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

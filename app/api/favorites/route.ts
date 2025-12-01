@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,49 +56,133 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, productId } = await request.json()
-
-    if (!userId && !productId) {
-      return NextResponse.json({ error: "User ID and Product ID are required" }, { status: 400 })
+    // Parse and log request body for easier debugging when clients send malformed payloads
+    const raw = await request.text()
+    let parsed: any = {}
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw)
+      } catch (e) {
+        // If JSON parsing fails, attempt to parse as form-encoded body
+        try {
+          const params = new URLSearchParams(raw)
+          parsed = {}
+          for (const [k, v] of params.entries()) parsed[k] = v
+          console.warn("POST /api/favorites: parsed body as form-urlencoded", { parsed })
+        } catch (e2) {
+          console.warn("POST /api/favorites: failed to parse body as JSON or form-urlencoded", { raw })
+          return NextResponse.json({ error: "Invalid request body (not JSON nor form-encoded)", details: raw || null }, { status: 400 })
+        }
+      }
     }
 
-    const supabase = await createServerClient()
-    // Try to get server session user id, but allow client-provided userId as a
-    // development fallback when server session is not present (helps local debugging).
-    const { data: authData } = await supabase.auth.getUser()
-    const serverUserId = authData?.user?.id ?? (process.env.NODE_ENV !== "production" ? userId : null)
-    if (!serverUserId) {
-      return NextResponse.json({ error: "Not authenticated (no server session)" }, { status: 401 })
+    // Normalize common field names to be tolerant with different clients
+    const userIdFromBody = parsed?.userId ?? parsed?.user_id ?? parsed?.user?.id ?? null
+    const productIdFromBody = parsed?.productId ?? parsed?.product_id ?? parsed?.product?.id ?? parsed?.product ?? null
+
+    // Allow x-user-id header as an additional fallback (useful for some clients)
+    const headerUserId = request.headers.get("x-user-id")
+
+    const bodyUserId = userIdFromBody || headerUserId || null
+
+
+    // We'll create supabase client now to check session. If there is no server
+    // session we may use the admin (service role) client in development to
+    // perform checks/inserts; this avoids RLS blocking anonymous inserts while
+    // keeping production behavior strict.
+    const serverSupabase = await createServerClient()
+    const { data: authData } = await serverSupabase.auth.getUser()
+    const serverUserId = authData?.user?.id ?? null
+
+    // Resolve which user id to use (server session preferred)
+    const finalUserIdCandidate = serverUserId || (process.env.NODE_ENV !== "production" ? bodyUserId : null)
+
+    // Choose DB client: prefer serverSupabase when we have a session. As a
+    // safety measure, only enable the admin (service-role) fallback when an
+    // explicit env var `ALLOW_ADMIN_FALLBACK` is set to "true" and a
+    // service role key is present. This prevents accidental use of the
+    // privileged client in unintended environments.
+    const useAdmin = !serverUserId && !!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.ALLOW_ADMIN_FALLBACK === "true"
+    let db: any = serverSupabase
+    if (useAdmin) {
+      try { console.warn("Using SUPABASE service-role client fallback for favorites (dev only)") } catch (e) {}
+      try {
+        db = await getAdminDb()
+      } catch (e) {
+        return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+      }
     }
 
-    if (!productId) {
-      return NextResponse.json({ error: "Product ID is required" }, { status: 400 })
+    try {
+      console.log("POST /api/favorites parsed body and headers", { parsed, headerUserId, finalUserIdCandidate, productIdFromBody })
+    } catch (e) {}
+
+    if (!finalUserIdCandidate) {
+      return NextResponse.json({ error: "Not authenticated (no server session and no userId in body)" }, { status: 401 })
     }
+
+    if (!productIdFromBody) {
+      return NextResponse.json({ error: "Product ID is required", details: { productId: !!productIdFromBody, parsed } }, { status: 400 })
+    }
+
+    const finalUserId = finalUserIdCandidate
 
     // Validate product exists to avoid FK constraint violations
     try {
-      const { data: prodData, error: prodErr } = await supabase.from("products").select("id").eq("id", productId).maybeSingle()
+      const { data: prodData, error: prodErr } = await db.from("products").select("id, name, image_url").eq("id", productIdFromBody).maybeSingle()
       if (prodErr) {
         console.error("Error checking product existence:", prodErr)
         return NextResponse.json({ error: "Error checking product", details: String(prodErr) }, { status: 500 })
       }
+
+      try { console.log("POST /api/favorites product lookup result", { productIdFromBody, prodData }) } catch (e) {}
+
       if (!prodData) {
-        return NextResponse.json({ error: "Product not found", details: `product ${productId} does not exist` }, { status: 400 })
+        return NextResponse.json({ error: "Product not found", details: { productId: productIdFromBody, prodData: prodData || null, parsed } }, { status: 400 })
       }
     } catch (err) {
       console.error("Unexpected error checking product existence:", err)
       return NextResponse.json({ error: "Internal server error", details: String(err) }, { status: 500 })
     }
 
-    const { data: favorite, error } = await supabase
+    try {
+      console.log("POST /api/favorites inserting", { user: finalUserId, product: productIdFromBody })
+    } catch (e) {}
+
+    // Check existing to avoid duplicate inserts
+    try {
+      const { data: existing, error: existErr } = await db
+        .from("favorites")
+        .select("id")
+        .eq("user_id", finalUserId)
+        .eq("product_id", productIdFromBody)
+        .maybeSingle()
+
+      if (existErr) {
+        console.error("Error checking existing favorite:", existErr)
+      } else if (existing) {
+        return NextResponse.json({ message: "Favorite already exists", favorite: existing }, { status: 200 })
+      }
+    } catch (e) {
+      console.error("Error checking existing favorite:", e)
+    }
+
+    const { data: favorite, error } = await db
       .from("favorites")
-      .insert([{ user_id: serverUserId, product_id: productId }])
+      .insert([{ user_id: finalUserId, product_id: productIdFromBody }])
       .select()
       .single()
 
     if (error) {
       console.error("Error inserting favorite:", error)
-      return NextResponse.json({ error: "Error adding favorite", details: String(error) }, { status: 500 })
+      // Serialize Supabase error objects to JSON-friendly shape when possible
+      let errDetails: any = null
+      try {
+        errDetails = JSON.parse(JSON.stringify(error))
+      } catch (e) {
+        errDetails = String(error)
+      }
+      return NextResponse.json({ error: "Error adding favorite", details: errDetails }, { status: 500 })
     }
 
     return NextResponse.json(favorite, { status: 201 })

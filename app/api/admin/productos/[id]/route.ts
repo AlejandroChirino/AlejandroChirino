@@ -1,10 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const { data: product, error } = await getSupabaseAdmin()
+    let db: any
+    try {
+      db = await getAdminDb(request)
+    } catch (e) {
+      return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+    }
+
+    const { data: product, error } = await db
       .from("products")
       .select("*")
       .eq("id", id)
@@ -28,7 +35,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
 
     // Obtener configuración para calcular inversión
-    const respConfig = await getSupabaseAdmin()
+    let db: any
+    try {
+      db = await getAdminDb(request)
+    } catch (e) {
+      return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+    }
+
+    const respConfig = await db
       .from("configuracion")
       .select("precio_libra, valor_dolar")
       .single()
@@ -63,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       updated_at: new Date().toISOString(),
     }
 
-    const { data: product, error } = await getSupabaseAdmin()
+    const { data: product, error } = await db
       .from("products")
       .update(productData as never)
       .eq("id", id)
@@ -85,7 +99,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
   const { id } = await params
-  const { error } = await getSupabaseAdmin().from("products").delete().eq("id", id)
+  let db: any
+  try {
+    db = await getAdminDb(request)
+  } catch (e) {
+    return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+  }
+
+  const { error } = await db.from("products").delete().eq("id", id)
 
     if (error) {
       console.error("Error deleting product:", error)

@@ -1,0 +1,58 @@
+[33mcommit 7639862079fa37054ca79f2245711c95d094560c[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: v0 <v0[bot]@users.noreply.github.com>
+Date:   Sat Nov 29 20:47:36 2025 +0000
+
+    feat: sync main changes in AlejandroChirino project
+    
+    Update project files and components to reflect latest main branch changes
+    
+    Co-authored-by: AlejandroChirino <190323991+AlejandroChirino@users.noreply.github.com>
+
+ app/accesorios/AccesoriosClient.tsx                |   2 [32m+[m[31m-[m
+ app/admin/clientes/page.tsx                        |   2 [32m+[m[31m-[m
+ app/admin/cupones/CouponForm.tsx                   |   2 [32m+[m[31m-[m
+ app/admin/cupones/editar/[id]/page.tsx             |   2 [32m+[m[31m-[m
+ app/admin/cupones/nuevo/page.tsx                   |   2 [32m+[m[31m-[m
+ app/admin/cupones/page.tsx                         |   2 [32m+[m[31m-[m
+ app/admin/page.tsx                                 |   2 [32m+[m[31m-[m
+ app/admin/pedidos/[id]/page.tsx                    |   2 [32m+[m[31m-[m
+ app/admin/pedidos/nuevo/page.tsx                   |   2 [32m+[m[31m-[m
+ app/admin/pedidos/page.tsx                         |   2 [32m+[m[31m-[m
+ app/api/addresses/route.ts                         |   2 [32m+[m[31m-[m
+ app/api/admin/_diagnose/route.ts                   |   2 [32m+[m[31m-[m
+ app/api/admin/clientes/[id]/route.ts               |   2 [32m+[m[31m-[m
+ app/api/admin/clientes/ranking/route.ts            |   2 [32m+[m[31m-[m
+ app/api/admin/clientes/route.ts                    |   2 [32m+[m[31m-[m
+ app/api/admin/clientes/upcoming-birthdays/route.ts |   2 [32m+[m[31m-[m
+ app/api/admin/coupons/[id]/route.ts                |   2 [32m+[m[31m-[m
+ app/api/admin/coupons/route.ts                     |   2 [32m+[m[31m-[m
+ app/api/admin/diagnose/route.ts                    |   2 [32m+[m[31m-[m
+ app/api/admin/meta/route.ts                        |   2 [32m+[m[31m-[m
+ app/api/admin/pedidos/[id]/route.ts                |   2 [32m+[m[31m-[m
+ app/api/admin/pedidos/route.ts                     |   2 [32m+[m[31m-[m
+ app/api/admin/productos/[id]/route.ts              |   2 [32m+[m[31m-[m
+ app/api/admin/productos/bulk/route.ts              |   2 [32m+[m[31m-[m
+ app/api/admin/productos/route.ts                   |   2 [32m+[m[31m-[m
+ app/api/auth/check-email/route.ts                  |   2 [32m+[m[31m-[m
+ app/api/auth/create-profile/route.ts               |   2 [32m+[m[31m-[m
+ app/api/auth/sync/route.ts                         |   2 [32m+[m[31m-[m
+ app/api/coupons/redeem/route.ts                    |   2 [32m+[m[31m-[m
+ app/api/coupons/validate/route.ts                  |   2 [32m+[m[31m-[m
+ app/api/orders/route.ts                            |   1 [31m-[m
+ app/api/size-preferences/route.ts                  |   2 [32m+[m[31m-[m
+ app/buscar/BuscarClient.tsx                        |   2 [32m+[m[31m-[m
+ app/checkout/confirmacion/page.tsx                 |   2 [32m+[m[31m-[m
+ app/checkout/datos/page.tsx                        |   2 [32m+[m[31m-[m
+ app/checkout/entrega/page.tsx                      |   2 [32m+[m[31m-[m
+ app/checkout/layout.tsx                            |   2 [32m+[m[31m-[m
+ app/checkout/metododepago/page.tsx                 |   2 [32m+[m[31m-[m
+ app/colaboraciones/[slug]/page.tsx                 |   2 [32m+[m[31m-[m
+ app/cuenta/crear/page.tsx                          |   2 [32m+[m[31m-[m
+ app/cuenta/iniciar/page.tsx                        |   2 [32m+[m[31m-[m
+ app/cuenta/page.tsx                                |   2 [32m+[m[31m-[m
+ app/cuenta/perfil/PerfilClient.tsx                 |   2 [32m+[m[31m-[m
+ .../perfil/direcciones/DireccionFormClient.tsx     |   2 [32m+[m[31m-[m
+ .../perfil/direcciones/DireccionesClient.tsx       |   2 [32m+[m[31m-[m
+ app/cuenta/perfil/direcciones/[id]/page.tsx        |   2 [32m+[m[31m-[m
+ app/cuenta/perfil/direcciones/nueva/page.tsx       |   2 [32m+[m[31m-[m
+ app/cuenta/perfil/direcciones/page.tsx             |   2 [32m+[m

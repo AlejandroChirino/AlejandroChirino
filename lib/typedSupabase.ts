@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient"
-import { getSupabaseAdmin } from "./supabaseAdmin"
+import { getAdminDb } from "./adminClient"
 
 // Nombre de tablas públicas según nuestro esquema
 export type PublicTable = keyof import("./database.types").Database["public"]["Tables"]
@@ -14,6 +14,8 @@ export const db = {
 // Wrapper tipado para el cliente de servidor (service role)
 export const dbAdmin = {
   from<T extends PublicTable>(table: T) {
-    return getSupabaseAdmin().from(table)
+    // Prefer the admin helper which will return a session-aware client when
+    // appropriate or fall back to service-role client only when explicitly allowed.
+    return getAdminDb().then((db) => db.from(table))
   },
 }

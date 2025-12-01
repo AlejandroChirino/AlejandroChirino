@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: any }) {
     }
 
     const { id } = await params
-    const { data: product, error } = await supabase.from("products").select("*").eq("id", id).single()
+    const { data: product, error } = await supabase.from("products").select("*").eq("id", id).eq("archived", false).single()
 
     if (error) {
       if (error.code === "PGRST116") {

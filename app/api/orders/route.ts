@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 import { randomUUID } from "crypto"
 import { computeCouponDiscount, redeemCoupon } from "@/lib/coupons"
 
@@ -17,7 +17,16 @@ export async function POST(request: Request) {
     const { data: authData } = await serverSupabase.auth.getUser()
     const authUserId = (authData as any)?.user?.id
 
-    const admin = getSupabaseAdmin()
+    // Prefer session-aware server client. If there's no session, allow admin
+    // fallback only when explicitly enabled via env (and service role key present).
+    let admin: any = serverSupabase
+    if (!authUserId) {
+      try {
+        admin = await getAdminDb()
+      } catch (e) {
+        return NextResponse.json({ error: 'Not authenticated (no session) or admin client not available' }, { status: 401 })
+      }
+    }
 
     // Determine user id to link the order to
     let resolvedUserId: string | null = null
@@ -148,21 +157,36 @@ export async function POST(request: Request) {
         product_id: it.product_id,
         quantity: it.quantity || 1,
         price: it.price || 0,
-        size: it.size || null,
-        color: it.color || null,
+        size: it.size ?? null,
+        color: it.color ?? null,
         discount_amount: discount_amount,
       }
     })
 
-    const { error: itemsError } = await admin.from("order_items").insert(itemsToInsert)
-    if (itemsError) {
-      console.error("Error inserting order items:", itemsError)
+    // Debug: log items to insert (trim large payloads)
+    try { console.debug("order items to insert:", JSON.stringify(itemsToInsert).slice(0, 2000)) } catch (e) {}
+
+    try {
+      const { data: insertedItems, error: itemsError } = await admin.from("order_items").insert(itemsToInsert).select()
+      if (itemsError) {
+        console.error("Error inserting order items:", itemsError)
+        try {
+          await admin.from("orders").delete().eq("id", order_id)
+        } catch (delErr) {
+          console.warn("Failed to cleanup order after items insert error:", delErr)
+        }
+        const details = process.env.NODE_ENV !== "production" ? (itemsError?.message || (() => { try { return JSON.stringify(itemsError) } catch (e) { return String(itemsError) } })()) : undefined
+        return NextResponse.json({ error: "Error inserting items", details }, { status: 500 })
+      }
+    } catch (e: any) {
+      console.error("Unexpected exception inserting order items:", e)
       try {
         await admin.from("orders").delete().eq("id", order_id)
       } catch (delErr) {
-        console.warn("Failed to cleanup order after items insert error:", delErr)
+        console.warn("Failed to cleanup order after items insert exception:", delErr)
       }
-      return NextResponse.json({ error: "Error inserting items" }, { status: 500 })
+      const details = process.env.NODE_ENV !== "production" ? String(e) : undefined
+      return NextResponse.json({ error: "Error inserting items", details }, { status: 500 })
     }
 
     // If coupon applied, register coupon use via centralized redeemCoupon (best-effort)

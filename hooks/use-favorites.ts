@@ -37,7 +37,7 @@ export function useFavorites(): UseFavoritesReturn {
               try {
                 await fetch(`/api/favorites`, {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: { "Content-Type": "application/json", "x-user-id": userId },
                   body: JSON.stringify({ userId, productId: pid }),
                 })
               } catch (e) {
@@ -92,7 +92,7 @@ export function useFavorites(): UseFavoritesReturn {
             try {
               await fetch(`/api/favorites`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "x-user-id": userId },
                 body: JSON.stringify({ userId, productId: pid }),
               })
             } catch (e) {}
@@ -157,7 +157,7 @@ export function useFavorites(): UseFavoritesReturn {
             try { console.log("useFavorites: POST /api/favorites", { productId }) } catch (e) {}
             const res = await fetch(`/api/favorites`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "x-user-id": userId },
               body: JSON.stringify({ userId, productId }),
             })
             if (!res.ok) throw new Error("Error adding favorite on server")

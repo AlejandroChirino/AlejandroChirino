@@ -215,6 +215,33 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
               </button>
             </div>
           </div>
+
+          <div>
+            <div className="mb-2 text-sm font-medium text-gray-700">Archivado</div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("archived", undefined)}
+                className={`text-left px-3 py-1 rounded ${filters.archived === undefined ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("archived", false)}
+                className={`text-left px-3 py-1 rounded ${filters.archived === false ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Activos
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("archived", true)}
+                className={`text-left px-3 py-1 rounded ${filters.archived === true ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Archivados
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

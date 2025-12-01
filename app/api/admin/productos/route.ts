@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,11 +11,18 @@ export async function GET(request: NextRequest) {
     const is_new = searchParams.get("is_new")
     const featured = searchParams.get("featured")
     const on_sale = searchParams.get("on_sale")
+    const archivedParam = searchParams.get("archived")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "20")
 
-    let query = getSupabaseAdmin()
-      .from("products")
+    let db: any
+    try {
+      db = await getAdminDb(request)
+    } catch (e) {
+      return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+    }
+
+    let query = db.from("products")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
 
@@ -42,6 +49,12 @@ export async function GET(request: NextRequest) {
     if (on_sale !== null) {
       query = query.eq("on_sale", on_sale === "true")
     }
+    // Admin filter for archived: explicit values only (true/false). If not provided, return all.
+    if (archivedParam !== null) {
+      if (archivedParam === "true" || archivedParam === "false") {
+        query = query.eq("archived", archivedParam === "true")
+      }
+    }
 
     // Paginación
     const from = (page - 1) * limit
@@ -61,7 +74,7 @@ export async function GET(request: NextRequest) {
           limit_count: rpcLimit,
         }
 
-        const { data: rpcProducts, error: rpcError } = await getSupabaseAdmin().rpc("search_products_rpc", rpcParams)
+        const { data: rpcProducts, error: rpcError } = await db.rpc("search_products_rpc", rpcParams)
 
         if (rpcError) {
           console.warn("RPC search_products_rpc failed in admin/products, falling back:", rpcError)
@@ -71,7 +84,7 @@ export async function GET(request: NextRequest) {
 
           // For pagination total, run a count using ilike as a fallback method.
           // Note: this count may differ slightly from exact trigram matches, but is sufficient for pages.
-          let countQuery = getSupabaseAdmin().from("products").select("id", { count: "exact" })
+          let countQuery = db.from("products").select("id", { count: "exact" })
           countQuery = countQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
           if (category && category !== "all") countQuery = countQuery.eq("category", category)
           const { count } = (await countQuery) as any
@@ -124,6 +137,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    let db: any
+    try {
+      db = await getAdminDb(request)
+    } catch (e) {
+      return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
+    }
     const body = await request.json()
 
     // --- LÓGICA DE CÁLCULO DE INVERSIÓN ELIMINADA ---
@@ -164,7 +183,7 @@ export async function POST(request: NextRequest) {
       updated_at: now,
     }
 
-    const { data: product, error } = await getSupabaseAdmin()
+    const { data: product, error } = await db
       .from("products")
       .insert([productData as never])
       .select()
@@ -185,20 +204,93 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const ids = searchParams.get("ids")?.split(",") || []
+    // Normalize ids: split, trim, remove surrounding angle brackets if present (clients sometimes send <id>)
+    const rawIds = searchParams.get("ids") || ""
+    const ids = rawIds
+      .split(",")
+      .map((s) => String(s || "").trim())
+      .map((s) => s.replace(/^<|>$/g, ""))
+      .filter(Boolean)
+    const force = (searchParams.get("force") || "false") === "true"
 
     if (ids.length === 0) {
-      return NextResponse.json({ error: "No se proporcionaron IDs" }, { status: 400 })
+      return NextResponse.json({ error: "No se proporcionaron IDs válidos" }, { status: 400 })
     }
 
-  const { error } = await getSupabaseAdmin().from("products").delete().in("id", ids)
-
-    if (error) {
-      console.error("Error deleting products:", error)
-      return NextResponse.json({ error: "Error al eliminar productos" }, { status: 500 })
+    // Validate UUID format for all ids and report invalid ones
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    const invalidIds = ids.filter((id) => !uuidRegex.test(id))
+    if (invalidIds.length > 0) {
+      return NextResponse.json({ error: "IDs inválidos", invalid: invalidIds }, { status: 400 })
     }
 
-    return NextResponse.json({ message: `${ids.length} productos eliminados correctamente` })
+  let db: any
+  try {
+    db = await getAdminDb(request)
+  } catch (e) {
+    return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
+  }
+
+  // If force flag is set, snapshot product info into order_items.product_snapshot
+  // and allow product deletion while preserving order_items data.
+  if (force) {
+    try {
+      // Fetch product data for snapshot (limit fields to relevant ones)
+      const { data: productsToSnapshot, error: prodFetchErr } = await db.from("products").select("id, name, price, image_url, category, subcategoria").in("id", ids)
+      if (prodFetchErr) {
+        console.error("Error fetching products for snapshot:", prodFetchErr, { ids })
+        return NextResponse.json({ error: prodFetchErr?.message || "Error preparando snapshot de productos", details: prodFetchErr }, { status: 500 })
+      }
+
+      // For each product, write a snapshot into order_items.product_snapshot
+      const updates: Array<Promise<any>> = []
+      for (const p of (productsToSnapshot || []) as any[]) {
+        const snapshot = {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          image_url: p.image_url ?? null,
+          category: p.category ?? null,
+          subcategoria: p.subcategoria ?? null,
+        }
+        updates.push(db.from("order_items").update({ product_snapshot: snapshot }).eq("product_id", p.id))
+      }
+
+      const results = await Promise.all(updates)
+      const anyErr = results.find((r) => r.error)
+      if (anyErr) {
+        console.error("Error updating order_items with product snapshot:", anyErr.error)
+        return NextResponse.json({ error: anyErr.error?.message || "Error actualizando order_items con snapshot", details: anyErr.error }, { status: 500 })
+      }
+
+      console.log(`Snapshot applied to order_items for ${Array.isArray(productsToSnapshot) ? productsToSnapshot.length : 0} products`, { ids })
+    } catch (e) {
+      console.error("Unexpected error snapshotting order_items:", e, { ids })
+      return NextResponse.json({ error: "Error aplicando snapshot a referencias de pedidos" }, { status: 500 })
+    }
+  }
+
+  const { error } = await db.from("products").delete().in("id", ids)
+
+  if (error) {
+    console.error("Error deleting products:", error, { ids })
+
+    // Detect common Postgres foreign key violation (23503) and return 409 Conflict
+    const pgCode = error?.code || error?.details || null
+    const message = error?.message || JSON.stringify(error)
+    if (pgCode === "23503" || (typeof message === "string" && message.includes("violates foreign key constraint"))) {
+      return NextResponse.json({ error: "No se puede eliminar el/los producto(s): están referenciados por pedidos (order_items)." }, { status: 409 })
+    }
+
+    // En desarrollo, devolver mensaje de error más detallado para depuración.
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json({ error: error?.message || error || "Error al eliminar productos", details: error }, { status: 500 })
+    }
+
+    return NextResponse.json({ error: "Error al eliminar productos" }, { status: 500 })
+  }
+
+  return NextResponse.json({ message: `${ids.length} productos eliminados correctamente` })
   } catch (error) {
     console.error("Error in DELETE /api/admin/productos:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
@@ -207,6 +299,12 @@ export async function DELETE(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    let db: any
+    try {
+      db = await getAdminDb(request)
+    } catch (e) {
+      return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
+    }
     const body = await request.json()
     const ids: string[] = body.ids || []
     const changes = body.changes || {}
@@ -220,6 +318,7 @@ export async function PATCH(request: NextRequest) {
     if (changes.featured !== undefined && changes.featured !== null) updatePayload.featured = changes.featured
     if (changes.is_vip !== undefined && changes.is_vip !== null) updatePayload.is_vip = changes.is_vip
     if (changes.is_new !== undefined && changes.is_new !== null) updatePayload.is_new = changes.is_new
+    if (changes.archived !== undefined && changes.archived !== null) updatePayload.archived = changes.archived
 
     if (Object.keys(updatePayload).length === 0) {
       // It's possible sale_action is present; defer to sale_action handling
@@ -230,7 +329,13 @@ export async function PATCH(request: NextRequest) {
 
     // Apply the simple field updates if present
     if (Object.keys(updatePayload).length > 0) {
-      const { error } = await getSupabaseAdmin().from("products").update(updatePayload).in("id", ids)
+      let adminClient: any
+      try {
+        adminClient = await getAdminDb()
+      } catch (e) {
+        return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
+      }
+      const { error } = await adminClient.from("products").update(updatePayload).in("id", ids)
 
       if (error) {
         console.error("Error updating products:", error)
@@ -243,7 +348,13 @@ export async function PATCH(request: NextRequest) {
       const saleAction = changes.sale_action
 
       if (saleAction.action === "remove") {
-        const { error } = await getSupabaseAdmin().from("products").update({ on_sale: false, sale_price: null }).in("id", ids)
+        let adminClient: any
+        try {
+          adminClient = await getAdminDb()
+        } catch (e) {
+          return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
+        }
+        const { error } = await adminClient.from("products").update({ on_sale: false, sale_price: null }).in("id", ids)
         if (error) {
           console.error("Error removing sale:", error)
           return NextResponse.json({ error: "Error al quitar ofertas" }, { status: 500 })
@@ -253,7 +364,7 @@ export async function PATCH(request: NextRequest) {
 
       if (saleAction.action === "apply") {
         // Fetch products to read price
-        const { data: products, error: fetchError } = await getSupabaseAdmin().from("products").select("id, price").in("id", ids)
+          const { data: products, error: fetchError } = await db.from("products").select("id, price").in("id", ids)
         if (fetchError) {
           console.error("Error fetching products for sale:", fetchError)
           return NextResponse.json({ error: "Error al preparar ofertas" }, { status: 500 })
@@ -276,7 +387,7 @@ export async function PATCH(request: NextRequest) {
           // Ensure non-negative and round to 2 decimals
           sale_price = Math.max(0, Math.round(sale_price * 100) / 100)
 
-          updates.push(getSupabaseAdmin().from("products").update({ on_sale: true, sale_price }).eq("id", p.id))
+          updates.push(db.from("products").update({ on_sale: true, sale_price }).eq("id", p.id))
         }
 
         const results = await Promise.all(updates)

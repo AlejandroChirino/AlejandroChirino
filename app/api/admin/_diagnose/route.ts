@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET() {
   try {
@@ -10,7 +10,7 @@ export async function GET() {
     // Try to create admin client and query the view
     let viewResult: any = { exists: false }
     try {
-      const supabase = getSupabaseAdmin()
+      const supabase = await getAdminDb()
       const { data, error } = await supabase
         .from("orders_with_profiles")
         .select("id,full_name,email")

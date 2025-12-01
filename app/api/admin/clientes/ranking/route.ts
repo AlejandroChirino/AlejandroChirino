@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 function rangeToDate(range: string | null) {
   const now = new Date()
@@ -19,7 +19,12 @@ export async function GET(request: Request) {
 
     const since = rangeToDate(range)
 
-    const admin = getSupabaseAdmin()
+    let admin: any
+    try {
+      admin = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
+    }
 
     // Total spent per user in range
     const { data: totals, error: totalsErr } = await admin

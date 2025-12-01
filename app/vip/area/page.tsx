@@ -1,6 +1,5 @@
 import type React from "react"
 import { createServerClient } from "@/lib/supabase/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 import ArticuloCard from "@/components/articulo-card"
 import type { ArticuloEnCamino } from "@/lib/types"
 
@@ -47,9 +46,8 @@ export default async function VipAreaPage(): Promise<JSX.Element> {
       )
     }
 
-    // Usuario VIP: obtener articulos en camino desde el cliente admin
-    const admin = getSupabaseAdmin()
-    const { data: articulos } = await admin.from("articulos_en_camino").select("*").order("estimated_arrival", { ascending: true }).limit(50)
+    // Usuario VIP: obtener articulos en camino usando el cliente de servidor (respeta RLS)
+    const { data: articulos } = await supabase.from("articulos_en_camino").select("*").order("estimated_arrival", { ascending: true }).limit(50)
 
     const list: ArticuloEnCamino[] = Array.isArray(articulos) ? articulos : []
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 // GET /api/admin/clientes?page=&limit=&search=
 export async function GET(request: Request) {
@@ -14,7 +14,13 @@ export async function GET(request: Request) {
     const minTotal = params.get("minTotal") ? Number(params.get("minTotal")) : null
     const lastOrderDays = params.get("lastOrderDays") ? Number(params.get("lastOrderDays")) : null
 
-    const admin = getSupabaseAdmin()
+    let admin: any
+    try {
+      admin = await getAdminDb()
+    } catch (e) {
+      console.error("Admin client not available for /api/admin/clientes:", e)
+      return NextResponse.json({ error: "Admin client not available" }, { status: 401 })
+    }
 
     // Build base query with profile-level filters (search, vip, tag)
     let base = admin.from("user_profiles").select("id, email, full_name, birthdate, is_vip, tags, created_at", { count: "exact" }).order("created_at", { ascending: false })

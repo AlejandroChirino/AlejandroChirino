@@ -14,6 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       .from("products")
       .select("name, description, price, image_url, image_urls, category")
       .eq("id", slug)
+      .eq("archived", false)
       .single()
 
     const product = resp.data as

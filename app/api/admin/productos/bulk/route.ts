@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { v4 as uuidv4 } from "uuid"
 import type { ProductFormData } from "@/lib/admin-types"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function POST(request: Request) {
   const { productData, quantity }: { productData: ProductFormData; quantity: number } = await request.json()
@@ -48,7 +48,14 @@ export async function POST(request: Request) {
       id: uuidv4(),
     }))
 
-  const { data, error } = await getSupabaseAdmin().from("products").insert(payload as never).select()
+  let db: any
+  try {
+    db = await getAdminDb()
+  } catch (e) {
+    return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+  }
+
+  const { data, error } = await db.from("products").insert(payload as never).select()
     if (error) {
       console.error("Error en la creación masiva:", error)
       return NextResponse.json({ error: "Error en la creación masiva" }, { status: 500 })

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET(request: Request) {
   try {
@@ -16,9 +16,15 @@ export async function GET(request: Request) {
     const sortBy = params.get("sortBy") || "created_at"
     const sortDir = params.get("sortDir") === "asc" ? "asc" : "desc"
 
+    let db: any
+    try {
+      db = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+    }
+
     // Query the pre-joined view for orders with profile info
-    let query = getSupabaseAdmin()
-      .from("orders_with_profiles")
+    let query = db.from("orders_with_profiles")
       .select(`id,user_id,total,status,created_at,full_name,email,coupon_code,total_discount`, { count: "exact" })
       .order(sortBy as any, { ascending: sortDir === "asc" })
 
@@ -111,7 +117,12 @@ export async function POST(request: Request) {
     if (!user_id) return NextResponse.json({ error: "user_id required" }, { status: 400 })
     if (!items || !Array.isArray(items) || items.length === 0) return NextResponse.json({ error: "items required" }, { status: 400 })
 
-    const supabase = getSupabaseAdmin()
+    let db2: any
+    try {
+      db2 = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ error: "No autorizado o cliente admin no disponible" }, { status: 401 })
+    }
 
     // If user_id is an email, try to resolve it to a uuid in user_profiles
     let resolvedUserId = user_id
@@ -145,7 +156,7 @@ export async function POST(request: Request) {
     const productIds = items.map((it: any) => it.product_id).filter(Boolean)
     if (productIds.length === 0) return NextResponse.json({ error: "items must include product_id" }, { status: 400 })
 
-    const { data: existingProducts, error: prodErr } = await supabase
+    const { data: existingProducts, error: prodErr } = await db2
       .from("products")
       .select("id")
       .in("id", productIds)
@@ -163,7 +174,7 @@ export async function POST(request: Request) {
 
     // Insert order
     const total = items.reduce((s: number, it: any) => s + (Number(it.price) * Number(it.quantity || 1)), 0)
-    const { data: orderData, error: orderError } = await supabase
+    const { data: orderData, error: orderError } = await db2
       .from("orders")
       .insert({ user_id: resolvedUserId, total, status: "pending", shipping_address })
       .select("id")
@@ -186,7 +197,7 @@ export async function POST(request: Request) {
       color: it.color || null,
     }))
 
-    const { error: itemsError } = await supabase.from("order_items").insert(itemsToInsert)
+    const { error: itemsError } = await db2.from("order_items").insert(itemsToInsert)
     if (itemsError) {
       console.error("Error inserting order items:", itemsError)
       // attempt simple rollback: delete created order

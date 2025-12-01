@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
+import { createServerClient } from "@/lib/supabase/server"
 import { computeCouponDiscount } from "@/lib/coupons"
 
 type ReqItem = {
@@ -20,8 +21,25 @@ export async function POST(req: Request) {
     const { code, items, subtotal = 0, deliveryCost = 0, user_id = null } = body
 
     if (!code) return NextResponse.json({ valid: false, reason: "Código requerido" }, { status: 400 })
-    const supabase = getSupabaseAdmin()
-    const result = await computeCouponDiscount({ admin: supabase, code, items, subtotal, deliveryCost, user_id })
+
+    // Prefer session-aware server client so RLS applies. Only use admin client
+    // as a fallback if computeCouponDiscount fails and admin fallback is enabled.
+    const serverSupabase = await createServerClient()
+    let result: any = null
+
+    try {
+      result = await computeCouponDiscount({ admin: serverSupabase, code, items, subtotal, deliveryCost, user_id })
+    } catch (err) {
+      console.warn('/api/coupons/validate: computeCouponDiscount failed with server client, error:', err)
+      try {
+        const admin = await getAdminDb()
+        result = await computeCouponDiscount({ admin, code, items, subtotal, deliveryCost, user_id })
+      } catch (adminErr) {
+        console.error('/api/coupons/validate: admin fallback failed', adminErr)
+        return NextResponse.json({ valid: false, reason: 'Error interno' }, { status: 500 })
+      }
+    }
+
     if (!result) return NextResponse.json({ valid: false, reason: 'Error interno' }, { status: 500 })
     return NextResponse.json(result)
   } catch (err) {

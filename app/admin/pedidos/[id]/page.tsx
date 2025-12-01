@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 import Button from "@/components/ui/button"
 
 type Params = { params: { id: string } }
@@ -33,7 +33,7 @@ export default async function OrderDetailPage({ params }: Params) {
   }
 
   try {
-    const supabase = getSupabaseAdmin()
+    const supabase = await getAdminDb()
 
     const { data: orderData, error: orderError } = await supabase
       .from("orders")
@@ -62,23 +62,25 @@ export default async function OrderDetailPage({ params }: Params) {
 
     const { data: itemsData } = await supabase
       .from("order_items")
-      .select("id,order_id,product_id,quantity,price,size,color,discount_amount")
+      .select("id,order_id,product_id,quantity,price,size,color,discount_amount,product_snapshot")
       .eq("order_id", id)
 
     // Fetch product metadata for items
     let productsMap: Record<string, any> = {}
     if (itemsData && itemsData.length > 0) {
-      const productIds = itemsData.map((it: any) => it.product_id)
-      const { data: products } = await supabase
-        .from("products")
-        .select("id,name,price,image_url")
-        .in("id", productIds)
+      const productIds = Array.from(new Set(itemsData.map((it: any) => it.product_id).filter(Boolean)))
+      if (productIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("id,name,price,image_url")
+          .in("id", productIds)
 
-      if (products) {
-        productsMap = products.reduce((acc: any, p: any) => {
-          acc[p.id] = p
-          return acc
-        }, {})
+        if (products) {
+          productsMap = products.reduce((acc: any, p: any) => {
+            acc[p.id] = p
+            return acc
+          }, {})
+        }
       }
     }
 
@@ -135,16 +137,17 @@ export default async function OrderDetailPage({ params }: Params) {
               <div className="mt-3 space-y-3">
                 {itemsData && itemsData.length > 0 ? (
                   itemsData.map((it: any) => {
-                    const prod = productsMap[it.product_id]
+                    const prodFromProducts = it.product_id ? productsMap[it.product_id] : undefined
+                    const prod = prodFromProducts ?? (it.product_snapshot || null)
                         return (
                       <div key={it.id} className="flex items-center gap-4 p-3 border rounded">
                         {prod?.image_url ? (
-                          <img src={prod.image_url} alt={prod.name} className="w-16 h-16 object-cover rounded" />
+                          <img src={prod.image_url} alt={prod.name || prod?.id || "producto"} className="w-16 h-16 object-cover rounded" />
                         ) : (
                           <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400">—</div>
                         )}
                         <div className="flex-1">
-                          <div className="font-medium">{prod?.name ?? it.product_id}</div>
+                          <div className="font-medium">{prod?.name ?? it.product_id ?? "Producto eliminado"}</div>
                           <div className="text-sm text-gray-500">Cantidad: {it.quantity} • Talla: {it.size ?? '—'} • Color: {it.color ?? '—'}</div>
                         </div>
                         <div className="text-right">

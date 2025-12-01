@@ -48,6 +48,7 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
           .from("products")
           .select("id, name, price, sale_price, on_sale, image_url, category")
           .eq("category", category)
+          .eq("archived", false)
           .neq("id", currentProductId)
           .limit(8)
           .order("created_at", { ascending: false })

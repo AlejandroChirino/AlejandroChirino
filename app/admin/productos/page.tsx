@@ -28,6 +28,8 @@ export default function AdminProductosPage() {
     selectAllProducts,
     clearSelection,
     deleteSelectedProducts,
+    deleteProductsByIds,
+    updateProductsByIds,
     updateSelectedProducts,
     refreshProducts,
   } = useAdminProducts()
@@ -36,13 +38,34 @@ export default function AdminProductosPage() {
     router.push(`/admin/productos/editar/${id}`)
   }
 
-  const handleDelete = async (ids: string[]) => {
-    const success = await deleteSelectedProducts()
-    if (success) {
-      toast({
-        title: "Productos eliminados",
-        description: `${ids.length} producto(s) eliminados correctamente`,
-      })
+  const handleDelete = async (ids: string[]): Promise<boolean> => {
+    try {
+      const success = await deleteProductsByIds(ids)
+      if (success) {
+        toast({
+          title: "Productos eliminados",
+          description: `${ids.length} producto(s) eliminados correctamente`,
+        })
+      }
+      return success
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al eliminar productos"
+      toast({ title: "Error al eliminar", description: message })
+      return false
+    }
+  }
+
+  const handleArchive = async (ids: string[], archived: boolean): Promise<boolean> => {
+    try {
+      const success = await updateProductsByIds(ids, { archived })
+      if (success) {
+        toast({ title: archived ? "Productos archivados" : "Productos restaurados", description: `${ids.length} producto(s) actualizados correctamente` })
+      }
+      return success
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al actualizar productos"
+      toast({ title: "Error", description: message })
+      return false
     }
   }
 
@@ -117,6 +140,7 @@ export default function AdminProductosPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onBulkUpdate={handleBulkUpdate}
+              onArchive={handleArchive}
             />
 
             {/* Paginación */}

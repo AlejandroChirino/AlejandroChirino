@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET(request: Request) {
   try {
@@ -7,7 +7,12 @@ export async function GET(request: Request) {
     const params = url.searchParams
     const days = Number(params.get("days") || "5")
 
-    const admin = getSupabaseAdmin()
+    let admin: any
+    try {
+      admin = await getAdminDb()
+    } catch (e) {
+      return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
+    }
     const { data: profiles, error } = await admin.from("user_profiles").select("id,full_name,email,birthdate")
     if (error) {
       console.error("Error fetching profiles for birthdays:", error)

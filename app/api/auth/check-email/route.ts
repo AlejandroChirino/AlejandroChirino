@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function POST(req: Request) {
   try {
@@ -8,9 +8,9 @@ export async function POST(req: Request) {
 
     let supabase
     try {
-      supabase = getSupabaseAdmin()
+      supabase = await getAdminDb()
     } catch (err: any) {
-      return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
+      return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
     }
 
     // Usar admin API para buscar por email

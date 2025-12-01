@@ -202,21 +202,23 @@ export interface Database {
         Row: {
           id: string
           order_id: string
-          product_id: string
+          product_id: string | null
           quantity: number
           price: number
           size: string | null
           color: string | null
+          product_snapshot: any | null
           created_at: string
         }
         Insert: {
           id?: string
           order_id: string
-          product_id: string
+          product_id?: string | null
           quantity: number
           price: number
           size?: string | null
           color?: string | null
+          product_snapshot?: any | null
           created_at?: string
         }
         Update: {
@@ -224,6 +226,7 @@ export interface Database {
           price?: number
           size?: string | null
           color?: string | null
+          product_snapshot?: any | null
         }
       }
       colaboraciones: {

@@ -12,6 +12,7 @@ async function FeaturedProducts() {
       .from("products")
       .select("id, name, price, sale_price, on_sale, image_url, category")
       .eq("featured", true)
+      .eq("archived", false)
       .limit(4)
       .order("created_at", { ascending: false })
 
@@ -49,6 +50,7 @@ async function AccessoriesPreview() {
       .from("products")
       .select("id, name, price, sale_price, on_sale, image_url, category")
       .eq("category", "accesorios")
+      .eq("archived", false)
       .limit(4)
       .order("created_at", { ascending: false })
 
@@ -95,6 +97,7 @@ async function NewProductsPreview() {
       .from("products_with_effective_price")
       .select("id, name, price, sale_price, on_sale, image_url, category")
       .gte("created_at", sevenDaysAgoISO)
+      .eq("archived", false)
       .limit(20)
       .order("weekly_hash", { ascending: true })
 
@@ -189,6 +192,7 @@ async function FeaturedProductsPreview() {
       .from("products")
       .select("id, name, price, sale_price, on_sale, image_url, category")
       .eq("featured", true)
+      .eq("archived", false)
       .limit(20)
       .order("created_at", { ascending: false })
 

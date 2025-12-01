@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
             .from("products")
             .select("*", { count: "exact", head: true })
             .eq("colaboracion_id", colaboracion.id)
+            .eq("archived", false)
 
           return {
             ...colaboracion,

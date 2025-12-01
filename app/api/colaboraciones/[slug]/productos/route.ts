@@ -22,6 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("products")
       .select("*")
       .eq("colaboracion_id", colaboracionId)
+      .eq("archived", false)
       .order("created_at", { ascending: false })
 
     if (productsError) {

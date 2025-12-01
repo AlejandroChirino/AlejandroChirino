@@ -1,7 +1,7 @@
 import { formatDate, formatPrice } from "@/lib/utils"
 // ReserveWhatsappButton is a client component; import directly so Next bundles it as client
 import ReserveWhatsappButton from "@/components/reserve-whatsapp-button"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { createServerClient } from "@/lib/supabase/server"
 import Image from "next/image"
 import Link from "next/link"
 import { redirect, notFound } from "next/navigation"
@@ -12,9 +12,9 @@ interface Props {
 
 export default async function Page({ params }: Props) {
   const { id } = params
-  const supabase = getSupabaseAdmin()
+  const supabase = await createServerClient()
 
-  // Buscar artículo en articulos_en_camino
+  // Buscar artículo en articulos_en_camino (usa cliente de servidor para respetar sesión)
   const { data: articulo, error } = await supabase.from("articulos_en_camino").select("*").eq("id", id).maybeSingle()
 
   if (error) {

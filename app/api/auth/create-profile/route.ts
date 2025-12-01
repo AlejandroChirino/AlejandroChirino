@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function POST(req: Request) {
   try {
@@ -17,10 +17,10 @@ export async function POST(req: Request) {
 
     let supabase
     try {
-      supabase = getSupabaseAdmin()
+      supabase = await getAdminDb()
     } catch (err: any) {
-      console.error("[api/create-profile] getSupabaseAdmin error:", err)
-      return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
+      console.error("[api/create-profile] admin client unavailable:", err)
+      return NextResponse.json({ error: "Admin client unavailable" }, { status: 401 })
     }
 
     // Revisar si ya existe

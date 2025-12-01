@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { getAdminDb } from "@/lib/adminClient"
 
 export async function GET() {
   try {
     let supabase
     try {
-      supabase = getSupabaseAdmin()
+      supabase = await getAdminDb()
     } catch (e: any) {
       console.error("GET /api/admin/coupons init error", e?.message || e)
-      return NextResponse.json({ error: e?.message || "supabase init error" }, { status: 500 })
+      return NextResponse.json({ error: e?.message || "admin client not available" }, { status: 401 })
     }
     const { data, error } = await supabase.from("coupons").select("*").order("created_at", { ascending: false })
     if (error) {
@@ -27,10 +27,10 @@ export async function POST(req: Request) {
     const body = await req.json()
     let supabase
     try {
-      supabase = getSupabaseAdmin()
+      supabase = await getAdminDb()
     } catch (e: any) {
       console.error("POST /api/admin/coupons init error", e?.message || e)
-      return NextResponse.json({ error: e?.message || "supabase init error" }, { status: 500 })
+      return NextResponse.json({ error: e?.message || "admin client not available" }, { status: 401 })
     }
 
     // Only include columns that exist in the `coupons` table schema

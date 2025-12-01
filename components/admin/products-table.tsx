@@ -15,8 +15,9 @@ interface ProductsTableProps {
   onSelectAll: () => void
   onClearSelection: () => void
   onEdit: (id: string) => void
-  onDelete: (ids: string[]) => void
+  onDelete: (ids: string[]) => Promise<boolean>
   onBulkUpdate: (changes: Record<string, any>) => void
+  onArchive: (ids: string[], archived: boolean) => Promise<boolean>
 }
 
 export function ProductsTable({
@@ -28,12 +29,14 @@ export function ProductsTable({
   onEdit,
   onDelete,
   onBulkUpdate,
+  onArchive,
 }: ProductsTableProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showBulkModal, setShowBulkModal] = useState(false)
   const [bulkFeatured, setBulkFeatured] = useState<string>("")
   const [bulkVip, setBulkVip] = useState<string>("")
   const [bulkNew, setBulkNew] = useState<string>("")
+  const [bulkArchived, setBulkArchived] = useState<string>("")
   const [showSaleModal, setShowSaleModal] = useState(false)
   const [saleAction, setSaleAction] = useState<string>("") // "apply" | "remove"
   const [saleMode, setSaleMode] = useState<string>("percent") // "percent" | "amount"
@@ -48,9 +51,15 @@ export function ProductsTable({
     }
   }
 
-  const confirmDelete = () => {
-    onDelete(selectedProducts)
-    setShowDeleteConfirm(false)
+  const confirmDelete = async () => {
+    // Espera la operación delete. Solo cierra el modal si fue exitosa.
+    try {
+      const ok = await onDelete(selectedProducts)
+      if (ok) setShowDeleteConfirm(false)
+    } catch (err) {
+      // Si ocurre un error, mantenemos el modal abierto para que el usuario lo note.
+      // (El manejo de errores/mostrar toast está en el padre)
+    }
   }
 
   return (
@@ -191,6 +200,9 @@ export function ProductsTable({
                     <Button variant="outline" size="sm" onClick={() => onEdit(product.id)}>
                       <Edit className="w-4 h-4" />
                     </Button>
+                    <Button variant="outline" size="sm" onClick={() => onArchive([product.id], !(product as any).archived)} className="text-gray-600 hover:text-gray-700">
+                      {(product as any).archived ? "Restaurar" : "Archivar"}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -260,6 +272,13 @@ export function ProductsTable({
                 <option value="true">Marcar como nuevo</option>
                 <option value="false">Quitar nuevo</option>
               </select>
+
+              <label className="text-sm text-gray-700">Archivado</label>
+              <select value={bulkArchived} onChange={(e) => setBulkArchived(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <option value="">No cambiar</option>
+                <option value="true">Archivar</option>
+                <option value="false">Restaurar</option>
+              </select>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -269,10 +288,11 @@ export function ProductsTable({
               <Button
                 variant="primary"
                 onClick={() => {
-                  const changes: { featured?: boolean | null; is_vip?: boolean | null; is_new?: boolean | null } = {}
+                  const changes: { featured?: boolean | null; is_vip?: boolean | null; is_new?: boolean | null; archived?: boolean | null } = {}
                   if (bulkFeatured !== "") changes.featured = bulkFeatured === "true"
                   if (bulkVip !== "") changes.is_vip = bulkVip === "true"
                   if (bulkNew !== "") changes.is_new = bulkNew === "true"
+                  if (bulkArchived !== "") changes.archived = bulkArchived === "true"
 
                   onBulkUpdate(changes)
                   setShowBulkModal(false)

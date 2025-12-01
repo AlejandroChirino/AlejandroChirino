@@ -41,4 +41,5 @@ export interface AdminFilters {
   is_new?: boolean
   featured?: boolean
   on_sale?: boolean
+  archived?: boolean
 }

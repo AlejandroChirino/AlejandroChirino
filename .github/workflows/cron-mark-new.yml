@@ -14,10 +14,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Ensure pnpm is available (install via npm)
+      - name: Ensure pnpm is available (corepack prepare, fallback to npm)
         run: |
+          set -e
+          echo "Trying corepack prepare pnpm@latest --activate"
           corepack enable || true
-          npm install -g pnpm@latest
+          corepack prepare pnpm@latest --activate || true
+          if ! command -v pnpm >/dev/null 2>&1; then
+            echo "pnpm not found; installing via npm (force)"
+            npm install -g pnpm@latest --force || true
+          fi
+          echo "pnpm version: $(pnpm --version || echo 'not-found')"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

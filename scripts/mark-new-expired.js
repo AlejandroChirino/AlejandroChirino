@@ -16,18 +16,35 @@
 
     console.log('Marking products older than', cutoff, 'as not new (is_new = false)')
 
+    // Attempt to return the updated rows (ids) so we can report the exact count.
     const { data, error } = await supabase
       .from('products')
       .update({ is_new: false })
       .lt('created_at', cutoff)
       .eq('is_new', true)
+      .select('id')
 
     if (error) {
       console.error('Error marking expired is_new:', error)
       process.exit(2)
     }
 
-    console.log('Updated rows:', Array.isArray(data) ? data.length : 'unknown')
+    if (Array.isArray(data)) {
+      console.log('Updated rows:', data.length)
+    } else {
+      // Fallback: run a count query to determine how many rows are now marked as not new.
+      try {
+        const countRes = await supabase
+          .from('products')
+          .select('id', { head: true, count: 'exact' })
+          .lt('created_at', cutoff)
+          .eq('is_new', false)
+
+        console.log('Updated rows (fallback count):', countRes.count ?? 'unknown')
+      } catch (e) {
+        console.log('Updated rows: unknown')
+      }
+    }
     process.exit(0)
   } catch (e) {
     console.error('Unexpected error in mark-new-expired script:', e)

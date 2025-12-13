@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       stock: productData.stock ?? 0,
       featured: productData.featured ?? false,
       is_vip: productData.is_vip ?? null,
-      is_new: productData.is_new ?? null,
+      is_new: productData.is_new ?? true,
 
       // valores fuente para trigger de inversión
       peso: productData.peso ?? null,

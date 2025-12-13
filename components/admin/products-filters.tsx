@@ -36,16 +36,7 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
             {showAdvanced ? "Ocultar filtros" : "Más filtros"}
           </Button>
 
-          {/* Nuevo filtro: Sin fotos */}
-          <button
-            type="button"
-            onClick={() => handleFilterChange("no_image", !filters.no_image)}
-            className={`px-3 py-1 rounded text-sm border ${filters.no_image ? "bg-gray-900 text-white border-gray-900" : "bg-gray-100 text-gray-700"}`}
-            aria-pressed={!!filters.no_image}
-            title="Mostrar solo productos sin fotos"
-          >
-            Sin fotos
-          </button>
+          {/* Nota: el control de fotos (con/sin/todos) se muestra en el panel 'Más filtros' */}
 
           {hasActiveFilters && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
@@ -120,6 +111,33 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
         style={{ maxHeight: showAdvanced ? 520 : 0 }}
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+          {/* Oferta: tri-estado (Todos / Solo en oferta / No en oferta) */}
+          <div>
+            <div className="mb-2 text-sm font-medium text-gray-700">Oferta</div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("on_sale", undefined)}
+                className={`text-left px-3 py-1 rounded ${filters.on_sale === undefined ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Todos (Oferta)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("on_sale", true)}
+                className={`text-left px-3 py-1 rounded ${filters.on_sale === true ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Solo en oferta
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("on_sale", false)}
+                className={`text-left px-3 py-1 rounded ${filters.on_sale === false ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                No en oferta
+              </button>
+            </div>
+          </div>
           {/* Subcategoría: mostramos opciones como lista de botones para mejor visibilidad */}
           <div>
             <div className="mb-2 text-sm font-medium text-gray-700">Subcategoría</div>
@@ -173,7 +191,6 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
               </button>
             </div>
           </div>
-
           <div>
             <div className="mb-2 text-sm font-medium text-gray-700">Nuevo</div>
             <div className="flex flex-col gap-2">
@@ -227,7 +244,6 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
               </button>
             </div>
           </div>
-
           <div>
             <div className="mb-2 text-sm font-medium text-gray-700">Archivado</div>
             <div className="flex flex-col gap-2">
@@ -251,6 +267,34 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
                 className={`text-left px-3 py-1 rounded ${filters.archived === true ? "bg-accent-orange text-white" : "bg-gray-100"}`}
               >
                 Archivados
+              </button>
+            </div>
+          </div>
+          
+          {/* Fotos: tri-estado (Todos / Con fotos / Sin fotos) */}
+          <div>
+            <div className="mb-2 text-sm font-medium text-gray-700">Fotos</div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => handleFilterChange("no_image", undefined)}
+                className={`text-left px-3 py-1 rounded ${filters.no_image === undefined ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Todos (Fotos)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("no_image", false)}
+                className={`text-left px-3 py-1 rounded ${filters.no_image === false ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Con fotos
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("no_image", true)}
+                className={`text-left px-3 py-1 rounded ${filters.no_image === true ? "bg-accent-orange text-white" : "bg-gray-100"}`}
+              >
+                Sin fotos
               </button>
             </div>
           </div>

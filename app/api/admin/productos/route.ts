@@ -124,10 +124,43 @@ export async function GET(request: NextRequest) {
     // Apply category/subcategoria/flags already set earlier
     query = query.range(from, to)
 
-    const { data: products, error, count } = await query
+    let products: any = null
+    let error: any = null
+    let count: any = 0
+
+    try {
+      const res: any = await query
+      products = res.data ?? res
+      error = res.error
+      count = res.count ?? res?.count
+    } catch (e: any) {
+      console.error("Exception executing products query", {
+        params: { search, category, subcategoria, is_vip, is_new, featured, on_sale, archivedParam, noImageParam, page, limit, from, to },
+        error: e,
+      })
+
+      // Handle PostgREST range error (requested offset beyond available rows)
+      // PostgREST surface codes under error.code === 'PGRST103' in some environments
+      // and the message contains 'Requested range not satisfiable'. Return an empty
+      // result set instead of propagating a 500 so the admin UI can handle empty pages.
+      const errCode = e?.code || null
+      const errMsg = typeof e?.message === "string" ? e.message : null
+      if (errCode === "PGRST103" || (errMsg && errMsg.includes("Requested range not satisfiable"))) {
+        return NextResponse.json({ products: [], pagination: { page, limit, total: 0, totalPages: 0 } })
+      }
+
+      return NextResponse.json({ error: "Error al ejecutar consulta de productos" }, { status: 500 })
+    }
 
     if (error) {
-      console.error("Error fetching products:", error)
+      console.error("Error fetching products:", error, { params: { search, category, subcategoria, is_vip, is_new, featured, on_sale, archivedParam, noImageParam, page, limit, from, to } })
+
+      const pgErrCode = error?.code || null
+      const pgErrMsg = typeof error?.message === "string" ? error.message : null
+      if (pgErrCode === "PGRST103" || (pgErrMsg && pgErrMsg.includes("Requested range not satisfiable"))) {
+        return NextResponse.json({ products: [], pagination: { page, limit, total: 0, totalPages: 0 } })
+      }
+
       return NextResponse.json({ error: "Error al obtener productos" }, { status: 500 })
     }
 
@@ -181,7 +214,7 @@ export async function POST(request: NextRequest) {
       stock: body.stock ?? 0,
       featured: body.featured ?? false,
       is_vip: body.is_vip ?? null,
-      is_new: body.is_new ?? null,
+      is_new: body.is_new ?? true,
 
       // Enviamos los valores de origen para que el TRIGGER DE LA DB los lea.
       peso: body.peso ?? null, 

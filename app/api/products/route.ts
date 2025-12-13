@@ -161,7 +161,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const { data: product, error } = await supabase.from("products").insert([body]).select().single()
+    // Ensure new products default to `is_new = true` when not explicitly provided
+    const payload = { ...body, is_new: body?.is_new ?? true }
+
+    const { data: product, error } = await supabase.from("products").insert([payload]).select().single()
 
     if (error) {
       return NextResponse.json({ error: "Error creating product" }, { status: 500 })

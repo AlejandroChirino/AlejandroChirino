@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Trash2, Minus, Plus, Heart } from "lucide-react"
+import { Trash2, Minus, Plus, Heart, Check } from "lucide-react"
 import { useState } from "react"
 import { useCart } from "@/contexts/cart-context"
 import { formatPrice } from "@/lib/utils"
@@ -16,7 +16,7 @@ interface CartItemProps {
 }
 
 export default function CartItem({ item }: CartItemProps) {
-  const { updateQuantity, updateItemOptions, removeItem, isLoading } = useCart()
+  const { updateQuantity, updateItemOptions, removeItem, isLoading, selectedIds, toggleSelect } = useCart()
   const { product, quantity, size, color } = item
   const { isFavorite, toggleFavorite } = useFavorites()
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -38,8 +38,10 @@ export default function CartItem({ item }: CartItemProps) {
   const currentPrice = product.on_sale && product.sale_price != null ? product.sale_price : product.price
   const hasDiscount = product.on_sale && product.sale_price != null && product.sale_price < product.price
 
+  const isSelected = selectedIds.includes(item.id)
+
   return (
-    <div className="flex gap-4 py-4 items-start">
+    <div className="flex gap-4 py-4 items-center">
       {/* Imagen */}
       <div className="w-[100px] sm:w-[110px] aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
         <Link href={`/producto/${product.id}`}>
@@ -53,6 +55,22 @@ export default function CartItem({ item }: CartItemProps) {
         </Link>
       </div>
 
+      {/* Selector central (no redondo) */}
+      <div className="flex-shrink-0 flex items-center justify-center">
+        <button
+          aria-label={isSelected ? "Deseleccionar producto" : "Seleccionar producto"}
+          onClick={() => toggleSelect(item.id)}
+          className={
+            `w-8 h-8 grid place-items-center focus:outline-none transition-colors border ${
+              isSelected
+                ? "bg-[var(--brand-green)] text-white border-transparent"
+                : "bg-white text-[var(--brand-green)] border border-[var(--brand-green)]"
+            } rounded-none`
+          }
+        >
+          {isSelected ? <Check className="h-4 w-4" /> : <span className="text-sm font-semibold">✓</span>}
+        </button>
+      </div>
       {/* Detalles */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Fila superior */}

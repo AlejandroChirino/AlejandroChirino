@@ -28,13 +28,25 @@ export function ProductsFilters({ filters, onFiltersChange, onClearFilters }: Pr
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
         <h3 className="text-lg font-medium text-gray-900">Filtros</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setShowAdvanced(!showAdvanced)}>
             <Filter className="w-4 h-4 mr-2" />
             {showAdvanced ? "Ocultar filtros" : "Más filtros"}
           </Button>
+
+          {/* Nuevo filtro: Sin fotos */}
+          <button
+            type="button"
+            onClick={() => handleFilterChange("no_image", !filters.no_image)}
+            className={`px-3 py-1 rounded text-sm border ${filters.no_image ? "bg-gray-900 text-white border-gray-900" : "bg-gray-100 text-gray-700"}`}
+            aria-pressed={!!filters.no_image}
+            title="Mostrar solo productos sin fotos"
+          >
+            Sin fotos
+          </button>
+
           {hasActiveFilters && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
               <X className="w-4 h-4 mr-2" />

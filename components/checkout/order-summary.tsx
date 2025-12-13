@@ -200,12 +200,12 @@ export default function OrderSummary(props: OrderSummaryProps) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mt-2">
-        <Button onClick={onPrev} variant="outline" className="rounded-full w-full md:w-44" size="md">
-          Volver
-        </Button>
         <Button onClick={onSubmit} loading={isSubmitting} variant="primary" className="rounded-full w-full md:w-44 flex items-center justify-center" size="md">
           <Check className="h-4 w-4 mr-2" />
           Confirmar pedido
+        </Button>
+        <Button onClick={onPrev} variant="outline" className="rounded-full w-full md:w-44" size="md">
+          Volver
         </Button>
       </div>
 

@@ -42,4 +42,5 @@ export interface AdminFilters {
   featured?: boolean
   on_sale?: boolean
   archived?: boolean
+  no_image?: boolean
 }

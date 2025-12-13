@@ -101,22 +101,25 @@ export default function AdminProductosPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión de Productos</h1>
-            <p className="text-gray-600 mt-2">Administra el catálogo de productos de La ⚡ Fashion</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => setShowConfigModal(true)}>
-              <Settings className="w-4 h-4 mr-2" />
-              Configuración
-            </Button>
-            <Button variant="primary" onClick={() => router.push("/admin/productos/nuevo")}>
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Producto
-            </Button>
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header: responsive - apila botones en móvil */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Gestión de Productos</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">Administra el catálogo de productos de La ⚡ Fashion</p>
+            </div>
+
+            <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Button variant="outline" onClick={() => setShowConfigModal(true)} className="w-full sm:w-auto">
+                <Settings className="w-4 h-4 mr-2" />
+                Configuración
+              </Button>
+              <Button variant="primary" onClick={() => router.push("/admin/productos/nuevo")} className="w-full sm:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Producto
+              </Button>
+            </div>
           </div>
         </div>
 

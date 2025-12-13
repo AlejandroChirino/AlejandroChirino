@@ -35,15 +35,25 @@ export async function computeCouponDiscount({ admin, code, coupon_id, items = []
       return { valid: false, reason: 'Compra mínima no alcanzada' }
     }
 
-    // Check max uses
+    // Check max uses: prefer usage_count stored on the coupon (avoid expensive COUNT on large tables)
     if (coupon.max_uses) {
-      const { count } = await admin.from('coupon_uses').select('id', { count: 'exact' }).eq('coupon_id', coupon.id)
-      if (typeof count === 'number' && count >= coupon.max_uses) {
-        return { valid: false, reason: 'Límite de usos alcanzado' }
+      try {
+        const usageCount = typeof coupon.usage_count === 'number' ? coupon.usage_count : 0
+        if (usageCount >= coupon.max_uses) {
+          return { valid: false, reason: 'Límite de usos alcanzado' }
+        }
+      } catch (e) {
+        // Fallback: if for some reason usage_count is not available, perform the count (last resort)
+        console.warn('computeCouponDiscount: usage_count not available, falling back to COUNT query', e)
+        const { count } = await admin.from('coupon_uses').select('id', { count: 'exact' }).eq('coupon_id', coupon.id)
+        if (typeof count === 'number' && count >= coupon.max_uses) {
+          return { valid: false, reason: 'Límite de usos alcanzado' }
+        }
       }
     }
 
     // Determine subtotal applicable
+    console.time && console.time(`computeCouponDiscount:filter-items:${coupon.id || coupon.code}`)
     let subtotalApplicable = 0
     const applicableProductIds: string[] = []
     const hasRestrictions = (coupon.products && coupon.products.length) || (coupon.categories && coupon.categories.length) || (coupon.subcategories && coupon.subcategories.length) || (coupon.brands && coupon.brands.length) || (coupon.tags && coupon.tags.length)
@@ -66,6 +76,7 @@ export async function computeCouponDiscount({ admin, code, coupon_id, items = []
         if (p.id) applicableProductIds.push(p.id)
       }
     }
+    console.time && console.timeEnd(`computeCouponDiscount:filter-items:${coupon.id || coupon.code}`)
 
     // Calculate discount amount
     let discount = 0

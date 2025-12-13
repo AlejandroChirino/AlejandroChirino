@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import { toast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Button from "@/components/ui/button"
@@ -35,6 +36,8 @@ export default function CustomerForm({ data, onUpdate, onNext }: CustomerFormPro
 
     if (Object.keys(newErrors).length === 0) {
       onNext()
+    } else {
+      toast({ title: "Campos incompletos", description: "Por favor completa los campos requeridos antes de continuar", variant: "destructive" })
     }
   }
 

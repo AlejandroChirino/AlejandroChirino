@@ -3,7 +3,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
-import { Menu, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft } from "lucide-react"
+import { Menu, User, Heart, X, Crown, ChevronRight, ShoppingBag, ChevronLeft, Search } from "lucide-react"
 // Importar el CartBadge
 import CartBadge from "@/components/cart-badge"
 import { createBrowserClient } from "@/lib/supabase/client"
@@ -234,6 +234,16 @@ const Header = memo(function Header({ initialUser }: { initialUser?: any | null 
                 <User className="h-5 w-5" />
               </Link>
             )}
+
+            {/* Search button: abre la página de búsqueda en nueva pestaña */}
+            <button
+              onClick={toggleSearch}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Buscar"
+              title="Buscar"
+            >
+              <Search className="h-5 w-5" />
+            </button>
 
             <Link
               href="/favoritos"

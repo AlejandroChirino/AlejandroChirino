@@ -10,12 +10,20 @@ export interface CartContextType {
   items: CartItem[]
   itemCount: number
   subtotal: number
+  selectedItems: CartItem[]
+  selectedItemCount: number
+  selectedSubtotal: number
   isLoading: boolean
+  selectedIds: string[]
   addItem: (product: Product, quantity?: number, size?: string, color?: string) => Promise<void>
   updateQuantity: (itemId: string, quantity: number) => Promise<void>
   updateItemOptions: (itemId: string, options: { size?: string | null; color?: string | null }) => Promise<void>
   removeItem: (itemId: string) => Promise<void>
   clearCart: () => Promise<void>
+  toggleSelect: (itemId: string) => void
+  selectAll: () => void
+  clearSelection: () => void
+  removeItems: (itemIds: string[]) => Promise<void>
   isItemInCart: (productId: string, size?: string | null, color?: string | null) => boolean
 }
 
@@ -25,6 +33,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+
+  // Rehydrate selected ids from localStorage to preserve selection across navigation and sessions
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem("la-fashion-selected")
+      if (s) setSelectedIds(JSON.parse(s))
+    } catch (e) {
+      /* ignore */
+    }
+  }, [])
+
+  // Persist selection to localStorage so it survives leaving the cart or closing the browser
+  useEffect(() => {
+    try {
+      localStorage.setItem("la-fashion-selected", JSON.stringify(selectedIds))
+    } catch (e) {
+      /* ignore */
+    }
+  }, [selectedIds])
 
   // Calcular el número total de items
   const itemCount = items.reduce((count, item) => count + item.quantity, 0)
@@ -33,6 +61,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const subtotal = items.reduce((total, item) => {
     return total + item.quantity * item.product.price
   }, 0)
+
+  // Selected items derived from selectedIds
+  const selectedItems = items.filter((it) => selectedIds.includes(it.id))
+  const selectedItemCount = selectedItems.reduce((count, item) => count + item.quantity, 0)
+  const selectedSubtotal = selectedItems.reduce((total, item) => total + item.quantity * item.product.price, 0)
 
   // Cargar carrito desde localStorage al iniciar
   useEffect(() => {
@@ -62,31 +95,59 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return
         setUserId(uid)
 
-        // Merge: enviar items locales al servidor (POST /api/cart) — el endpoint manejará update/insert
+        // Merge: comprobar primero si el servidor acepta la sesión del cliente.
+        // En algunos despliegues la sesión no se transmite a los endpoints server-side,
+        // lo que provoca 401 en cada POST. Hacemos una comprobación GET previa y sólo
+        // ejecutamos la migración si el servidor responde OK.
         const local = JSON.parse(localStorage.getItem("la-fashion-cart") || "[]") as CartItem[]
-        for (const it of local) {
-          try {
-            await fetch(`/api/cart`, {
+
+        // Safety guard: if the local cart contains an abnormally large number
+        // of items (likely from a previous test run or a bug), skip the
+        // automatic migration to avoid inserting hundreds/thousands of rows
+        // repeatedly. The threshold is conservative and can be adjusted.
+        if (Array.isArray(local) && local.length > 50) {
+          console.warn("Skipping automatic cart migration: local cart contains too many items", { localCount: local.length })
+          return
+        }
+
+        const testRes = await fetch(`/api/cart?userId=${encodeURIComponent(uid)}`)
+        if (!testRes.ok) {
+          // Si el servidor responde 401 (no autenticado) o falla, evitamos hacer muchos POST 401.
+          console.warn("Failed to fetch server cart for sync", { status: testRes.status })
+          // Mantener el carrito local tal cual y salir de la sincronización.
+          return
+        }
+
+        // Si la verificación pasó, obtener carrito definitivo desde servidor y luego migrar local items.
+        const serverItemsInitial = await testRes.json()
+        // Mapeamos primero para reemplazar local más tarde (esto evita estados intermedios)
+        const mappedInitial: CartItem[] = (serverItemsInitial || []).map((ci: any) => ({
+          id: ci.id,
+          product: ci.products,
+          quantity: ci.quantity,
+          size: ci.size || null,
+          color: ci.color || null,
+        }))
+
+        // Enviar items locales al servidor con un solo request bulk (upsert)
+        // Esto hace la migración idempotente y evita N peticiones seriales.
+        try {
+          const bulkPayload = (local || []).map((it) => ({ productId: it.product.id, quantity: it.quantity, size: it.size, color: it.color }))
+          if (bulkPayload.length > 0) {
+            await fetch(`/api/cart/bulk`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: uid,
-                productId: it.product.id,
-                quantity: it.quantity,
-                size: it.size,
-                color: it.color,
-              }),
+              body: JSON.stringify({ items: bulkPayload }),
             })
-          } catch (err) {
-            // no bloquear el merge por errores en un item
-            console.warn("Error merging cart item to server:", err)
           }
+        } catch (err) {
+          console.warn("Error merging cart items to server (bulk):", err)
         }
 
         // Obtener carrito definitivo desde servidor y reemplazar local
         const res = await fetch(`/api/cart?userId=${encodeURIComponent(uid)}`)
         if (!res.ok) {
-          console.warn("Failed to fetch server cart for sync")
+          console.warn("Failed to fetch server cart for sync after migration", { status: res.status })
           return
         }
         const serverItems = await res.json()
@@ -96,8 +157,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           quantity: ci.quantity,
           size: ci.size || null,
           color: ci.color || null,
+          selected: ci.selected === undefined ? true : !!ci.selected,
         }))
         setItems(mapped)
+        // Sync selection from server for authenticated user
+        setSelectedIds(mapped.filter((it) => !!(it as any).selected).map((it) => it.id))
       } catch (err) {
         console.error("Error initializing cart sync:", err)
       }
@@ -128,7 +192,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             quantity: ci.quantity,
             size: ci.size || null,
             color: ci.color || null,
+            selected: ci.selected === undefined ? true : !!ci.selected,
           }))
+          setSelectedIds(mapped.filter((it) => !!(it as any).selected).map((it) => it.id))
           // Si el servidor tiene un estado distinto, prefierelo y sincroniza localStorage
           const serverJson = JSON.stringify(mapped)
           const localJson = JSON.stringify(items)
@@ -145,6 +211,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items])
 
+  // Mantener selección coherente cuando cambian los items (eliminar ids que ya no existan)
+  useEffect(() => {
+    setSelectedIds((prev) => prev.filter((id) => items.some((it) => it.id === id)))
+  }, [items])
+
   // Verificar si un producto ya está en el carrito
   const isItemInCart = useCallback(
     (productId: string, size?: string | null, color?: string | null) => {
@@ -153,6 +224,107 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       )
     },
     [items],
+  )
+
+  // Selección de items (UI)
+  const toggleSelect = useCallback((itemId: string) => {
+    // Optimistic update: toggle locally and attempt to persist to server if authenticated
+    setSelectedIds((prev) => {
+      const isSelected = prev.includes(itemId)
+      const next = isSelected ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+      ;(async () => {
+        try {
+          // Only call server if we have a authenticated user id
+          if (!userId) return
+          const body = { selected: !isSelected }
+          const res = await fetch(`/api/cart/${encodeURIComponent(itemId)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+          if (!res.ok) {
+            // Revert optimistic update on failure
+            setSelectedIds((current) => (isSelected ? [...current, itemId] : current.filter((id) => id !== itemId)))
+            try { const err = await res.json().catch(() => ({})); console.warn("toggleSelect: server error", err) } catch (e) {}
+            toast({ title: "Error", description: "No se pudo actualizar la selección en el servidor", variant: "destructive" })
+          }
+        } catch (err) {
+          // network or unexpected error: revert and notify
+          setSelectedIds((current) => (isSelected ? [...current, itemId] : current.filter((id) => id !== itemId)))
+          console.error("toggleSelect error:", err)
+          toast({ title: "Error", description: "No se pudo actualizar la selección", variant: "destructive" })
+        }
+      })()
+      return next
+    })
+  }, [userId])
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(items.map((it) => it.id))
+  }, [items])
+
+  const clearSelection = useCallback(() => setSelectedIds([]), [])
+
+  // Eliminar múltiples items (mantiene comportamiento servidor/local)
+  const removeItems = useCallback(
+    async (itemIds: string[]) => {
+      if (!itemIds || itemIds.length === 0) return
+      setIsLoading(true)
+      try {
+        if (userId) {
+          // Si hay usuario, intentar eliminar cada item en el servidor (el endpoint maneja borrado por id)
+          // Si el servidor responde 401 (no autorizado), hacemos fallback a eliminación local para evitar loops de peticiones fallidas.
+          let unauthorized = false
+          for (const id of itemIds) {
+            try {
+              const res = await fetch(`/api/cart/${encodeURIComponent(id)}`, { method: "DELETE" })
+              if (res.status === 401) {
+                console.warn("Bulk delete: server returned 401, falling back to local delete")
+                unauthorized = true
+                break
+              }
+            } catch (e) {
+              console.warn("Error deleting cart item during bulk remove:", id, e)
+            }
+          }
+
+          if (!unauthorized) {
+            // refrescar desde servidor sólo si no hubo 401
+            try {
+              const fetchRes = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
+              if (fetchRes.ok) {
+                const serverItems = await fetchRes.json()
+                const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
+                  id: ci.id,
+                  product: ci.products,
+                  quantity: ci.quantity,
+                  size: ci.size || null,
+                  color: ci.color || null,
+                  selected: ci.selected === undefined ? true : !!ci.selected,
+                }))
+                setItems(mapped)
+                setSelectedIds(mapped.filter((it) => !!(it as any).selected).map((it) => it.id))
+              }
+            } catch (e) {
+              console.warn("Error refreshing server cart after bulk delete:", e)
+            }
+          } else {
+            // Fallback local: eliminar las filas en localStorage/state para evitar peticiones repetidas no autorizadas
+            setItems((prev) => prev.filter((it) => !itemIds.includes(it.id)))
+          }
+        } else {
+          // local
+          setItems((prev) => prev.filter((it) => !itemIds.includes(it.id)))
+        }
+        // limpiar selección
+        setSelectedIds((prev) => prev.filter((id) => !itemIds.includes(id)))
+      } catch (err) {
+        console.error("Error removing multiple cart items:", err)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [userId],
   )
 
   // Añadir un producto al carrito
@@ -209,13 +381,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               if (fetchRes.ok) {
                 const serverItems = await fetchRes.json()
                 const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
-                  id: ci.id,
-                  product: ci.products,
-                  quantity: ci.quantity,
-                  size: ci.size || null,
-                  color: ci.color || null,
-                }))
+                    id: ci.id,
+                    product: ci.products,
+                    quantity: ci.quantity,
+                    size: ci.size || null,
+                    color: ci.color || null,
+                    selected: ci.selected === undefined ? true : !!ci.selected,
+                  }))
                 setItems(mapped)
+                setSelectedIds(mapped.filter((it) => !!(it as any).selected).map((it) => it.id))
               }
             } else {
               // Fallback local behaviour si el servidor falla
@@ -225,20 +399,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 quantity,
                 size: size || null,
                 color: color || null,
+                selected: true,
               }
               setItems((prev) => [newItem, ...prev])
+              setSelectedIds((prev) => [newItem.id, ...prev])
             }
           } else {
             // Añadir nuevo item localmente
             const newItem: CartItem = {
-              id: `${product.id}-${size || "default"}-${color || "default"}-${Date.now()}`,
-              product,
-              quantity,
-              size: size || null,
-              color: color || null,
-            }
-            // Prepend new items so the most recently added appear first (stack behavior)
-            setItems((prev) => [newItem, ...prev])
+                id: `${product.id}-${size || "default"}-${color || "default"}-${Date.now()}`,
+                product,
+                quantity,
+                size: size || null,
+                color: color || null,
+                selected: true,
+              }
+              // Prepend new items so the most recently added appear first (stack behavior)
+              setItems((prev) => [newItem, ...prev])
+              setSelectedIds((prev) => [newItem.id, ...prev])
           }
         }
 
@@ -285,8 +463,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               quantity: ci.quantity,
               size: ci.size || null,
               color: ci.color || null,
+              selected: ci.selected === undefined ? true : !!ci.selected,
             }))
             setItems(mapped)
+            setSelectedIds(mapped.filter((it) => !!(it as any).selected).map((it) => it.id))
           }
         } else {
           const itemIndex = items.findIndex((item) => item.id === itemId)
@@ -431,43 +611,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const removeItem = useCallback(
     async (itemId: string) => {
       setIsLoading(true)
+      // Optimistic delete: remove locally first, then call server. On error, restore previous state.
+      const prevItems = items
       try {
+        // Optimistic update immediately for snappier UI
+        setItems((prev) => prev.filter((item) => item.id !== itemId))
+
         if (userId) {
           const res = await fetch(`/api/cart/${encodeURIComponent(itemId)}`, { method: "DELETE" })
-          if (!res.ok) throw new Error("Error deleting cart item on server")
-          // refrescar
-          const fetchRes = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`)
-          if (fetchRes.ok) {
-            const serverItems = await fetchRes.json()
-            const mapped: CartItem[] = (serverItems || []).map((ci: any) => ({
-              id: ci.id,
-              product: ci.products,
-              quantity: ci.quantity,
-              size: ci.size || null,
-              color: ci.color || null,
-            }))
-            setItems(mapped)
+          if (!res.ok) {
+            // restore and throw to surface error
+            setItems(prevItems)
+            throw new Error("Error deleting cart item on server")
           }
+          // Do not re-fetch full cart here for performance; trust the optimistic update.
+          // If you need strong consistency, re-fetch on a separate background task or when encountering errors.
         } else {
-          const itemToRemove = items.find((item) => item.id === itemId)
-          if (!itemToRemove) {
-            throw new Error("Item not found")
-          }
+          const itemToRemove = prevItems.find((item) => item.id === itemId)
+          if (!itemToRemove) throw new Error("Item not found")
 
-          setItems((prev) => prev.filter((item) => item.id !== itemId))
-
-          toast({
-            title: "Producto eliminado",
-            description: `${itemToRemove.product.name} ha sido eliminado de tu bolsa`,
-          })
+          toast({ title: "Producto eliminado", description: `${itemToRemove.product.name} ha sido eliminado de tu bolsa` })
         }
       } catch (error) {
         console.error("Error removing item from cart:", error)
-        toast({
-          title: "Error",
-          description: "No se pudo eliminar el producto",
-          variant: "destructive",
-        })
+        toast({ title: "Error", description: "No se pudo eliminar el producto", variant: "destructive" })
       } finally {
         setIsLoading(false)
       }
@@ -514,12 +681,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     items,
     itemCount,
     subtotal,
+    selectedItems,
+    selectedItemCount,
+    selectedSubtotal,
     isLoading,
+    selectedIds,
     addItem,
     updateQuantity,
     updateItemOptions,
     removeItem,
     clearCart,
+    toggleSelect,
+    selectAll,
+    clearSelection,
+    removeItems,
     isItemInCart,
   }
 

@@ -4,6 +4,7 @@ import "./globals.css"
 
 // Importar los providers
 import { CartProvider } from "@/contexts/cart-context"
+import { FavoritesProvider } from "@/contexts/favorites-context"
 import { ToastProvider } from "@/components/ui/use-toast"
 import CheckoutProviderClient from "@/components/checkout/CheckoutProviderClient"
 import Header from "@/components/header"
@@ -40,13 +41,15 @@ export default async function RootLayout({
     <html lang="es">
       <body className="min-h-screen bg-white">
           <CartProvider>
-            <ToastProvider>
-              <CheckoutProviderClient>
-                {/* @ts-ignore - pass resolved server user (can be null) */}
-                <Header initialUser={serverUser} />
-                {children}
-              </CheckoutProviderClient>
-            </ToastProvider>
+            <FavoritesProvider>
+              <ToastProvider>
+                <CheckoutProviderClient>
+                  {/* @ts-ignore - pass resolved server user (can be null) */}
+                  <Header initialUser={serverUser} />
+                  {children}
+                </CheckoutProviderClient>
+              </ToastProvider>
+            </FavoritesProvider>
           </CartProvider>
       </body>
     </html>

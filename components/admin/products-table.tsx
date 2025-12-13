@@ -102,11 +102,11 @@ export function ProductsTable({
       </div>
 
       {/* Tabla */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="w-full overflow-x-auto">
+        <table className="min-w-[1100px] w-full table-auto">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -114,27 +114,27 @@ export function ProductsTable({
                   className="rounded border-gray-300"
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">
                 Producto
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">
                 Categoría
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">Precio</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">
                 Inversión CUP
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">Stock</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">Estado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0">
                 Acciones
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
+              <tr key={product.id} className="hover:bg-gray-50 h-20 sm:h-auto">
+                <td className="px-6 py-4 min-w-0 align-middle">
                   <input
                     type="checkbox"
                     checked={selectedProducts.includes(product.id)}
@@ -142,75 +142,85 @@ export function ProductsTable({
                     className="rounded border-gray-300"
                   />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 min-w-0 align-middle">
                   <div className="flex items-center">
                     {product.image_url && (
                       <img
                         src={product.image_url || "/placeholder.svg"}
                         alt={product.name}
-                        className="w-10 h-10 rounded-lg object-cover mr-3"
+                        className="w-10 h-10 rounded-lg object-cover mr-3 flex-shrink-0"
                       />
                     )}
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                      <div className="text-sm text-gray-500">{product.description?.substring(0, 50)}...</div>
+                    <div className="overflow-hidden">
+                      <div className="text-sm font-medium text-gray-900 whitespace-normal break-words">{product.name}</div>
+                      {/* Descripción oculta en móvil, visible en sm+ */}
+                      <div className="text-sm text-gray-500 hidden sm:block">{product.description}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 min-w-0 align-middle">
                   <div className="text-sm text-gray-900">{product.category}</div>
-                  <div className="text-sm text-gray-500">{product.subcategoria}</div>
+                  <div className="text-sm text-gray-500 hidden sm:block">{product.subcategoria}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 min-w-0">
                   <div className="text-sm text-gray-900">{formatPrice(product.price)}</div>
                   {product.on_sale && product.sale_price && (
                     <div className="text-sm text-red-600">{formatPrice(product.sale_price)}</div>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 text-sm text-gray-900 min-w-0">
                   ${product.inversion_cup?.toFixed(2)} CUP
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.stock}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 text-sm text-gray-900 min-w-0">{product.stock}</td>
+                <td className="px-6 py-4 min-w-0">
                   <div className="flex flex-col gap-1">
                     {product.featured && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 w-fit">
                         Destacado
                       </span>
                     )}
                     {product.is_vip && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 w-fit">
                         VIP
                       </span>
                     )}
                     {product.is_new && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit">
                         Nuevo
                       </span>
                     )}
                     {product.on_sale && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 w-fit">
                         Oferta
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => onEdit(product.id)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => onArchive([product.id], !(product as any).archived)} className="text-gray-600 hover:text-gray-700">
-                      {(product as any).archived ? "Restaurar" : "Archivar"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onDelete([product.id])}
-                      className="text-red-600 hover:text-red-700"
+                <td className="px-6 py-4 text-sm font-medium min-w-0 sticky right-0 bg-white z-10 align-middle">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(product.id)}
+                      className="w-full sm:w-auto text-green-600 border border-green-600 rounded px-2 py-1 text-xs hover:bg-green-50"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                      Editar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onArchive([product.id], !(product as any).archived)}
+                      className="w-full sm:w-auto text-yellow-600 border border-yellow-400 rounded px-2 py-1 text-xs hover:bg-yellow-50"
+                    >
+                      {(product as any).archived ? "Restaurar" : "Archivar"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onDelete([product.id])}
+                      className="w-full sm:w-auto text-red-600 border border-red-600 rounded px-2 py-1 text-xs hover:bg-red-50"
+                    >
+                      Eliminar
+                    </button>
                   </div>
                 </td>
               </tr>

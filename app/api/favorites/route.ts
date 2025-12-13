@@ -7,8 +7,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
 
-    // Log incoming request for debugging
-    try { console.log("GET /api/favorites called", { url: request.url, userId }) } catch (e) {}
+    // Log incoming request for debugging (only when verbose logging enabled)
+    try { if (process.env.VERBOSE_LOGGING === '1') console.log("GET /api/favorites called", { url: request.url, userId }) } catch (e) {}
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
@@ -83,19 +83,15 @@ export async function POST(request: NextRequest) {
     // Allow x-user-id header as an additional fallback (useful for some clients)
     const headerUserId = request.headers.get("x-user-id")
 
-    const bodyUserId = userIdFromBody || headerUserId || null
-
-
     // We'll create supabase client now to check session. If there is no server
     // session we may use the admin (service role) client in development to
     // perform checks/inserts; this avoids RLS blocking anonymous inserts while
-    // keeping production behavior strict.
+    // keeping production behavior strict. As an extra safety measure we only
+    // consider client-provided user ids when the admin fallback is explicitly
+    // enabled via env var and a service-role key is present.
     const serverSupabase = await createServerClient()
     const { data: authData } = await serverSupabase.auth.getUser()
     const serverUserId = authData?.user?.id ?? null
-
-    // Resolve which user id to use (server session preferred)
-    const finalUserIdCandidate = serverUserId || (process.env.NODE_ENV !== "production" ? bodyUserId : null)
 
     // Choose DB client: prefer serverSupabase when we have a session. As a
     // safety measure, only enable the admin (service-role) fallback when an
@@ -113,8 +109,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Resolve which user id to use (server session preferred). Only accept
+    // client-provided user ids when the admin fallback is enabled.
+    const bodyUserId = userIdFromBody || null
+    const finalUserIdCandidate = serverUserId || (useAdmin ? (bodyUserId || headerUserId) : null)
+
     try {
-      console.log("POST /api/favorites parsed body and headers", { parsed, headerUserId, finalUserIdCandidate, productIdFromBody })
+      if (process.env.VERBOSE_LOGGING === '1') console.log("POST /api/favorites parsed body and headers", { parsed, headerUserId, finalUserIdCandidate, productIdFromBody })
     } catch (e) {}
 
     if (!finalUserIdCandidate) {
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Error checking product", details: String(prodErr) }, { status: 500 })
       }
 
-      try { console.log("POST /api/favorites product lookup result", { productIdFromBody, prodData }) } catch (e) {}
+      try { if (process.env.VERBOSE_LOGGING === '1') console.log("POST /api/favorites product lookup result", { productIdFromBody, prodData }) } catch (e) {}
 
       if (!prodData) {
         return NextResponse.json({ error: "Product not found", details: { productId: productIdFromBody, prodData: prodData || null, parsed } }, { status: 400 })
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      console.log("POST /api/favorites inserting", { user: finalUserId, product: productIdFromBody })
+      if (process.env.VERBOSE_LOGGING === '1') console.log("POST /api/favorites inserting", { user: finalUserId, product: productIdFromBody })
     } catch (e) {}
 
     // Check existing to avoid duplicate inserts

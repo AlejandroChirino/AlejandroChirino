@@ -9,13 +9,14 @@ import { useCart } from "@/contexts/cart-context"
 
 export default function ConfirmacionPage() {
   const router = useRouter()
-  const { items, itemCount } = useCart()
+  const { items, itemCount, selectedItems, selectedItemCount } = useCart()
   const { customerData, deliveryMethod, paymentMethod, calculations, submitOrder, prevStep, applyCoupon, removeCoupon, appliedCoupon } = useCheckout()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   React.useEffect(() => {
-    if (itemCount === 0) router.replace("/carrito")
-  }, [itemCount, router])
+    // If there are no selected items (nothing to confirm), go back to cart
+    if (selectedItemCount === 0) router.replace("/carrito")
+  }, [selectedItemCount, router])
 
   if (itemCount === 0) return null
 
@@ -38,7 +39,7 @@ export default function ConfirmacionPage() {
 
   return (
     <OrderSummary
-      items={items}
+      items={selectedItems}
       customer={customerData}
       deliveryMethod={deliveryMethod!}
       paymentMethod={paymentMethod!}

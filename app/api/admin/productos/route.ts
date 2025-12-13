@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get("featured")
     const on_sale = searchParams.get("on_sale")
     const archivedParam = searchParams.get("archived")
+    const noImageParam = searchParams.get("no_image")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "20")
 
@@ -48,6 +49,16 @@ export async function GET(request: NextRequest) {
     }
     if (on_sale !== null) {
       query = query.eq("on_sale", on_sale === "true")
+    }
+    // Filter products without images (either image_url is null OR image_urls is empty array)
+    if (noImageParam === "true") {
+      // Use OR to match either a NULL single image or an empty array stored as '{}'
+      try {
+        query = query.or("image_url.is.null,image_urls.eq.{}")
+      } catch (e) {
+        // Fallback: if the above fails for some reason, try filtering only by image_url NULL
+        query = query.is("image_url", null)
+      }
     }
     // Admin filter for archived: explicit values only (true/false). If not provided, return all.
     if (archivedParam !== null) {

@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { Truck, Store, MapPin } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 import Button from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils"
 import type { DeliveryMethod } from "@/lib/types"
@@ -133,11 +134,21 @@ export default function DeliverySelection({ selected, onSelect, onNext, onPrev, 
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
+        <Button
+          onClick={() => {
+            if (!selected) {
+              toast({ title: "Selecciona un método de entrega", description: "Debes escoger un método de entrega antes de continuar", variant: "destructive" })
+              return
+            }
+            onNext()
+          }}
+          className="rounded-full w-full md:w-44"
+          size="md"
+        >
+          Continuar con el pago
+        </Button>
         <Button onClick={onPrev} variant="outline" className="rounded-full w-full md:w-44" size="md">
           Volver
-        </Button>
-        <Button onClick={onNext} disabled={!selected} className="rounded-full w-full md:w-44" size="md">
-          Continuar con el pago
         </Button>
       </div>
     </div>

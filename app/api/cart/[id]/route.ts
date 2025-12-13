@@ -5,17 +5,20 @@ import type { TablesUpdate } from "@/lib/database.types"
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
+    const resolvedParams = await Promise.resolve(params)
+    const { id } = resolvedParams
     if (!id) return NextResponse.json({ error: "Cart item id is required" }, { status: 400 })
 
-    const { quantity, size, color } = await request.json()
+    const body = await request.json()
+    const { quantity, size, color, selected } = body
 
     const updateData: TablesUpdate<"cart_items"> = {
-      quantity,
-      size,
-      color,
       updated_at: new Date().toISOString(),
     }
+    if (quantity !== undefined) updateData.quantity = quantity
+    if (size !== undefined) updateData.size = size
+    if (color !== undefined) updateData.color = color
+    if (selected !== undefined) updateData.selected = selected
 
     // Prefer server session client; if none, allow admin fallback in dev.
     const serverSupabase = await createServerClient()
@@ -52,7 +55,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
+    const resolvedParams = await Promise.resolve(params)
+    const { id } = resolvedParams
     if (!id) return NextResponse.json({ error: "Cart item id is required" }, { status: 400 })
 
     // Prefer server session client; if none, allow admin fallback in dev.

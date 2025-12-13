@@ -12,7 +12,7 @@ import { cn, formatPrice } from "@/lib/utils"
 import Button from "@/components/ui/button"
 
 export default function CarritoPage() {
-  const { items, itemCount, subtotal } = useCart()
+  const { items, itemCount, subtotal, selectedIds, selectAll, clearSelection, removeItems, selectedSubtotal, selectedItemCount } = useCart()
 
   return (
   <div className="min-h-screen overflow-x-hidden">
@@ -39,7 +39,37 @@ export default function CarritoPage() {
               {/* Lista de productos */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-medium text-gray-700">Productos ({itemCount})</h2>
+                  <div className="flex items-center gap-4">
+                    <div className="inline-flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          if (selectedIds.length > 0 && selectedIds.length === items.length) clearSelection()
+                          else selectAll()
+                        }}
+                        aria-pressed={selectedIds.length > 0 && selectedIds.length === items.length}
+                        className={`${
+                          selectedIds.length > 0 && selectedIds.length === items.length
+                            ? "bg-[var(--brand-green)] text-white border-transparent"
+                            : "bg-white text-[var(--brand-green)] border border-[var(--brand-green)]"
+                        } w-8 h-8 inline-flex items-center justify-center rounded-full text-sm font-semibold transition-colors`}
+                      >
+                        {selectedIds.length > 0 && selectedIds.length === items.length ? "✓" : ""}
+                      </button>
+                      <span className="text-lg font-medium text-gray-700">Productos ({itemCount})</span>
+                    </div>
+                    {selectedIds.length > 0 && (
+                      <button
+                        onClick={async () => {
+                          const ok = confirm(`¿Eliminar ${selectedIds.length} producto(s) seleccionados?`)
+                          if (!ok) return
+                          await removeItems(selectedIds)
+                        }}
+                        className="text-sm text-red-600 hover:underline"
+                      >
+                        Eliminar seleccionados ({selectedIds.length})
+                      </button>
+                    )}
+                  </div>
                   <Link href="/" className="flex items-center text-[var(--brand-green)] hover:underline">
                     <ArrowLeft className="h-4 w-4 mr-1" />
                     <span className="align-middle">Seguir comprando</span>
@@ -62,16 +92,25 @@ export default function CarritoPage() {
             <div className="max-w-7xl mx-auto px-2">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-xs text-gray-500">Subtotal</p>
-                  <p className="text-lg font-bold">{formatPrice(subtotal)}</p>
+                  <p className="text-xs text-gray-500">Subtotal (seleccionados)</p>
+                  <p className="text-lg font-bold">{formatPrice(selectedSubtotal)}</p>
+                  <p className="text-xs text-gray-500">Items seleccionados: {selectedItemCount}</p>
                 </div>
                 <p className="text-xs text-gray-500">El envío se calcula en el checkout</p>
               </div>
-              <Link href="/checkout" className="block">
-                <Button className="w-full" size="lg">
-                  Proceder al checkout
-                </Button>
-              </Link>
+              {selectedIds.length > 0 ? (
+                <Link href="/checkout" className="block">
+                  <Button className="w-full rounded-full" size="lg">
+                    Proceder al checkout ({selectedItemCount})
+                  </Button>
+                </Link>
+              ) : (
+                <div className="block">
+                  <Button className="w-full rounded-full" size="lg" disabled>
+                    Selecciona al menos 1 producto para proceder
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}

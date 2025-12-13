@@ -37,7 +37,7 @@ export function useCheckoutContext() {
 }
 
 export function CheckoutProvider({ children }: { children: React.ReactNode }) {
-  const { items, subtotal } = useCart()
+  const { items, subtotal, selectedItems, selectedSubtotal } = useCart()
   const [currentStep, setCurrentStep] = useState(1)
   const [customerData, setCustomerData] = useState<CustomerData>(DefaultCustomer)
   const [deliveryMethod, setDeliveryMethodState] = useState<DeliveryMethod | null>(null)
@@ -63,8 +63,9 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     if (!deliveryMethod) return null
     const baseCost = DELIVERY_COSTS[deliveryMethod]
     let isFree = baseCost === 0
-    if (deliveryMethod === "local" && subtotal >= FREE_DELIVERY_THRESHOLDS.local) isFree = true
-    if (deliveryMethod === "municipal" && subtotal >= FREE_DELIVERY_THRESHOLDS.municipal) isFree = true
+    // Delivery thresholds are evaluated against the selected subtotal
+    if (deliveryMethod === "local" && selectedSubtotal >= FREE_DELIVERY_THRESHOLDS.local) isFree = true
+    if (deliveryMethod === "municipal" && selectedSubtotal >= FREE_DELIVERY_THRESHOLDS.municipal) isFree = true
     const descriptions: Record<string, string> = {
       tienda: "Recogida en tienda - Gratis",
       local: isFree
@@ -76,7 +77,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     }
 
     return { method: deliveryMethod, cost: isFree ? 0 : baseCost, isFree, description: descriptions[deliveryMethod] }
-  }, [deliveryMethod, subtotal])
+  }, [deliveryMethod, selectedSubtotal])
 
   const paymentInfo = useMemo((): PaymentInfo | null => {
     if (!paymentMethod) return null
@@ -95,18 +96,18 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     const discountRate = paymentInfo?.discount || 0
 
     // 1) descuento por método de pago (porcentaje sobre subtotal)
-    const paymentDiscount = subtotal * discountRate
+    const paymentDiscount = selectedSubtotal * discountRate
 
     // 2) descuento por cupón: preferir el monto ya calculado por el servidor (discountAmount).
     // Si no existe, calcular localmente usando appliedCoupon.applicableProducts (si aplica)
     let couponDiscount = 0
     // subtotal de items aplicables al cupón (por defecto todo el subtotal)
-    let subtotalApplicable = subtotal
+    let subtotalApplicable = selectedSubtotal
     try {
       if (appliedCoupon) {
         if (Array.isArray(appliedCoupon.applicableProducts) && appliedCoupon.applicableProducts.length > 0) {
           subtotalApplicable = 0
-          for (const it of items) {
+          for (const it of selectedItems) {
             if (appliedCoupon.applicableProducts.includes(it.product.id)) {
               subtotalApplicable += Number(it.product.price) * Number(it.quantity || 1)
             }
@@ -137,15 +138,16 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     }
 
     const discount = paymentDiscount + couponDiscount
-    const total = Math.max(0, subtotal - discount + deliveryCost)
+    const total = Math.max(0, selectedSubtotal - discount + deliveryCost)
     const currency = paymentMethod === "zelle" || paymentMethod === "efectivo_usd" ? "USD" : "CUP"
-    return { subtotal, deliveryCost, discount, paymentDiscount, couponDiscount, total, currency }
-  }, [subtotal, deliveryInfo, paymentInfo, paymentMethod, appliedCoupon])
+    return { subtotal: selectedSubtotal, deliveryCost, discount, paymentDiscount, couponDiscount, total, currency }
+  }, [selectedSubtotal, deliveryInfo, paymentInfo, paymentMethod, appliedCoupon, selectedItems])
 
   const isValid = useMemo(() => {
     const isCustomerValid = customerData.fullName && customerData.phone && customerData.address
-    return !!(isCustomerValid && deliveryMethod && paymentMethod && items.length > 0)
-  }, [customerData, deliveryMethod, paymentMethod, items])
+    // Require that at least one item is selected to proceed to checkout
+    return !!(isCustomerValid && deliveryMethod && paymentMethod && selectedItems.length > 0)
+  }, [customerData, deliveryMethod, paymentMethod, selectedItems])
 
   const goToStep = useCallback((step: number) => { if (step >= 1 && step <= 4) setCurrentStep(step) }, [])
   const nextStep = useCallback(() => setCurrentStep((s) => Math.min(4, s + 1)), [])
@@ -220,7 +222,8 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
       const userId = (authData as any)?.user?.id
       const payload: any = {
         shipping_address: customerData.address,
-        items: items.map((it: any) => ({ product_id: it.product.id, quantity: it.quantity || 1, price: it.product.price, size: it.size || null, color: it.color || null })),
+        // Send only selected items to the order API
+        items: selectedItems.map((it: any) => ({ product_id: it.product.id, quantity: it.quantity || 1, price: it.product.price, size: it.size || null, color: it.color || null })),
         customer: { fullName: customerData.fullName, phone: customerData.phone, email: customerData.email, address: customerData.address, city: customerData.city, notes: customerData.notes },
       }
       if (userId) payload.user_id = userId
@@ -229,7 +232,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
       if (!resp.ok) { const err = await resp.json().catch(() => ({})); console.warn("Order creation failed:", err); toast({ title: "Error", description: "No se pudo crear la orden. Inténtalo de nuevo.", variant: "destructive" }); return false }
       const body = await resp.json()
       const orderId = body?.id
-      const orderSummary = generateWhatsAppMessage({ customer: customerData, delivery: deliveryInfo!, payment: paymentInfo!, calculations, items, orderId })
+      const orderSummary = generateWhatsAppMessage({ customer: customerData, delivery: deliveryInfo!, payment: paymentInfo!, calculations, items: selectedItems, orderId })
       const whatsappUrl = `https://wa.me/5352434599?text=${encodeURIComponent(orderSummary)}`
       window.open(whatsappUrl, "_blank")
       toast({ title: "Pedido creado", description: "Tu orden fue creada y se abrió WhatsApp para completarla." })
@@ -242,7 +245,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
       // DEBUG: log estado actual antes de validar cupón
       // applyCoupon - before
 
-      const payload = { code, items: items.map((it: any) => ({ product: { id: it.product.id, price: it.product.price, category: it.product.category, subcategoria: it.product.subcategoria, tags: (it.product as any).tags || [], brand: (it.product as any).brand || null }, quantity: it.quantity })), subtotal, deliveryCost: deliveryInfo?.cost || 0 }
+      const payload = { code, items: selectedItems.map((it: any) => ({ product: { id: it.product.id, price: it.product.price, category: it.product.category, subcategoria: it.product.subcategoria, tags: (it.product as any).tags || [], brand: (it.product as any).brand || null }, quantity: it.quantity })), subtotal: selectedSubtotal, deliveryCost: deliveryInfo?.cost || 0 }
       const resp = await fetch("/api/coupons/validate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       if (!resp.ok) {
         console.warn("coupon validate endpoint failed, falling back to local")

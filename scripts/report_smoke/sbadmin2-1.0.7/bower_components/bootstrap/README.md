@@ -36,7 +36,7 @@ Read the [Getting started page](http://getbootstrap.com/getting-started/) for in
 
 Within the download you'll find the following directories and files, logically grouping common assets and providing both compiled and minified variations. You'll see something like this:
 
-```
+\`\`\`
 bootstrap/
 ├── css/
 │   ├── bootstrap.css
@@ -54,7 +54,7 @@ bootstrap/
     ├── glyphicons-halflings-regular.ttf
     ├── glyphicons-halflings-regular.woff
     └── glyphicons-halflings-regular.woff2
-```
+\`\`\`
 
 We provide compiled CSS and JS (`bootstrap.*`), as well as compiled and minified CSS and JS (`bootstrap.min.*`). CSS [source maps](https://developers.google.com/chrome-developer-tools/docs/css-preprocessors) (`bootstrap.*.map`) are available for use with certain browsers' developer tools. Fonts from Glyphicons are included, as is the optional Bootstrap theme.
 

@@ -9,15 +9,15 @@
 
 * [npm](http://npmjs.org/)
 
-```bash
+\`\`\`bash
 npm install metismenu
-```
+\`\`\`
 
 * [Bower](http://bower.io)
 
-```bash
+\`\`\`bash
 bower install metisMenu
-```
+\`\`\`
 
 * [Download](https://github.com/onokumus/metisMenu/archive/master.zip)
 
@@ -25,39 +25,39 @@ bower install metisMenu
 
 1. Include Twitter Bootstrap StyleSheet
 
-    ```html
+    \`\`\`html
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.0/css/bootstrap.min.css">
-    ```
+    \`\`\`
 
 2. Include metisMenu StyleSheet
 
-    ```html
+    \`\`\`html
     <link rel="stylesheet" href="//cdn.jsdelivr.net/bootstrap.metismenu/1.1.2/css/metismenu.min.css">
-    ```
+    \`\`\`
 
 3. Include jQuery
 
-    ```html
+    \`\`\`html
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    ```
+    \`\`\`
 
 4. Include Twitter Bootstrap Script
 
-    ```html
+    \`\`\`html
     <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.0/js/bootstrap.min.js"></script>
-    ```
+    \`\`\`
 
 5. Include metisMenu plugin's code
 
-    ```html
+    \`\`\`html
     <script src="//cdn.jsdelivr.net/bootstrap.metismenu/1.1.2/js/metismenu.min.js"></script>
-    ```
+    \`\`\`
 
 6. Call the plugin:
 
-    ```javascript
+    \`\`\`javascript
     $("#menu").metisMenu();
-    ```
+    \`\`\`
 
 ### Options
 
@@ -67,11 +67,11 @@ Default: `true`
 
 For auto collapse support.
 
-```javascript
+\`\`\`javascript
   $("#menu").metisMenu({
     toggle: false
   });
-```
+\`\`\`
 
 #### doubleTapToGo
 Type: `Boolean`
@@ -79,11 +79,11 @@ Default: `false`
 
 For double tap support.
 
-```javascript
+\`\`\`javascript
   $("#menu").metisMenu({
     doubleTapToGo: true
   });
-```
+\`\`\`
 
 
 ### [DEMO](http://demo.onokumus.com/metisMenu/)

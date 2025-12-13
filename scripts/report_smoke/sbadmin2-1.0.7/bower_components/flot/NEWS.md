@@ -425,21 +425,21 @@ Multiple axes support. Code using dual axes should be changed from using
 x2axis/y2axis in the options to using an array (although backwards-
 compatibility hooks are in place). For instance,
 
-```js
+\`\`\`js
 {
     xaxis: { ... }, x2axis: { ... },
     yaxis: { ... }, y2axis: { ... }
 }
-```
+\`\`\`
 
 becomes
 
-```js
+\`\`\`js
 {
     xaxes: [ { ... }, { ... } ],
     yaxes: [ { ... }, { ... } ]
 }
-```
+\`\`\`
 
 Note that if you're just using one axis, continue to use the xaxis/yaxis
 directly (it now sets the default settings for the arrays). Plugins touching
@@ -453,15 +453,15 @@ now need to set the axis "show" option explicitly.
 "tickColor" on the grid options is now deprecated in favour of a corresponding
 option on the axes, so:
 
-```js
+\`\`\`js
 { grid: { tickColor: "#000" }}
-```
+\`\`\`
 
 becomes
 
-```js
+\`\`\`js
 { xaxis: { tickColor: "#000"}, yaxis: { tickColor: "#000"} }
-```
+\`\`\`
 
 But if you just configure a base color Flot will now autogenerate a tick color
 by adding transparency. Backwards-compatibility hooks are in place.
@@ -569,7 +569,7 @@ also surfaced, if your graphs are slow in IE, you may want to give it a spin:
 
  - Fixed a problem introduced in 0.6 with specifying a gradient with:
 
-   ```{brightness: x, opacity: y }```
+   \`\`\`{brightness: x, opacity: y }```
 
  - Don't use $.browser.msie, check for getContext on the created canvas element
    instead and try to use excanvas if it's not found.
@@ -658,15 +658,15 @@ improving code clarity. The change is based on a patch from andershol.
 In the global options specified in the $.plot command, "lines", "points",
 "bars" and "shadowSize" have been moved to a sub-object called "series":
 
-```js
+\`\`\`js
 $.plot(placeholder, data, { lines: { show: true }})
-```
+\`\`\`
 
 should be changed to
 
-```js
+\`\`\`js
   $.plot(placeholder, data, { series: { lines: { show: true }}})
-```
+\`\`\`
 
 All future series-specific options will go into this sub-object to
 simplify plugin writing. Backward-compatibility code is in place, so
@@ -869,7 +869,7 @@ Support for dual axis has been added (based on patch by someone who's annoyed
 and /david). For each data series you can specify which axes it belongs to,
 and there are two more axes, x2axis and y2axis, to customize. This affects the
 "selected" event which has been renamed to "plotselected" and spews out
-```{ xaxis: { from: -10, to: 20 } ... },``` setSelection in which the
+\`\`\`{ xaxis: { from: -10, to: 20 } ... },``` setSelection in which the
 parameters are on a new form (backwards compatible hooks are in place so old
 code shouldn't break) and markings (formerly coloredAreas).
 

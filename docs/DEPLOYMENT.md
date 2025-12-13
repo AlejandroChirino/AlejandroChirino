@@ -19,12 +19,12 @@ Recomendación:
 - En desarrollo local: si necesitas ejecutar herramientas admin sin iniciar sesión como admin, copia la clave a un `.env.local` local y pon `ALLOW_ADMIN_FALLBACK=true`. **No** comites ese archivo.
 
 **3) Ejemplo de `.env.local` (local, NO comitear)**
-```
+\`\`\`
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...anon...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...service-role...
 ALLOW_ADMIN_FALLBACK=true
-```
+\`\`\`
 - Añade `.env.local` a `.gitignore` si no lo tienes.
 
 **4) Cómo ejecutar localmente (Windows PowerShell)**

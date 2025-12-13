@@ -47,7 +47,7 @@ with the following updates and exceptions:
 Use four-space indents, no tabs.  Do not add horizontal space around parameter
 lists, loop definitions, or array/object indices. For example:
 
-```js
+\`\`\`js
     for ( var i = 0; i < data.length; i++ ) {  // This block is wrong!
         if ( data[ i ] > 1 ) {
             data[ i ] = 2;
@@ -59,7 +59,7 @@ lists, loop definitions, or array/object indices. For example:
             data[i] = 2;
         }
     }
-```
+\`\`\`
 
 #### Comments ####
 
@@ -69,14 +69,14 @@ Use // for all inline and block comments, regardless of length.
 All // comment blocks should have an empty line above *and* below them. For
 example:
 
-```js
+\`\`\`js
     var a = 5;
 
     // We're going to loop here
     // TODO: Make this loop faster, better, stronger!
 
     for (var x = 0; x < 10; x++) {}
-```
+\`\`\`
 
 #### Wrapping ####
 
@@ -89,10 +89,10 @@ judgement call made on a situational basis.
 Statements containing complex logic should not be wrapped arbitrarily if they
 do not exceed 80 characters. For example:
 
-```js
+\`\`\`js
     if (a == 1 &&    // This block is wrong!
         b == 2 &&
         c == 3) {}
 
     if (a == 1 && b == 2 && c == 3) {}  // This block is correct!
-```
+\`\`\`

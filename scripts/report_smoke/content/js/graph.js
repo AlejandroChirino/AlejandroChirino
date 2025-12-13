@@ -1413,4 +1413,3 @@ function toggleAll(id, checked){
         });
     }
 }
-

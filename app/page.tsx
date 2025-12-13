@@ -94,14 +94,24 @@ async function NewProductsPreview() {
     const sevenDaysAgoISO = sevenDaysAgo.toISOString()
 
     const { data: products, error } = await supabase
-      .from("products_with_effective_price")
-      .select("id, name, price, sale_price, on_sale, image_url, category")
+      .from("products")
+      .select("id, name, price, sale_price, on_sale, image_url, category, created_at")
       .gte("created_at", sevenDaysAgoISO)
       .eq("archived", false)
       .limit(20)
-      .order("weekly_hash", { ascending: true })
+      .order("created_at", { ascending: false })
 
-    if (error || !products || products.length === 0) {
+    // Si hubo error o no hay productos nuevos, mostrar enlace a novedades
+    const shuffled = (products || []).slice()
+    // Fisher-Yates shuffle
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const tmp = shuffled[i]
+      shuffled[i] = shuffled[j]
+      shuffled[j] = tmp
+    }
+
+    if (error || shuffled.length === 0) {
       return (
         <div className="text-center py-8">
           <a
@@ -116,7 +126,7 @@ async function NewProductsPreview() {
 
     return (
       <div>
-        <ProductCarousel products={products} square />
+        <ProductCarousel products={shuffled} square badgeType="nuevo" />
         <div className="text-center mt-4">
           <a
             href="/nuevo"

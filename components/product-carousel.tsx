@@ -14,6 +14,7 @@ interface ProductCarouselProps {
   className?: string
   autoPlay?: boolean
   square?: boolean
+  badgeType?: "nuevo" | "top-ventas"
 }
 
 const ProductCarousel = memo(function ProductCarousel({
@@ -21,6 +22,7 @@ const ProductCarousel = memo(function ProductCarousel({
   title,
   className = "",
   square = false,
+  badgeType,
 }: ProductCarouselProps) {
   const isMobile = useMobile()
   const itemsPerPage = isMobile ? 2 : 4
@@ -60,7 +62,7 @@ const ProductCarousel = memo(function ProductCarousel({
               "w-[48%] md:w-[24%]", // Ancho de las tarjetas (2 en móvil, 4 en desktop)
             )}
           >
-            <CarouselProductCard product={product} isMobile={isMobile} square={square} />
+            <CarouselProductCard product={product} isMobile={isMobile} square={square} badgeType={badgeType} />
           </div>
         ))}
       </div>

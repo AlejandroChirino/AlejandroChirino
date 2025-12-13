@@ -51,9 +51,12 @@ function NewProducts({ selectedSubcategory, selectedColors, selectedSizes, selec
         for (const c of selectedColors) params.append("colors", c)
         for (const s of selectedSizes) params.append("sizes", s)
 
-        const res = await fetch(`/api/products?${params.toString()}`)
+        const url = `/api/products?${params.toString()}`
+        console.debug("[NuevoClient] fetching products from:", url)
+        const res = await fetch(url)
         const data = await res.json()
-        setProducts(data.products || [])
+        console.debug("[NuevoClient] products fetch result length:", (data.products || data || []).length, data)
+        setProducts(data.products || data || [])
       } catch (err) {
         setError("Error al cargar los productos")
       } finally {

@@ -41,9 +41,26 @@ export default function CartItem({ item }: CartItemProps) {
   const isSelected = selectedIds.includes(item.id)
 
   return (
-    <div className="flex gap-4 py-4 items-center">
+    <div className="flex gap-3 py-2 items-center">
+      {/* Selector moved to the left of the image and made circular */}
+      <div className="flex-shrink-0 flex items-center justify-center">
+        <button
+          aria-label={isSelected ? "Deseleccionar producto" : "Seleccionar producto"}
+          onClick={() => toggleSelect(item.id)}
+          className={
+            `w-6 h-6 grid place-items-center focus:outline-none transition-colors border ${
+              isSelected
+                ? "bg-[var(--brand-green)] text-white border-transparent"
+                : "bg-white text-[var(--brand-green)] border border-[var(--brand-green)]"
+            } rounded-full`
+          }
+        >
+          {isSelected ? <Check className="h-3 w-3" /> : <span className="text-sm font-semibold">✓</span>}
+        </button>
+      </div>
+
       {/* Imagen */}
-      <div className="w-[100px] sm:w-[110px] aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
+      <div className="w-[80px] sm:w-[90px] aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
         <Link href={`/producto/${product.id}`}>
           <Image
             src={product.image_url || "/placeholder.svg?height=400&width=300&query=product"}
@@ -55,22 +72,7 @@ export default function CartItem({ item }: CartItemProps) {
         </Link>
       </div>
 
-      {/* Selector central (no redondo) */}
-      <div className="flex-shrink-0 flex items-center justify-center">
-        <button
-          aria-label={isSelected ? "Deseleccionar producto" : "Seleccionar producto"}
-          onClick={() => toggleSelect(item.id)}
-          className={
-            `w-8 h-8 grid place-items-center focus:outline-none transition-colors border ${
-              isSelected
-                ? "bg-[var(--brand-green)] text-white border-transparent"
-                : "bg-white text-[var(--brand-green)] border border-[var(--brand-green)]"
-            } rounded-none`
-          }
-        >
-          {isSelected ? <Check className="h-4 w-4" /> : <span className="text-sm font-semibold">✓</span>}
-        </button>
-      </div>
+      {/* Selector único (circular a la izquierda) - antiguo selector cuadrado eliminado */}
       {/* Detalles */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Fila superior */}
@@ -107,21 +109,21 @@ export default function CartItem({ item }: CartItemProps) {
               <div className="flex-1 min-w-0" />
 
               {/* Modificador de cantidad centrado entre selector y eliminar */}
-              <div className="shrink-0 flex items-center justify-center">
+              <div className="flex-shrink-0 flex items-center justify-center">
                 <div className="flex items-center rounded-md border border-gray-200 bg-white overflow-hidden">
                   <button
                     onClick={() => handleQuantityChange(quantity - 1)}
                     disabled={quantity <= 1 || isLoading}
-                    className="w-7 h-7 grid place-items-center text-gray-700 border-r border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="w-6 h-6 grid place-items-center text-gray-700 border-r border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
                     aria-label="Disminuir cantidad"
                   >
                     <Minus className="h-3 w-3" />
                   </button>
-                  <span className="px-3 text-sm min-w-[28px] text-center text-gray-900">{quantity}</span>
+                  <span className="px-2 text-sm min-w-[24px] text-center text-gray-900">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(quantity + 1)}
                     disabled={quantity >= product.stock || isLoading}
-                    className="w-7 h-7 grid place-items-center text-gray-700 border-l border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="w-6 h-6 grid place-items-center text-gray-700 border-l border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
                     aria-label="Aumentar cantidad"
                   >
                     <Plus className="h-3 w-3" />
@@ -134,7 +136,7 @@ export default function CartItem({ item }: CartItemProps) {
                 <button
                   onClick={handleRemove}
                   disabled={isLoading}
-                  className="flex items-center justify-center w-7 h-7 text-gray-500 hover:text-gray-700 transition-colors rounded"
+                  className="flex items-center justify-center w-6 h-6 text-gray-500 hover:text-gray-700 transition-colors rounded"
                   aria-label="Eliminar producto"
                 >
                   <Trash2 className="h-4 w-4" />

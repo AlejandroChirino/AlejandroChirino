@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Trash2 } from "lucide-react"
+import ConfirmModal from "@/components/confirm-modal"
 // Header provisto por RootLayout
 import Footer from "@/components/footer"
 import CartItem from "@/components/cart-item"
@@ -13,6 +14,7 @@ import Button from "@/components/ui/button"
 
 export default function CarritoPage() {
   const { items, itemCount, subtotal, selectedIds, selectAll, clearSelection, removeItems, selectedSubtotal, selectedItemCount } = useCart()
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   return (
   <div className="min-h-screen overflow-x-hidden">
@@ -20,7 +22,13 @@ export default function CarritoPage() {
 
       <main className={cn("pt-4", itemCount > 0 ? "pb-28 lg:pb-8" : "")}>
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 tracked-strong uppercase">MI BOLSA</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold tracked-strong uppercase">MI BOLSA</h2>
+            <Link href="/" className="flex items-center text-[var(--brand-green)] hover:underline">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              <span className="align-middle">Regresar</span>
+            </Link>
+          </div>
 
           {itemCount === 0 ? (
             <div className="text-center py-16">
@@ -39,8 +47,11 @@ export default function CarritoPage() {
               {/* Lista de productos */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-4">
-                    <div className="inline-flex items-center gap-3">
+                  <div className="flex items-center gap-4 w-full">
+                    <div className="flex-1">
+                      <span className="text-lg font-medium text-gray-700">Productos ({itemCount})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
                           if (selectedIds.length > 0 && selectedIds.length === items.length) clearSelection()
@@ -51,29 +62,22 @@ export default function CarritoPage() {
                           selectedIds.length > 0 && selectedIds.length === items.length
                             ? "bg-[var(--brand-green)] text-white border-transparent"
                             : "bg-white text-[var(--brand-green)] border border-[var(--brand-green)]"
-                        } w-8 h-8 inline-flex items-center justify-center rounded-full text-sm font-semibold transition-colors`}
+                        } h-8 px-3 inline-flex items-center justify-center rounded-full text-sm font-semibold transition-colors`}
                       >
-                        {selectedIds.length > 0 && selectedIds.length === items.length ? "✓" : ""}
+                        <span className="mr-2">{selectedIds.length > 0 && selectedIds.length === items.length ? "✓" : ""}</span>
+                        <span className="capitalize">todo</span>
                       </button>
-                      <span className="text-lg font-medium text-gray-700">Productos ({itemCount})</span>
+                      {selectedIds.length > 0 && (
+                        <button
+                          onClick={() => setConfirmOpen(true)}
+                          className="flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-red-600 hover:bg-gray-50"
+                          aria-label={`Eliminar ${selectedIds.length} seleccionados`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
-                    {selectedIds.length > 0 && (
-                      <button
-                        onClick={async () => {
-                          const ok = confirm(`¿Eliminar ${selectedIds.length} producto(s) seleccionados?`)
-                          if (!ok) return
-                          await removeItems(selectedIds)
-                        }}
-                        className="text-sm text-red-600 hover:underline"
-                      >
-                        Eliminar seleccionados ({selectedIds.length})
-                      </button>
-                    )}
                   </div>
-                  <Link href="/" className="flex items-center text-[var(--brand-green)] hover:underline">
-                    <ArrowLeft className="h-4 w-4 mr-1" />
-                    <span className="align-middle">Seguir comprando</span>
-                  </Link>
                 </div>
 
                 <div className="divide-y divide-gray-200">
@@ -115,6 +119,25 @@ export default function CarritoPage() {
           </div>
         )}
       </main>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title={`Eliminar ${selectedIds.length} producto(s)`}
+        description={`¿Deseas eliminar ${selectedIds.length} producto(s) seleccionados de tu bolsa? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={async () => {
+          try {
+            await removeItems(selectedIds)
+            setConfirmOpen(false)
+            toast({ title: "Productos eliminados", description: `${selectedIds.length} producto(s) eliminados.` })
+          } catch (err) {
+            setConfirmOpen(false)
+            toast({ title: "Error", description: "No se pudieron eliminar los productos." })
+          }
+        }}
+      />
 
       <Footer />
     </div>

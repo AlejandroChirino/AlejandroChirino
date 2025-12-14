@@ -242,7 +242,7 @@ export default function HomePage() {
         <section className="relative h-screen">
           {/* Background image */}
           <Image
-            src="/pexels-hikaique-561656.jpg"
+            src="/pexels-dantemunozphoto-16152528.jpg"
             alt="La L Fashion"
             fill
             className="absolute inset-0 w-full h-full object-cover"

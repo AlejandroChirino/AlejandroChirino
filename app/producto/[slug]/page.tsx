@@ -287,7 +287,8 @@ export default function ProductPage({ params }: ProductPageProps) {
     if (product.subcategoria) {
       try {
         const slug = slugFromLabel(product.category as any, product.subcategoria)
-        items.push({ label: product.subcategoria, href: `/${product.category}/${slug}` })
+        // Enlazar a la página de categoría usando query param `sub` (ej. /mujer?sub=blusas)
+        items.push({ label: product.subcategoria, href: `/${product.category}?sub=${encodeURIComponent(slug)}` })
       } catch (e) {
         // Fallback: push label without href
         items.push({ label: product.subcategoria })

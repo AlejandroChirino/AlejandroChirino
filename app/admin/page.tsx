@@ -164,8 +164,11 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Categorías */}
-            <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer">
+            {/* Tendencias Destacadas */}
+            <div
+              className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => { if (typeof window !== 'undefined') window.location.href = '/admin/tendencias' }}
+            >
               <div className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -173,14 +176,28 @@ export default function AdminPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Categorías</dt>
-                      <dd className="text-lg font-medium text-gray-900">Organizar productos</dd>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Tendencias</dt>
+                      <dd className="text-lg font-medium text-gray-900">Tendencias destacadas (home)</dd>
                     </dl>
                   </div>
                 </div>
               </div>
               <div className="bg-gray-50 px-6 py-3">
-                <div className="text-sm text-gray-600">No disponible aún</div>
+                <a href="/admin/tendencias" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                  Gestionar tendencias
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 ml-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </a>
               </div>
             </div>
 

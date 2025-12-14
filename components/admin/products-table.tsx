@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Trash2, Edit, Settings } from "lucide-react"
 // ✅ Correcto
 import Button from "@/components/ui/button"
@@ -37,13 +37,93 @@ export function ProductsTable({
   const [bulkVip, setBulkVip] = useState<string>("")
   const [bulkNew, setBulkNew] = useState<string>("")
   const [bulkArchived, setBulkArchived] = useState<string>("")
-  const [showSaleModal, setShowSaleModal] = useState(false)
   const [saleAction, setSaleAction] = useState<string>("") // "apply" | "remove"
   const [saleMode, setSaleMode] = useState<string>("percent") // "percent" | "amount"
   const [saleValue, setSaleValue] = useState<string>("")
+  // Campos editables adicionales y flags "dirty" para enviar solo los modificados
+  const [name, setName] = useState<string>("")
+  const [nameDirty, setNameDirty] = useState<boolean>(false)
+
+  const [price, setPrice] = useState<string>("")
+  const [priceDirty, setPriceDirty] = useState<boolean>(false)
+
+  const [stock, setStock] = useState<string>("")
+  const [stockDirty, setStockDirty] = useState<boolean>(false)
+
+  const [sizes, setSizes] = useState<string[]>([])
+  const [sizesDirty, setSizesDirty] = useState<boolean>(false)
+
+  const [colors, setColors] = useState<string[]>([])
+  const [colorsDirty, setColorsDirty] = useState<boolean>(false)
+
+  const [imageUrl, setImageUrl] = useState<string>("")
+  const [imageUrlDirty, setImageUrlDirty] = useState<boolean>(false)
+
+  // nuevos campos solicitados
+  const [brand, setBrand] = useState<string>("")
+  const [brandDirty, setBrandDirty] = useState<boolean>(false)
+
+  const [tagsField, setTagsField] = useState<string[]>([])
+  const [tagsDirty, setTagsDirty] = useState<boolean>(false)
+
+  const [peso, setPeso] = useState<string>("")
+  const [pesoDirty, setPesoDirty] = useState<boolean>(false)
+
+  const [precioCompra, setPrecioCompra] = useState<string>("")
+  const [precioCompraDirty, setPrecioCompraDirty] = useState<boolean>(false)
+
+  const [categoryField, setCategoryField] = useState<string>("")
+  const [categoryDirty, setCategoryDirty] = useState<boolean>(false)
+
+  const [subcategoriaField, setSubcategoriaField] = useState<string>("")
+  const [subcategoriaDirty, setSubcategoriaDirty] = useState<boolean>(false)
+
+  const [description, setDescription] = useState<string>("")
+  const [descriptionDirty, setDescriptionDirty] = useState<boolean>(false)
 
   const allSelected = products.length > 0 && selectedProducts.length === products.length
   const someSelected = selectedProducts.length > 0
+
+  // opciones predefinidas (traídas desde API admin/meta y admin/options)
+  const [availableCategories, setAvailableCategories] = useState<string[]>([])
+  const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([])
+  const [subcategoriesByCategory, setSubcategoriesByCategory] = useState<Record<string, string[]>>({})
+  const [availableBrands, setAvailableBrands] = useState<string[]>([])
+  const [availableTags, setAvailableTags] = useState<string[]>([])
+  const [availableSizesOptions, setAvailableSizesOptions] = useState<string[]>([])
+  const [availableColorsOptions, setAvailableColorsOptions] = useState<string[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    // meta (categories, subcategories, brands, tags)
+    fetch('/api/admin/meta')
+      .then(r => r.json())
+      .then(json => {
+        if (!mounted) return
+        if (json && !json.error) {
+          setAvailableCategories(json.categories || [])
+          setAvailableSubcategories(json.subcategories || [])
+          setAvailableBrands(json.brands || [])
+          setAvailableTags(json.tags || [])
+          setSubcategoriesByCategory(json.subcategoriesByCategory || {})
+        }
+      })
+      .catch(() => {})
+
+    // options (sizes/colors). No filtros por defecto.
+    fetch('/api/admin/options')
+      .then(r => r.json())
+      .then(json => {
+        if (!mounted) return
+        if (json && !json.error) {
+          setAvailableSizesOptions(json.sizes || [])
+          setAvailableColorsOptions(json.colors || [])
+        }
+      })
+      .catch(() => {})
+
+    return () => { mounted = false }
+  }, [])
 
   const handleDeleteSelected = () => {
     if (selectedProducts.length > 0) {
@@ -61,6 +141,296 @@ export function ProductsTable({
       // (El manejo de errores/mostrar toast está en el padre)
     }
   }
+
+  // Construir lista de campos para dividir en dos columnas
+  const fieldNodes: JSX.Element[] = [
+    (
+      <div key="name">
+        <label className="text-sm text-gray-700">Nombre</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => { setName(e.target.value); setNameDirty(true) }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          placeholder="Dejar vacío para no cambiar"
+        />
+      </div>
+    ),
+    (
+      <div key="price">
+        <label className="text-sm text-gray-700">Precio</label>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          value={price}
+          onChange={(e) => { setPrice(e.target.value); setPriceDirty(true) }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          placeholder="Ej. 19.99"
+        />
+      </div>
+    ),
+    (
+      <div key="stock">
+        <label className="text-sm text-gray-700">Stock</label>
+        <input
+          type="number"
+          step="1"
+          min="0"
+          value={stock}
+          onChange={(e) => { setStock(e.target.value); setStockDirty(true) }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          placeholder="Ej. 10"
+        />
+      </div>
+    ),
+    (
+      <div key="sizes">
+        <label className="text-sm text-gray-700">Tallas</label>
+        {availableSizesOptions.length > 0 ? (
+          <select
+            multiple
+            value={sizes}
+            onChange={(e) => {
+              const vals = Array.from(e.target.selectedOptions).map(o => o.value)
+              setSizes(vals)
+              setSizesDirty(true)
+            }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg h-28"
+          >
+            {availableSizesOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={sizes.join(',')}
+            onChange={(e) => { setSizes(e.target.value.split(',').map(s=>s.trim()).filter(Boolean)); setSizesDirty(true) }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            placeholder="S,M,L"
+          />
+        )}
+      </div>
+    ),
+    (
+      <div key="colors">
+        <label className="text-sm text-gray-700">Colores</label>
+        {availableColorsOptions.length > 0 ? (
+          <select
+            multiple
+            value={colors}
+            onChange={(e) => {
+              const vals = Array.from(e.target.selectedOptions).map(o => o.value)
+              setColors(vals)
+              setColorsDirty(true)
+            }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg h-28"
+          >
+            {availableColorsOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={colors.join(',')}
+            onChange={(e) => { setColors(e.target.value.split(',').map(s=>s.trim()).filter(Boolean)); setColorsDirty(true) }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            placeholder="Rojo,Azul,Negro"
+          />
+        )}
+      </div>
+    ),
+    (
+      <div key="image">
+        <label className="text-sm text-gray-700">Imagen principal (URL)</label>
+        <input
+          type="text"
+          value={imageUrl}
+          onChange={(e) => { setImageUrl(e.target.value); setImageUrlDirty(true) }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          placeholder="https://.../imagen.jpg"
+        />
+      </div>
+    ),
+    (
+      <div key="brand">
+        <label className="text-sm text-gray-700">Marca</label>
+        {availableBrands.length > 0 ? (
+          <select value={brand} onChange={(e) => { setBrand(e.target.value); setBrandDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="">No cambiar</option>
+            {availableBrands.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+        ) : (
+          <input type="text" value={brand} onChange={(e) => { setBrand(e.target.value); setBrandDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Marca" />
+        )}
+      </div>
+    ),
+    (
+      <div key="tags">
+        <label className="text-sm text-gray-700">Etiquetas</label>
+        {availableTags.length > 0 ? (
+          <select multiple value={tagsField} onChange={(e) => { const vals = Array.from(e.target.selectedOptions).map(o => o.value); setTagsField(vals); setTagsDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg h-28">
+            {availableTags.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        ) : (
+          <input type="text" value={tagsField.join(',')} onChange={(e) => { setTagsField(e.target.value.split(',').map(s=>s.trim()).filter(Boolean)); setTagsDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="tag1,tag2" />
+        )}
+      </div>
+    ),
+    (
+      <div key="peso">
+        <label className="text-sm text-gray-700">Peso (kg)</label>
+        <input type="number" step="0.01" min="0" value={peso} onChange={(e) => { setPeso(e.target.value); setPesoDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0.5" />
+      </div>
+    ),
+    (
+      <div key="precio_compra">
+        <label className="text-sm text-gray-700">Precio compra</label>
+        <input type="number" step="0.01" min="0" value={precioCompra} onChange={(e) => { setPrecioCompra(e.target.value); setPrecioCompraDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Ej. 10.00" />
+      </div>
+    ),
+    (
+      <div key="category">
+        <label className="text-sm text-gray-700">Categoría</label>
+        {availableCategories.length > 0 ? (
+          <select value={categoryField} onChange={(e) => { setCategoryField(e.target.value); setCategoryDirty(true); setSubcategoriaField('') }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="">No cambiar</option>
+            {availableCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={categoryField}
+            onChange={(e) => { setCategoryField(e.target.value); setCategoryDirty(true) }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            placeholder="mujer / hombre / accesorios"
+          />
+        )}
+      </div>
+    ),
+    (
+      <div key="subcategoria">
+        <label className="text-sm text-gray-700">Subcategoría</label>
+        {categoryField && subcategoriesByCategory[categoryField] ? (
+          <select value={subcategoriaField} onChange={(e) => { setSubcategoriaField(e.target.value); setSubcategoriaDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="">No cambiar</option>
+            {subcategoriesByCategory[categoryField].map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        ) : availableSubcategories.length > 0 ? (
+          <select value={subcategoriaField} onChange={(e) => { setSubcategoriaField(e.target.value); setSubcategoriaDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="">No cambiar</option>
+            {availableSubcategories.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={subcategoriaField}
+            onChange={(e) => { setSubcategoriaField(e.target.value); setSubcategoriaDirty(true) }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            placeholder="vestidos, camisetas..."
+          />
+        )}
+      </div>
+    ),
+    (
+      <div key="description">
+        <label className="text-sm text-gray-700">Descripción</label>
+        <textarea
+          value={description}
+          onChange={(e) => { setDescription(e.target.value); setDescriptionDirty(true) }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          placeholder="Texto descriptivo..."
+        />
+      </div>
+    ),
+    (
+      <div key="featured">
+        <label className="text-sm text-gray-700">Destacado</label>
+        <select
+          value={bulkFeatured}
+          onChange={(e) => setBulkFeatured(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+        >
+          <option value="">No cambiar</option>
+          <option value="true">Marcar como destacado</option>
+          <option value="false">Quitar destacado</option>
+        </select>
+      </div>
+    ),
+    (
+      <div key="vip">
+        <label className="text-sm text-gray-700">VIP</label>
+        <select value={bulkVip} onChange={(e) => setBulkVip(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+          <option value="">No cambiar</option>
+          <option value="true">Marcar VIP</option>
+          <option value="false">Quitar VIP</option>
+        </select>
+      </div>
+    ),
+    (
+      <div key="nuevo">
+        <label className="text-sm text-gray-700">Nuevo</label>
+        <select value={bulkNew} onChange={(e) => setBulkNew(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+          <option value="">No cambiar</option>
+          <option value="true">Marcar como nuevo</option>
+          <option value="false">Quitar nuevo</option>
+        </select>
+      </div>
+    ),
+    (
+      <div key="archivado">
+        <label className="text-sm text-gray-700">Archivado</label>
+        <select value={bulkArchived} onChange={(e) => setBulkArchived(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+          <option value="">No cambiar</option>
+          <option value="true">Archivar</option>
+          <option value="false">Restaurar</option>
+        </select>
+      </div>
+    ),
+    (
+      <div key="offers">
+        <label className="text-sm text-gray-700">Ofertas</label>
+        <select value={saleAction} onChange={(e) => setSaleAction(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+          <option value="">No cambiar</option>
+          <option value="apply">Aplicar oferta</option>
+          <option value="remove">Quitar oferta</option>
+        </select>
+      </div>
+    ),
+  ]
+
+  // si saleAction === 'apply' añadir campos extra al final
+  if (saleAction === "apply") {
+    fieldNodes.push(
+      (
+        <div key="saleMode">
+          <label className="text-sm text-gray-700">Tipo</label>
+          <select value={saleMode} onChange={(e) => setSaleMode(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="percent">Porcentaje (%)</option>
+            <option value="amount">Monto fijo</option>
+          </select>
+        </div>
+      )
+    )
+    fieldNodes.push(
+      (
+        <div key="saleValue">
+          <label className="text-sm text-gray-700">Valor</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={saleValue}
+            onChange={(e) => setSaleValue(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            placeholder={saleMode === "percent" ? "% de descuento (ej. 20)" : "Monto a restar (ej. 5.00)"}
+          />
+        </div>
+      )
+    )
+  }
+
+  const half = Math.ceil(fieldNodes.length / 2)
+  const leftNodes = fieldNodes.slice(0, half)
+  const rightNodes = fieldNodes.slice(half)
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -83,10 +453,6 @@ export function ProductsTable({
             <Button variant="outline" size="sm" onClick={() => setShowBulkModal(true)}>
               <Settings className="w-4 h-4 mr-2" />
               Acciones
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowSaleModal(true)}>
-              <span className="w-4 h-4 mr-2">%</span>
-              Ofertas
             </Button>
             <Button
               variant="outline"
@@ -231,8 +597,8 @@ export function ProductsTable({
 
       {/* Modal de confirmación de eliminación */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-full mx-4 lg:mx-0 lg:rounded-none lg:w-screen lg:max-w-none max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Confirmar eliminación</h3>
             <p className="text-sm text-gray-600 mb-6">
               ¿Estás seguro de que quieres eliminar {selectedProducts.length} producto(s)? Esta acción no se puede
@@ -252,133 +618,79 @@ export function ProductsTable({
 
       {/* Modal acciones masivas */}
       {showBulkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-full mx-4 lg:mx-0 lg:rounded-none lg:w-screen lg:max-w-none max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Acciones masivas</h3>
             <p className="text-sm text-gray-600 mb-4">Aplica cambios a {selectedProducts.length} producto(s)</p>
 
-            <div className="grid grid-cols-1 gap-3">
-              <label className="text-sm text-gray-700">Destacado</label>
-              <select
-                value={bulkFeatured}
-                onChange={(e) => setBulkFeatured(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">No cambiar</option>
-                <option value="true">Marcar como destacado</option>
-                <option value="false">Quitar destacado</option>
-              </select>
+              {/* Mostrar campos divididos en dos columnas usando listas preconstruidas */}
+              <div className="lg:flex lg:gap-6">
+                <div className="lg:flex-1 flex flex-col gap-4">{leftNodes}</div>
+                <div className="lg:flex-1 flex flex-col gap-4 mt-4 lg:mt-0">{rightNodes}</div>
+              </div>
 
-              <label className="text-sm text-gray-700">VIP</label>
-              <select value={bulkVip} onChange={(e) => setBulkVip(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="">No cambiar</option>
-                <option value="true">Marcar VIP</option>
-                <option value="false">Quitar VIP</option>
-              </select>
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="outline" onClick={() => setShowBulkModal(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    const changes: Record<string, any> = {}
+                    if (bulkFeatured !== "") changes.featured = bulkFeatured === "true"
+                    if (bulkVip !== "") changes.is_vip = bulkVip === "true"
+                    if (bulkNew !== "") changes.is_new = bulkNew === "true"
+                    if (bulkArchived !== "") changes.archived = bulkArchived === "true"
 
-              <label className="text-sm text-gray-700">Nuevo</label>
-              <select value={bulkNew} onChange={(e) => setBulkNew(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="">No cambiar</option>
-                <option value="true">Marcar como nuevo</option>
-                <option value="false">Quitar nuevo</option>
-              </select>
+                    // Campos adicionales: solo añadir si el usuario los modificó (dirty)
+                    if (nameDirty && name !== "") changes.name = name
+                    if (priceDirty && price !== "") changes.price = Number(price)
+                    if (stockDirty && stock !== "") changes.stock = Number(stock)
+                    if (sizesDirty && Array.isArray(sizes) && sizes.length > 0) {
+                      changes.sizes = sizes
+                    }
+                    if (colorsDirty && Array.isArray(colors) && colors.length > 0) {
+                      changes.colors = colors
+                    }
+                    if (imageUrlDirty && imageUrl !== "") {
+                      // send both image_url and image_urls for compatibility
+                      changes.image_url = imageUrl
+                      const many = imageUrl.split(',').map(s => s.trim()).filter(Boolean)
+                      if (many.length > 1) changes.image_urls = many
+                    }
+                    if (categoryDirty && categoryField !== "") changes.category = categoryField
+                    if (subcategoriaDirty && subcategoriaField !== "") changes.subcategoria = subcategoriaField
+                    if (descriptionDirty && description !== "") changes.description = description
 
-              <label className="text-sm text-gray-700">Archivado</label>
-              <select value={bulkArchived} onChange={(e) => setBulkArchived(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="">No cambiar</option>
-                <option value="true">Archivar</option>
-                <option value="false">Restaurar</option>
-              </select>
-            </div>
+                    // nuevos campos
+                    if (brandDirty && brand !== "") changes.brand = brand
+                    if (tagsDirty && Array.isArray(tagsField) && tagsField.length > 0) changes.tags = tagsField
+                    if (pesoDirty && peso !== "") changes.peso = Number(peso)
+                    if (precioCompraDirty && precioCompra !== "") changes.precio_compra = Number(precioCompra)
 
-            <div className="flex justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowBulkModal(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  const changes: { featured?: boolean | null; is_vip?: boolean | null; is_new?: boolean | null; archived?: boolean | null } = {}
-                  if (bulkFeatured !== "") changes.featured = bulkFeatured === "true"
-                  if (bulkVip !== "") changes.is_vip = bulkVip === "true"
-                  if (bulkNew !== "") changes.is_new = bulkNew === "true"
-                  if (bulkArchived !== "") changes.archived = bulkArchived === "true"
+                    if (saleAction) {
+                      if (saleAction === "remove") {
+                        changes.sale_action = { action: "remove" }
+                      } else if (saleAction === "apply") {
+                        changes.sale_action = { action: "apply", mode: saleMode, value: Number(saleValue) }
+                      }
+                    }
 
-                  onBulkUpdate(changes)
-                  setShowBulkModal(false)
-                }}
-              >
-                Aplicar
-              </Button>
-            </div>
+                    // Enviar solo si hay cambios
+                    if (Object.keys(changes).length > 0) {
+                      onBulkUpdate(changes)
+                      setShowBulkModal(false)
+                    }
+                  }}
+                >
+                  Aplicar
+                </Button>
+              </div>
           </div>
         </div>
       )}
 
-      {/* Modal ofertas (separado) */}
-      {showSaleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Poner en oferta</h3>
-            <p className="text-sm text-gray-600 mb-4">Aplica una oferta a {selectedProducts.length} producto(s)</p>
-
-            <div className="grid grid-cols-1 gap-3">
-              <label className="text-sm text-gray-700">Acción</label>
-              <select value={saleAction} onChange={(e) => setSaleAction(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="">Seleccionar acción</option>
-                <option value="apply">Aplicar descuento</option>
-                <option value="remove">Quitar oferta</option>
-              </select>
-
-              {saleAction === "apply" && (
-                <>
-                  <label className="text-sm text-gray-700">Tipo</label>
-                  <select value={saleMode} onChange={(e) => setSaleMode(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="percent">Porcentaje (%)</option>
-                    <option value="amount">Monto fijo</option>
-                  </select>
-
-                  <label className="text-sm text-gray-700">Valor</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={saleValue}
-                    onChange={(e) => setSaleValue(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder={saleMode === "percent" ? "% de descuento (ej. 20)" : "Monto a restar (ej. 5.00)"}
-                  />
-                </>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowSaleModal(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  // Validation
-                  if (saleAction === "") return
-                  if (saleAction === "apply" && (!saleValue || Number(saleValue) <= 0)) return
-
-                  const sale_action: any = { action: saleAction }
-                  if (saleAction === "apply") {
-                    sale_action.mode = saleMode
-                    sale_action.value = Number(saleValue)
-                  }
-
-                  onBulkUpdate({ sale_action })
-                  setShowSaleModal(false)
-                }}
-              >
-                Aplicar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   )
 }

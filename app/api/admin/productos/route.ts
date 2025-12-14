@@ -353,16 +353,55 @@ export async function PATCH(request: NextRequest) {
     const ids: string[] = body.ids || []
     const changes = body.changes || {}
 
+    // Debug: if precio_compra is present, log to help trace unexpected mutations
+    try {
+      if (changes && Object.prototype.hasOwnProperty.call(changes, 'precio_compra')) {
+        console.log('[admin/products PATCH] received precio_compra in changes:', changes.precio_compra, 'ids:', body.ids)
+      }
+    } catch (e) {
+      console.warn('Error logging precio_compra debug info', e)
+    }
+
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: "No se proporcionaron IDs" }, { status: 400 })
     }
 
     // Build update payload only with keys that are not null/undefined
     const updatePayload: Record<string, any> = {}
-    if (changes.featured !== undefined && changes.featured !== null) updatePayload.featured = changes.featured
-    if (changes.is_vip !== undefined && changes.is_vip !== null) updatePayload.is_vip = changes.is_vip
-    if (changes.is_new !== undefined && changes.is_new !== null) updatePayload.is_new = changes.is_new
-    if (changes.archived !== undefined && changes.archived !== null) updatePayload.archived = changes.archived
+    const acceptIfPresent = (key: string) => {
+      if (changes[key] !== undefined && changes[key] !== null) updatePayload[key] = changes[key]
+    }
+
+    // Common flags
+    acceptIfPresent("featured")
+    acceptIfPresent("is_vip")
+    acceptIfPresent("is_new")
+    acceptIfPresent("archived")
+
+    // Texto / meta
+    acceptIfPresent("name")
+    acceptIfPresent("description")
+
+    // Price fields
+    acceptIfPresent("price")
+    acceptIfPresent("sale_price")
+    acceptIfPresent("on_sale")
+
+    // Media / category
+    acceptIfPresent("image_url")
+    acceptIfPresent("image_urls")
+    acceptIfPresent("category")
+    acceptIfPresent("subcategoria")
+
+    // Inventory and attributes
+    acceptIfPresent("sizes")
+    acceptIfPresent("colors")
+    acceptIfPresent("stock")
+    // Additional product fields
+    acceptIfPresent("brand")
+    acceptIfPresent("tags")
+    acceptIfPresent("peso")
+    acceptIfPresent("precio_compra")
 
     if (Object.keys(updatePayload).length === 0) {
       // It's possible sale_action is present; defer to sale_action handling
@@ -379,7 +418,16 @@ export async function PATCH(request: NextRequest) {
       } catch (e) {
         return NextResponse.json({ error: 'Admin client not available' }, { status: 401 })
       }
-      const { error } = await adminClient.from("products").update(updatePayload).in("id", ids)
+
+      // For array fields ensure proper format (PostgREST expects arrays serialized)
+      const formattedPayload = { ...updatePayload }
+      if (Array.isArray(formattedPayload.sizes)) formattedPayload.sizes = formattedPayload.sizes
+      if (Array.isArray(formattedPayload.colors)) formattedPayload.colors = formattedPayload.colors
+      if (Array.isArray(formattedPayload.tags)) formattedPayload.tags = formattedPayload.tags
+
+      // Debug: log payload before DB update to confirm the value we write
+      try { console.log('[admin/products PATCH] updating products with payload:', formattedPayload, 'ids:', ids) } catch (e) { /* ignore */ }
+      const { error } = await adminClient.from("products").update(formattedPayload).in("id", ids)
 
       if (error) {
         console.error("Error updating products:", error)

@@ -290,7 +290,7 @@ export default function HomePage() {
               priority
             />
             {/* Dark overlay to ensure contrast */}
-            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-black/20" />
 
             <div style={{ position: 'absolute', top: '35%', left: '75%', transform: 'translate(-50%, -50%)' }}>
               <div className="text-center max-w-md px-4 flex flex-col items-center gap-1">

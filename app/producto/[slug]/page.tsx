@@ -29,7 +29,7 @@ interface ProductPageProps {
 }
 
 // Componente para productos similares
-function SimilarProducts({ category, currentProductId }: { category: string; currentProductId: string }) {
+function SimilarProducts({ product }: { product: any }) {
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -44,31 +44,126 @@ function SimilarProducts({ category, currentProductId }: { category: string; cur
           return
         }
 
-        const { data, error } = await supabase
-          .from("products")
-          .select("id, name, price, sale_price, on_sale, image_url, category")
-          .eq("category", category)
-          .eq("archived", false)
-          .neq("id", currentProductId)
-          .limit(8)
-          .order("created_at", { ascending: false })
-
-        if (error) {
-          console.error("Error fetching similar products:", error)
-          setLoading(false)
-          return
+        // Helper to stringify errors (includes non-enumerable props)
+        const formatError = (err: any) => {
+          try {
+            return JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+          } catch (e) {
+            try {
+              return String(err)
+            } catch (e2) {
+              return "(unserializable error)"
+            }
+          }
         }
 
-        setProducts(data || [])
+        // Try the view that includes effective_price, fallback to `products` if it fails
+        let candidates: any[] = []
+        try {
+          const res = await supabase
+            .from("products_with_effective_price")
+            .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria, sizes, colors, stock, description, featured, effective_price, created_at")
+            .eq("category", product.category)
+            .neq("id", product.id)
+            .gte("stock", 1)
+            .limit(100)
+
+          if (res.error) throw res.error
+          candidates = res.data || []
+        } catch (e) {
+          console.error("products_with_effective_price query failed, falling back to products table. error:", formatError(e))
+          try {
+            const res2 = await supabase
+              .from("products")
+              .select("id, name, price, sale_price, on_sale, image_url, category, subcategoria, sizes, colors, stock, description, featured, created_at")
+              .eq("category", product.category)
+              .eq("archived", false)
+              .neq("id", product.id)
+              .gte("stock", 1)
+              .limit(100)
+
+            if (res2.error) {
+              console.error("Fallback products query also failed:", formatError(res2.error))
+              setLoading(false)
+              return
+            }
+            candidates = res2.data || []
+          } catch (e2) {
+            console.error("Unexpected error during fallback products query:", formatError(e2))
+            setLoading(false)
+            return
+          }
+        }
+
+        // Scoring function: subcategoria, colors, sizes, name/description similarity, recency, featured
+        const tokenize = (text: string | null) => {
+          if (!text) return []
+          return text
+            .toLowerCase()
+            .replace(/[^a-z0-9áéíóúñ\s]/g, " ")
+            .split(/\s+/)
+            .filter(Boolean)
+        }
+
+        const baseText = `${product.name || ""} ${product.description || ""}`
+        const baseTokens = new Set(tokenize(baseText))
+
+        const scored = candidates.map((c) => {
+          let score = 0
+
+          // subcategory exact match (strong)
+          if (product.subcategoria && c.subcategoria && product.subcategoria === c.subcategoria) score += 6
+
+          // color and size overlaps
+          const prodColors = (product.colors || []).map((x: string) => (x || "").toLowerCase())
+          const candColors = (c.colors || []).map((x: string) => (x || "").toLowerCase())
+          const colorOverlap = prodColors.filter((v: string) => candColors.includes(v)).length
+          score += colorOverlap * 2
+
+          const prodSizes = (product.sizes || []).map((x: string) => (x || "").toLowerCase())
+          const candSizes = (c.sizes || []).map((x: string) => (x || "").toLowerCase())
+          const sizeOverlap = prodSizes.filter((v: string) => candSizes.includes(v)).length
+          score += sizeOverlap * 2
+
+          // name/description token overlap
+          const candTokens = new Set((`${c.name || ""} ${c.description || ""}`).toLowerCase().replace(/[^a-z0-9áéíóúñ\s]/g, " ").split(/\s+/).filter(Boolean))
+          let common = 0
+          for (const t of baseTokens) if (candTokens.has(t)) common++
+          score += Math.min(common, 6)
+
+          // recency boost (products added within 30 days get small boost)
+          try {
+            const now = Date.now()
+            const created = new Date(c.created_at).getTime()
+            const days = Math.max(0, (now - created) / (1000 * 60 * 60 * 24))
+            if (days <= 7) score += 2
+            else if (days <= 30) score += 1
+          } catch (e) {
+            // ignore
+          }
+
+          if (c.featured) score += 1
+
+          // small random tie-breaker to vary results
+          const tie = Math.random() * 0.001
+
+          return { product: c, score: score + tie }
+        })
+
+        scored.sort((a, b) => b.score - a.score)
+
+        const top = scored.slice(0, 10).map((s) => s.product)
+
+        setProducts(top)
       } catch (error) {
-        console.error("Error fetching similar products:", error)
+        console.error("Error fetching similar products:", formatError(error))
       } finally {
         setLoading(false)
       }
     }
 
     fetchSimilarProducts()
-  }, [category, currentProductId])
+  }, [product])
 
   if (loading) {
     return <LoadingSkeleton count={4} compact />
@@ -443,9 +538,9 @@ export default function ProductPage({ params }: ProductPageProps) {
           </div>
 
           {/* Similar Products Section */}
-          <section className="mt-16">
-            <SimilarProducts category={product.category} currentProductId={product.id} />
-          </section>
+            <section className="mt-16">
+              <SimilarProducts product={product} />
+            </section>
         </div>
       </main>
 

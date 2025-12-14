@@ -281,9 +281,10 @@ export default function HomePage() {
           <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '1 / 1' }}>
             {/* Background image (square, crop left) */}
             <Image
-              src="/IMG_9061.JPG"
+              src="/rachel.jpg"
               alt="Mujer - La L Fashion"
               fill
+              unoptimized
               className="absolute inset-0 w-full h-full object-cover"
               style={{ objectPosition: '40% 50%' }}
               priority

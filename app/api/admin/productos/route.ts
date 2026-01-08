@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const archivedParam = searchParams.get("archived")
     const noImageParam = searchParams.get("no_image")
     const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "20")
+    const limit = Number.parseInt(searchParams.get("limit") || "100")
 
     let db: any
     try {

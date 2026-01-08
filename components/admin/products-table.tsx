@@ -7,6 +7,7 @@ import Button from "@/components/ui/button"
 
 import { formatPrice } from "@/lib/utils"
 import type { ProductWithCalculations } from "@/lib/admin-types"
+import { SUBCATEGORIAS } from "@/lib/types"
 
 interface ProductsTableProps {
   products: ProductWithCalculations[]
@@ -93,6 +94,17 @@ export function ProductsTable({
   const [availableSizesOptions, setAvailableSizesOptions] = useState<string[]>([])
   const [availableColorsOptions, setAvailableColorsOptions] = useState<string[]>([])
 
+  // inputs para crear nuevas opciones en el modal
+  const [newSizeInput, setNewSizeInput] = useState<string>("")
+  const [newColorInput, setNewColorInput] = useState<string>("")
+  const [newTagInput, setNewTagInput] = useState<string>("")
+  const [newCategoryInput, setNewCategoryInput] = useState<string>("")
+
+  // Predefinidos (coinciden con product-form/variants y product-form/categorization)
+  const PREDEFINED_CATEGORIES = ["mujer", "hombre", "accesorios"]
+  const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44"]
+  const DEFAULT_COLORS = ["Negro", "Blanco", "Gris", "Azul", "Rojo", "Verde", "Amarillo", "Rosa", "Morado", "Marrón"]
+
   useEffect(() => {
     let mounted = true
     // meta (categories, subcategories, brands, tags)
@@ -101,11 +113,17 @@ export function ProductsTable({
       .then(json => {
         if (!mounted) return
         if (json && !json.error) {
-          setAvailableCategories(json.categories || [])
+          // Mostrar categorías predefinidas en lugar de depender solo de la BDD
+          setAvailableCategories(PREDEFINED_CATEGORIES)
           setAvailableSubcategories(json.subcategories || [])
           setAvailableBrands(json.brands || [])
           setAvailableTags(json.tags || [])
-          setSubcategoriesByCategory(json.subcategoriesByCategory || {})
+          // Combinar subcategoriesByCategory de la API con las predefinidas (SUBCATEGORIAS)
+          const mergedSubs = {
+            ...(SUBCATEGORIAS as any),
+            ...(json.subcategoriesByCategory || {}),
+          }
+          setSubcategoriesByCategory(mergedSubs)
         }
       })
       .catch(() => {})
@@ -116,8 +134,13 @@ export function ProductsTable({
       .then(json => {
         if (!mounted) return
         if (json && !json.error) {
-          setAvailableSizesOptions(json.sizes || [])
-          setAvailableColorsOptions(json.colors || [])
+          const sizes = Array.from(new Set([...(json.sizes || []), ...DEFAULT_SIZES])).sort()
+          const colors = Array.from(new Set([...(json.colors || []), ...DEFAULT_COLORS])).sort()
+          setAvailableSizesOptions(sizes)
+          setAvailableColorsOptions(colors)
+        } else {
+          setAvailableSizesOptions(DEFAULT_SIZES)
+          setAvailableColorsOptions(DEFAULT_COLORS)
         }
       })
       .catch(() => {})
@@ -188,18 +211,56 @@ export function ProductsTable({
       <div key="sizes">
         <label className="text-sm text-gray-700">Tallas</label>
         {availableSizesOptions.length > 0 ? (
-          <select
-            multiple
-            value={sizes}
-            onChange={(e) => {
-              const vals = Array.from(e.target.selectedOptions).map(o => o.value)
-              setSizes(vals)
-              setSizesDirty(true)
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg h-28"
-          >
-            {availableSizesOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <>
+            <div className="flex flex-wrap gap-2">
+              {availableSizesOptions.map((s) => {
+                const active = sizes.includes(s)
+                return (
+                  <Button
+                    key={s}
+                    type="button"
+                    variant={active ? "primary" : "outline"}
+                    size="sm"
+                    className={active ? "bg-[#4CAF50] text-white" : "border-[#424242] text-[#424242]"}
+                    onClick={() => {
+                      let next = [] as string[]
+                      if (active) next = sizes.filter(x => x !== s)
+                      else next = [...sizes, s]
+                      setSizes(next)
+                      setSizesDirty(true)
+                    }}
+                  >
+                    {s}
+                  </Button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={newSizeInput}
+                onChange={(e) => setNewSizeInput(e.target.value)}
+                placeholder="Agregar talla"
+                className="px-2 py-1 border border-gray-300 rounded-lg"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const v = newSizeInput.trim()
+                  if (!v) return
+                  if (!availableSizesOptions.includes(v)) {
+                    setAvailableSizesOptions((prev) => [...prev, v])
+                  }
+                  if (!sizes.includes(v)) setSizes((prev) => [...prev, v])
+                  setSizesDirty(true)
+                  setNewSizeInput("")
+                }}
+              >
+                Agregar
+              </Button>
+            </div>
+          </>
         ) : (
           <input
             type="text"
@@ -215,18 +276,56 @@ export function ProductsTable({
       <div key="colors">
         <label className="text-sm text-gray-700">Colores</label>
         {availableColorsOptions.length > 0 ? (
-          <select
-            multiple
-            value={colors}
-            onChange={(e) => {
-              const vals = Array.from(e.target.selectedOptions).map(o => o.value)
-              setColors(vals)
-              setColorsDirty(true)
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg h-28"
-          >
-            {availableColorsOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <>
+            <div className="flex flex-wrap gap-2">
+              {availableColorsOptions.map((c) => {
+                const active = colors.includes(c)
+                return (
+                  <Button
+                    key={c}
+                    type="button"
+                    variant={active ? "primary" : "outline"}
+                    size="sm"
+                    className={active ? "bg-[#4CAF50] text-white" : "border-[#424242] text-[#424242]"}
+                    onClick={() => {
+                      let next = [] as string[]
+                      if (active) next = colors.filter(x => x !== c)
+                      else next = [...colors, c]
+                      setColors(next)
+                      setColorsDirty(true)
+                    }}
+                  >
+                    {c}
+                  </Button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={newColorInput}
+                onChange={(e) => setNewColorInput(e.target.value)}
+                placeholder="Agregar color"
+                className="px-2 py-1 border border-gray-300 rounded-lg"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const v = newColorInput.trim()
+                  if (!v) return
+                  if (!availableColorsOptions.includes(v)) {
+                    setAvailableColorsOptions((prev) => [...prev, v])
+                  }
+                  if (!colors.includes(v)) setColors((prev) => [...prev, v])
+                  setColorsDirty(true)
+                  setNewColorInput("")
+                }}
+              >
+                Agregar
+              </Button>
+            </div>
+          </>
         ) : (
           <input
             type="text"
@@ -254,10 +353,45 @@ export function ProductsTable({
       <div key="brand">
         <label className="text-sm text-gray-700">Marca</label>
         {availableBrands.length > 0 ? (
-          <select value={brand} onChange={(e) => { setBrand(e.target.value); setBrandDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-            <option value="">No cambiar</option>
-            {availableBrands.map((b) => <option key={b} value={b}>{b}</option>)}
-          </select>
+          <>
+            <select value={brand} onChange={(e) => { setBrand(e.target.value); setBrandDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+              <option value="">No cambiar</option>
+              {availableBrands.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={"" /* placeholder for new brand input refactor if needed */}
+                onChange={() => {}}
+                placeholder="Nueva marca (usar campo inferior)"
+                className="w-full px-2 py-1 border border-gray-200 rounded-lg bg-gray-50 text-sm"
+                disabled
+              />
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={newCategoryInput /* reuse temp input state for quick add */}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                placeholder="Agregar marca"
+                className="px-2 py-1 border border-gray-300 rounded-lg"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const v = newCategoryInput.trim()
+                  if (!v) return
+                  if (!availableBrands.includes(v)) setAvailableBrands((prev) => [...prev, v])
+                  setBrand(v)
+                  setBrandDirty(true)
+                  setNewCategoryInput("")
+                }}
+              >
+                Agregar
+              </Button>
+            </div>
+          </>
         ) : (
           <input type="text" value={brand} onChange={(e) => { setBrand(e.target.value); setBrandDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Marca" />
         )}
@@ -267,9 +401,54 @@ export function ProductsTable({
       <div key="tags">
         <label className="text-sm text-gray-700">Etiquetas</label>
         {availableTags.length > 0 ? (
-          <select multiple value={tagsField} onChange={(e) => { const vals = Array.from(e.target.selectedOptions).map(o => o.value); setTagsField(vals); setTagsDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg h-28">
-            {availableTags.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          <>
+            <div className="flex flex-wrap gap-2">
+              {availableTags.map((t) => {
+                const active = tagsField.includes(t)
+                return (
+                  <Button
+                    key={t}
+                    type="button"
+                    variant={active ? "primary" : "outline"}
+                    size="sm"
+                    className={active ? "bg-[#4CAF50] text-white" : "border-[#424242] text-[#424242]"}
+                    onClick={() => {
+                      let next = [] as string[]
+                      if (active) next = tagsField.filter(x => x !== t)
+                      else next = [...tagsField, t]
+                      setTagsField(next)
+                      setTagsDirty(true)
+                    }}
+                  >
+                    {t}
+                  </Button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={newTagInput}
+                onChange={(e) => setNewTagInput(e.target.value)}
+                placeholder="Agregar etiqueta"
+                className="px-2 py-1 border border-gray-300 rounded-lg"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const v = newTagInput.trim()
+                  if (!v) return
+                  if (!availableTags.includes(v)) setAvailableTags((prev) => [...prev, v])
+                  if (!tagsField.includes(v)) setTagsField((prev) => [...prev, v])
+                  setTagsDirty(true)
+                  setNewTagInput("")
+                }}
+              >
+                Agregar
+              </Button>
+            </div>
+          </>
         ) : (
           <input type="text" value={tagsField.join(',')} onChange={(e) => { setTagsField(e.target.value.split(',').map(s=>s.trim()).filter(Boolean)); setTagsDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="tag1,tag2" />
         )}
@@ -291,10 +470,49 @@ export function ProductsTable({
       <div key="category">
         <label className="text-sm text-gray-700">Categoría</label>
         {availableCategories.length > 0 ? (
-          <select value={categoryField} onChange={(e) => { setCategoryField(e.target.value); setCategoryDirty(true); setSubcategoriaField('') }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-            <option value="">No cambiar</option>
-            {availableCategories.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <>
+            <div className="flex flex-wrap gap-2">
+              {availableCategories.map((c) => {
+                const active = categoryField === c
+                return (
+                  <Button
+                    key={c}
+                    type="button"
+                    variant={active ? "primary" : "outline"}
+                    size="sm"
+                    className={active ? "bg-[#4CAF50] text-white" : "border-[#424242] text-[#424242]"}
+                    onClick={() => { setCategoryField(active ? "" : c); setCategoryDirty(true); if (!active) setSubcategoriaField('') }}
+                  >
+                    {c}
+                  </Button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                placeholder="Agregar categoría"
+                className="px-2 py-1 border border-gray-300 rounded-lg"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const v = newCategoryInput.trim()
+                  if (!v) return
+                  if (!availableCategories.includes(v)) setAvailableCategories((prev) => [...prev, v])
+                  setCategoryField(v)
+                  setCategoryDirty(true)
+                  setSubcategoriaField("")
+                  setNewCategoryInput("")
+                }}
+              >
+                Agregar
+              </Button>
+            </div>
+          </>
         ) : (
           <input
             type="text"
@@ -310,15 +528,41 @@ export function ProductsTable({
       <div key="subcategoria">
         <label className="text-sm text-gray-700">Subcategoría</label>
         {categoryField && subcategoriesByCategory[categoryField] ? (
-          <select value={subcategoriaField} onChange={(e) => { setSubcategoriaField(e.target.value); setSubcategoriaDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-            <option value="">No cambiar</option>
-            {subcategoriesByCategory[categoryField].map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div className="flex flex-wrap gap-2">
+            {subcategoriesByCategory[categoryField].map((s) => {
+              const active = subcategoriaField === s
+              return (
+                <Button
+                  key={s}
+                  type="button"
+                  variant={active ? "primary" : "outline"}
+                  size="sm"
+                  className={active ? "bg-[#4CAF50] text-white" : "border-[#424242] text-[#424242]"}
+                  onClick={() => { setSubcategoriaField(active ? "" : s); setSubcategoriaDirty(true) }}
+                >
+                  {s}
+                </Button>
+              )
+            })}
+          </div>
         ) : availableSubcategories.length > 0 ? (
-          <select value={subcategoriaField} onChange={(e) => { setSubcategoriaField(e.target.value); setSubcategoriaDirty(true) }} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-            <option value="">No cambiar</option>
-            {availableSubcategories.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div className="flex flex-wrap gap-2">
+            {availableSubcategories.map((s) => {
+              const active = subcategoriaField === s
+              return (
+                <Button
+                  key={s}
+                  type="button"
+                  variant={active ? "primary" : "outline"}
+                  size="sm"
+                  className={active ? "bg-[#4CAF50] text-white" : "border-[#424242] text-[#424242]"}
+                  onClick={() => { setSubcategoriaField(active ? "" : s); setSubcategoriaDirty(true) }}
+                >
+                  {s}
+                </Button>
+              )
+            })}
+          </div>
         ) : (
           <input
             type="text"

@@ -53,28 +53,25 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
         </Label>
 
         <div className="flex flex-wrap gap-2">
-          {commonSizes.map((size) => (
-            <Button
-              key={size}
-              type="button"
-              variant={formData.sizes.includes(size) ? "primary" : "outline"}
-              className={
-                formData.sizes.includes(size)
-                  ? "bg-[#4CAF50] text-white hover:bg-[#43a047]"
-                  : "border-[#424242] text-[#424242] hover:bg-transparent"
-              }
-              size="sm"
-              onClick={() => {
-                if (formData.sizes.includes(size)) {
-                  removeSize(size)
-                } else {
-                  addSize(size)
-                }
-              }}
-            >
-              {size}
-            </Button>
-          ))}
+          {commonSizes.map((size) => {
+            const curSizes = formData.sizes || []
+            const active = curSizes.includes(size)
+            return (
+              <Button
+                key={size}
+                type="button"
+                variant={active ? "primary" : "outline"}
+                className={active ? "bg-[#4CAF50] text-white hover:bg-[#43a047]" : "border-[#424242] text-[#424242] hover:bg-transparent"}
+                size="sm"
+                onClick={() => {
+                  if (active) removeSize(size)
+                  else addSize(size)
+                }}
+              >
+                {size}
+              </Button>
+            )
+          })}
         </div>
 
         <div className="flex gap-2">
@@ -95,7 +92,7 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {formData.sizes.map((size) => (
+          {(formData.sizes || []).map((size) => (
             <span
               key={size}
               className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
@@ -118,28 +115,25 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
         </Label>
 
         <div className="flex flex-wrap gap-2">
-          {commonColors.map((color) => (
-            <Button
-              key={color}
-              type="button"
-              variant={formData.colors.includes(color) ? "primary" : "outline"}
-              className={
-                formData.colors.includes(color)
-                  ? "bg-[#4CAF50] text-white hover:bg-[#43a047]"
-                  : "border-[#424242] text-[#424242] hover:bg-transparent"
-              }
-              size="sm"
-              onClick={() => {
-                if (formData.colors.includes(color)) {
-                  removeColor(color)
-                } else {
-                  addColor(color)
-                }
-              }}
-            >
-              {color}
-            </Button>
-          ))}
+          {commonColors.map((color) => {
+            const curColors = formData.colors || []
+            const active = curColors.includes(color)
+            return (
+              <Button
+                key={color}
+                type="button"
+                variant={active ? "primary" : "outline"}
+                className={active ? "bg-[#4CAF50] text-white hover:bg-[#43a047]" : "border-[#424242] text-[#424242] hover:bg-transparent"}
+                size="sm"
+                onClick={() => {
+                  if (active) removeColor(color)
+                  else addColor(color)
+                }}
+              >
+                {color}
+              </Button>
+            )
+          })}
         </div>
 
         <div className="flex gap-2">
@@ -160,7 +154,7 @@ export function Variants({ formData, errors, updateField }: VariantsProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {formData.colors.map((color) => (
+          {(formData.colors || []).map((color) => (
             <span
               key={color}
               className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm"
